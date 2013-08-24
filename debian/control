@@ -6,10 +6,3 @@ Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8), cdbs, libboost-dev (>= 1.47
 Standards-Version: 3.9.4
 Homepage: http://github.com/Nocte-/hexahedra
 
-Package: librhea1
-Section: libs
-Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}, libsfml (>= 2.0.0), libenet1a, libjpeg62, libglew1.8, libglu1-mesa | libglu1, libluajit5.1-2, libsqlite3-0, libluabind0.9.1
-Description: Play a collection of blocky sandbox games
- Single- and multi-player voxel games, with a big emphasis on modding.
-
