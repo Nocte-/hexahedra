@@ -1,0 +1,4 @@
+version=3
+
+https://github.com/Nocte-/hexahedra/tags .*/(\d[\d\.]+)\.tar\.gz
+

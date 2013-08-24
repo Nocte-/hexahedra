@@ -1,8 +1,14 @@
 Source: hexahedra
-Maintainer: Nocte <nocte@hippie.nu>
+Maintainer: Nocte <hexahedra.maintainer@gmail.com>
 Section: games
 Priority: optional
-Build-Depends: debhelper (>= 8.0.0), cmake (>= 2.8), cdbs, libboost-dev (>= 1.47), libsfml-dev (>= 2.0.0), libenet1a-dev, libjpeg62-dev, libglew1.8-dev, libglu1-mesa-dev | libglu1-dev, libluajit5.1-dev, libsqlite3-dev, libluabind-dev
+Build-Depends: debhelper (>= 9), cmake (>= 2.8), cdbs, libboost-dev (>= 1.47), libsfml-dev (>= 2.0.0), libenet1a-dev, libjpeg62-dev, libglew1.8-dev, libglu1-mesa-dev | libglu1-dev, libluajit5.1-dev, libsqlite3-dev, libluabind-dev
 Standards-Version: 3.9.4
 Homepage: http://github.com/Nocte-/hexahedra
+
+Package: hexahedra
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Collection of blocky sandbox games
+ A collection of single- and multiplayer blocky sandbox games.
 
