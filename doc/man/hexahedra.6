@@ -1,0 +1,46 @@
+.\" Manpage for hexahedra.
+.\" Contact hexahedra-maintainer@gmail.com to correct errors or typos.
+.TH HEXAHEDRA 6
+.SH NAME
+hexahedra \- Play a variety of voxel games
+
+.SH SYNOPSIS
+.B hexahedra [ OPTION ... ]
+
+.SH DESCRIPTION
+Hexahedra is a framework for voxel games.  It supports both local single
+player and online multiplayer games.
+
+.SH OPTIONS
+.TP
+.BR \-\-help
+Print the command line options.
+.TP
+.BR \-\-version
+Show version information and exit.
+.TP
+.BR \-\-hostname=host
+Connect to a server.  The default is 'localhost'.
+.TP
+.BR \-\-port=number
+Connect to the given port number.
+.TP
+.BR \-\-ogl2
+Override the OpenGL version autodetection, and force the use of OpenGL 2.0.
+.TP
+.BR \-\-viewdist=n
+Set the view radius to n chunks (or n*16 blocks).  The default is 20.  If you
+experience low frame rates or stuttering, try setting this to a lower value.
+
+.SH SEE ALSO
+hexahedra-server(6)
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Nocte (hexahedra-maintainer@gmail.com)
+
+.SH WWW
+http://hexahedra.net/
+

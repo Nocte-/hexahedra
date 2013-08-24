@@ -1,0 +1,19 @@
+{
+"areas": [
+],
+ 
+"terrain": [
+    {
+        "module" : "flat",
+        "material": "base"
+    }
+],
+
+"light": [
+    {
+        "module": "uniform"
+    }
+]
+
+}
+

@@ -1,0 +1,4 @@
+Play a collection of voxel games.
+ Hexahedra is a collection of single- and multiplayer voxel games, with a
+ heavy emphasis on modding.
+

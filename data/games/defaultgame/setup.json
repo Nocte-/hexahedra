@@ -1,0 +1,68 @@
+{
+"areas": [
+    {
+        "module": "standard_heightmap",
+        "name": "heightmap",
+        "octaves": 12,
+        "height": 2000,
+        "scale": 10000
+    },
+    {
+        "module": "biome",
+        "name": "rough_terrain",
+        "octaves": 2,
+        "scale": 200
+    },
+    {
+        "module": "biome",
+        "name": "temperature",
+        "min": 0,
+        "max": 500,
+        "octaves": 2,
+        "scale": 800
+    },
+    {
+        "module": "biome",
+        "name": "precipitation",
+        "min": 0,
+        "max": 400,
+        "octaves": 2,
+        "scale": 600
+    },
+    {
+        "module": "biome",
+        "name": "forest_density",
+        "min": 0,
+        "max": 100,
+        "octaves": 2,
+        "scale": 500
+    }
+],
+ 
+"terrain": [
+    {
+        "module" : "standard"
+    },
+    {
+        "module" : "ocean"
+    },
+    {
+        "module" : "topsurface",
+        "span"   : 6
+    },
+    {
+        "module" : "soil"
+    },
+    {
+        "module" : "trees"
+    }
+],
+
+"light": [
+    { "module": "ambient_occlusion" },
+    { "module": "sun" },
+    { "module": "lamp" }
+]
+
+}
+

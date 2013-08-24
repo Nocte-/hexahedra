@@ -1,0 +1,28 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=Hexahedra
+Comment=Play a variety of blocky sandbox games
+Comment[nl]=Een verzameling voxel spellen
+Terminal=false
+Exec=hexahedra
+Icon=hexahedra
+Categories=Game
+Keywords=voxel;block;mine;
+Actions=NewSingleplayer;Continue;JoinFavoriteServer
+
+[Desktop Action NewSingleplayer]
+Exec=hexahedra --newsingle
+Name=Jump right in with a new single-player world
+Name[nl]=Begin meteen met een nieuw spel
+
+[Desktop Action Continue]
+Exec=hexahedra --continue
+Name=Continue your current game
+Name[nl]=Spel hervatten
+
+[Desktop Action JoinFavoriteServer]
+Exec=hexahedra --quickjoin
+Name=Join your favorite server
+Name[nl]=Inloggen op je favoriete server
+

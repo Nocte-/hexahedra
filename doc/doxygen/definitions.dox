@@ -1,0 +1,13 @@
+
+/** \namespace hexa
+ *  The namespace for all Hexahedra code. */
+
+/** \namespace hexa::physics
+ *  Physics simulation. */
+
+/** \namespace hexa::sql
+ *  The sqlite3 database wrapper namespace. */
+
+/** \namespace hexa::msg
+ *  The network protocol. */
+
