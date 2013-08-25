@@ -338,7 +338,9 @@ void scene::build_mesh(chunk_coordinates pos)
                     assert(false);
                     lmi = plm->opaque.begin();
                 }
-                opaque_mesh->add_face(f.pos, (direction_type)d, tex, *lmi++);
+                assert(lmi != plm->opaque.end());
+                opaque_mesh->add_face(f.pos, (direction_type)d, tex, *lmi);
+                ++lmi;
             }
         }
     }
@@ -357,7 +359,8 @@ void scene::build_mesh(chunk_coordinates pos)
 
             uint16_t tex (m.textures[d]);
             assert(lmi != plm->transparent.end());
-            transparent_mesh->add_face(f.pos, (direction_type)d, tex, *lmi++);
+            transparent_mesh->add_face(f.pos, (direction_type)d, tex, *lmi);
+            ++lmi;
         }
     }
     assert(lmi == plm->transparent.end());

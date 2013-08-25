@@ -19,6 +19,7 @@
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
+#include <atomic>
 #include <cassert>
 #include <iostream>
 #include <fstream>
@@ -74,29 +75,44 @@ static std::string default_db_path()
     return (app_user_dir() / fs::path(SERVER_DB_PATH)).string();
 }
 
-bool lolquit = false;
+std::atomic_bool lolquit (false);
 void physics (server_entity_system& s, storage_i& terrain)
 {
     using namespace boost::chrono;
 
     milliseconds tick (50);
     auto last_tick (steady_clock::now());
-    while (!lolquit)
+    while (!lolquit.load())
     {
         boost::this_thread::sleep_for(tick);
         auto current_time (steady_clock::now());
-        auto delta (current_time - last_tick);
+        auto delta_tick (current_time - last_tick);
         last_tick = current_time;
-        double sec (duration_cast<microseconds>(delta).count() * 1.0e-6);
+        double delta (duration_cast<microseconds>(delta_tick).count() * 1.0e-6);
 
         {
         auto write_lock (s.acquire_write_lock());
-        //trace("physics timestep %1%", sec);
-        system_gravity(s, sec);
-        system_walk(s, sec);
-        system_motion(s, sec);
-        system_terrain_collision(s, terrain);
-        system_terrain_friction(s, sec);
+        //trace("physics timestep %1%", delta);
+        while (delta > 0)
+        {
+            constexpr double max_step = 0.05;
+            double step;
+            if (delta > max_step)
+            {
+                step = max_step;
+                delta -= max_step;
+            }
+            else
+            {
+                step = delta;
+                delta = 0;
+            }
+            system_gravity(s, step);
+            system_walk(s, step);
+            system_motion(s, step);
+            system_terrain_collision(s, terrain);
+            system_terrain_friction(s, step);
+        }
         }
     }
 }
@@ -284,11 +300,14 @@ int main (int argc, char* argv[])
         ::CloseHandle(stopEvent);
 #endif
 
+        trace("Stopping network...");
+        server.stop();
+
         trace("Stopping server...");
         server.jobs.push({ network::job::quit, chunk_coordinates(), 0 });
 
         trace("Stopping threads...");
-        lolquit=true;
+        lolquit.store(true);
         physics_thread.join();
         gameloop.join();
 

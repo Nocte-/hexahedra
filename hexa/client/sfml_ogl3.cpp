@@ -381,13 +381,15 @@ sfml_ogl3::sfml_ogl3(sf::RenderWindow& win)
     resize(width_, height_);
     sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);
 
+    const int16_t l (-10), h (266);
+
     static const int16_t cube[24*3] = {
-        0  , 0  , 0   ,   256, 0  , 0   ,   256, 256, 0   ,   0  , 256, 0   ,
-        256, 0  , 0   ,   256, 0  , 256 ,   256, 256, 256 ,   256, 256, 0   ,
-        0  , 256, 256 ,   256, 256, 256 ,   256, 0  , 256 ,   0  , 0  , 256 ,
-        0  , 256, 0   ,   0  , 256, 256 ,   0  , 0  , 256 ,   0  , 0  , 0   ,
-        0  , 0  , 0   ,   256, 0  , 0   ,   256, 0  , 256 ,   0  , 0  , 256 ,
-        0  , 256, 256 ,   256, 256, 256 ,   256, 256, 0   ,   0  , 256, 0    };
+        l,l,l,  h,l,l,  h,h,l,  l,h,l,
+        h,l,l,  h,l,h,  h,h,h,  h,h,l,
+        l,h,h,  h,h,h,  h,l,h,  l,l,h,
+        l,h,l,  l,h,h,  l,l,h,  l,l,l,
+        l,l,l,  h,l,l,  h,l,h,  l,l,h,
+        l,h,h,  h,h,h,  h,h,l,  l,h,l };
 
     occlusion_block_ = gl::vbo(cube, 24, sizeof(occ_cube_vtx));
 }

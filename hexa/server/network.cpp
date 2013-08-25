@@ -24,6 +24,7 @@
 #include <chrono>
 #include <iostream>
 #include <map>
+#include <thread>
 
 #include <boost/format.hpp>
 #include <boost/math/constants/constants.hpp>
@@ -71,11 +72,13 @@ network::network(uint16_t port, world& w, server_entity_system& entities,
     , world_    (w)
     , es_       (entities)
     , lua_      (scripting)
+    , running_  (false)
 {
 }
 
 void network::run()
 {
+    running_.store(true);
     int count (0);
 
     while (true)
@@ -92,6 +95,8 @@ void network::run()
         ++count;
         if (count % 20 == 0)
         {
+        trace("network tick");
+
         msg::entity_update_physics msg;
         auto lock (es_.acquire_read_lock());
 
@@ -117,11 +122,12 @@ void network::run()
         {
             auto job (jobs.pop());
 
-            trace((format("new job type %1%") % job.type).str());
+            trace((format("new network job type %1%") % job.type).str());
 
             switch (job.type)
             {
             case job::quit:
+                running_.store(false);
                 return;
 
             case job::lightmap:
@@ -147,13 +153,16 @@ void network::run()
                 break;
             }
 
-            trace("job finished");
+            trace("network job finished");
         }
     }
 }
 
 void network::stop()
 {
+    jobs.push({ job::quit, chunk_coordinates(), 0 });
+    while (running_.load())
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
 void network::on_connect (ENetPeer* c)

@@ -1307,7 +1307,7 @@ struct robinton_generator::impl
         int mcy (0);
         int mcz (-(int(pos.y) - origin_.y));
 
-        boost::mutex::scoped_lock lock (lock_);
+        //boost::mutex::scoped_lock lock (lock_);
         bool any (false);
         while (true)
         {
@@ -1438,11 +1438,11 @@ struct robinton_generator::impl
         }
         catch (bad_region& e)
         {
-            std::cout << "Bad minecraft region: " << e.what() << std::endl;
+            trace("Bad minecraft region: %1%", std::string(e.what()));
         }
         catch (std::exception& e)
         {
-            std::cout << "Exception " << e.what() << std::endl;
+            trace("Exception: %1%", std::string(e.what()));
         }
     }
 };

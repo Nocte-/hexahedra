@@ -144,7 +144,7 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
             if (data == nullptr)
             {
                 // No surface data available yet; block the whole chunk
-                cm.push_back(collision_aabb(aabb<vector>(local_offset, chunk_size), 0x3f));
+                cm.emplace_back(aabb<vector>(local_offset, chunk_size), 0x3f);
             }
             else
             {
@@ -153,14 +153,19 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
                     vector bp (c.pos + local_offset);
 
                     const auto& m (material_prop[c.type]);
-                    if (m.is_custom_block())
+                    if (!m.bounding_box.empty())
+                    {
+                        for (auto& part : m.bounding_box)
+                            cm.emplace_back(part + bp, 0x3f);
+                    }
+                    else if (m.is_custom_block())
                     {
                         for (auto& part : m.model)
-                            cm.push_back(collision_aabb((++aabb<vector>(part.box)) / 16.f + bp, 0x3f));
+                            cm.emplace_back((++aabb<vector>(part.box)) / 16.f + bp, 0x3f);
                     }
                     else
                     {
-                        cm.push_back(collision_aabb(bp, 0x3f));
+                        cm.emplace_back(bp, 0x3f);
                     }
                 }
             }
@@ -171,7 +176,7 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
         if (impact != vector::zero())
         {
             // If we bump into something, check if it's a staircase.
-            if (/*impact.z > 0 && */ (impact.x != 0 || impact.y != 0))
+            if (impact.z > 0 && (impact.x != 0 || impact.y != 0))
             {
                 vector w (v.x, v.y, 0);
 
@@ -197,36 +202,27 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
 
         if (impact != vector::zero())
         {
-            p_ += impact + (normalize(impact) * 0.0001);
+            // Move the entity according to the impact, plus a little
+            // nudge to prevent rounding errors.
+            p_ += impact + normalize(impact) * 0.0001f;
 
             // The impact we get back from the collision detection is the
             // offset in meters.  For the rest of the system, we're going to
             // translate it to the change in velocity, since this is more
             // useful for things like calculating fall damage.
             //
+            trace("impact %1%, v %2%", impact, v);
             if (impact.x != 0) { impact.x = -v.x; v.x = 0; }
             if (impact.y != 0) { impact.y = -v.y; v.y = 0; }
             if (impact.z != 0) { impact.z = -v.z; v.z = 0; }
-
             v_ = v;
         }
-
-        // If everything went okay, the collision box shouldn't be stuck
-        // inside the terrain anywhere.
-        //
-        assert(!std::any_of(cm.begin(), cm.end(), [&](const aabb<vector>& cbx)
+        else
         {
-            return are_overlapping(cbx, make_collision_box(p.frac, bb));
-        }));
-
-        p = p_;
-        auto tmpc (make_collision_box(p.frac, bb));
-        for (auto& c : cm)
-        {
-            if (are_overlapping(c, tmpc))
-                std::cout << "Overlap " << tmpc << "  " << c << std::endl;
+            trace("no impact, v %1%, bb %2%", v, box);
         }
 
+        p = p_;
         s.set(i, entity_system::c_impact, impact);
     });
 }

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <deque>
 #include <stdexcept>
@@ -37,6 +38,7 @@
 
 #include <boost/bind.hpp>
 
+#include "aabb.hpp"
 #include "vector2.hpp"
 #include "vector3.hpp"
 #include "wfpos.hpp"
@@ -220,6 +222,15 @@ public:
         return *this;
     }
 
+    template <typename t, size_t count>
+    self& operator() (const std::array<t, count>& val)
+    {
+        for (size_t i (0); i < count; ++i)
+            (*this)(val[i]);
+
+        return *this;
+    }
+
     template <class t>
     self& operator() (vector2<t>& val)
     {
@@ -251,6 +262,12 @@ public:
     self& operator() (const wfpos& val)
     {
         return (*this)(val.pos)(val.frac);
+    }
+
+    template <typename t>
+    self& operator() (aabb<t>& val)
+    {
+        return (*this)(val.first)(val.second);
     }
 
     template <class t>
@@ -326,6 +343,11 @@ class deserializer
     }
     conversion;
 
+    inline void boundary_check(int size)
+    {
+        assert(std::distance(cursor_, read_.end()) >= size);
+    }
+
 public:
     deserializer(const obj& o) : read_ (o), cursor_ (o.begin()) { }
 
@@ -337,36 +359,42 @@ public:
 
     self& operator() (bool& val)
     {
-        val = (*cursor_++) != 0;
+        boundary_check(1);
+        val = ((*cursor_++) != 0);
         return *this;
     }
 
     self& operator() (char& val)
     {
+        boundary_check(1);
         val = *cursor_++;
         return *this;
     }
 
     self& operator() (signed char& val) // Looks dumb, but it is needed.
     {
+        boundary_check(1);
         val = *cursor_++;
         return *this;
     }
 
     self& operator() (unsigned char& val)
     {
+        boundary_check(1);
         val = *cursor_++;
         return *this;
     }
 
     self& operator() (direction_type& val)
     {
+        boundary_check(1);
         val = static_cast<direction_type>(*cursor_++);
         return *this;
     }
 
     self& operator() (uint16_t& val)
     {
+        boundary_check(2);
         val = ntohs(*reinterpret_cast<const uint16_t*>(&*cursor_));
         std::advance(cursor_, 2);
         return *this;
@@ -374,6 +402,7 @@ public:
 
     self& operator() (int16_t& val)
     {
+        boundary_check(2);
         val = ntohs(*reinterpret_cast<const int16_t*>(&*cursor_));
         std::advance(cursor_, 2);
         return *this;
@@ -381,6 +410,7 @@ public:
 
     self& operator() (uint32_t& val)
     {
+        boundary_check(4);
         val = ntohl(*reinterpret_cast<const uint32_t*>(&*cursor_));
         std::advance(cursor_, 4);
         return *this;
@@ -388,6 +418,7 @@ public:
 
     self& operator() (int32_t& val)
     {
+        boundary_check(4);
         val = ntohl(*reinterpret_cast<const int32_t*>(&*cursor_));
         std::advance(cursor_, 4);
         return *this;
@@ -395,6 +426,7 @@ public:
 
     self& operator() (float& val)
     {
+        boundary_check(4);
         conversion c;
         c.integer = ntohl(*reinterpret_cast<const uint32_t*>(&*cursor_));
         val = c.real;
@@ -404,6 +436,7 @@ public:
 
     self& operator() (uint64_t& val)
     {
+        boundary_check(8);
         val = ntohll(*reinterpret_cast<const uint64_t*>(&*cursor_));
         std::advance(cursor_, 8);
         return *this;
@@ -411,6 +444,7 @@ public:
 
     self& operator() (double& val)
     {
+        boundary_check(8);
         uint64_t temp (ntohll(*reinterpret_cast<const uint64_t*>(&*cursor_)));
         val = *reinterpret_cast<double*>(temp);
         std::advance(cursor_, 8);
@@ -428,6 +462,7 @@ public:
         {
             std::cout << "end of string " << len << " " << std::distance(cursor_, read_.end())
                       << " " << std::distance(read_.begin(), read_.end()) << std::endl;
+            assert(false);
             throw std::runtime_error("end of string reached");
         }
 
@@ -468,14 +503,27 @@ public:
         return *this;
     }
 
+    template <typename t, size_t count>
+    self& operator() (std::array<t, count>& val)
+    {
+        boundary_check(count * sizeof(t));
+        for (size_t i (0); i < count; ++i)
+            (*this)(val[i]);
+
+        return *this;
+    }
+
     template <class t>
     self& operator() (vector2<t>& val)
     {
+        boundary_check(2 * sizeof(t));
         return (*this)(val.x)(val.y);
     }
 
     self& operator() (vector3<int8_t>& val)
     {
+        boundary_check(2);
+
         // Offsets within a chunk are stored in a more compact form
         uint16_t temp;
         (*this)(temp);
@@ -488,12 +536,19 @@ public:
     template <class t>
     self& operator() (vector3<t>& val)
     {
+        boundary_check(3 * sizeof(t));
         return (*this)(val.x)(val.y)(val.z);
     }
 
     self& operator() (wfpos& val)
     {
         return (*this)(val.pos)(val.frac);
+    }
+
+    template <typename t>
+    self& operator() (aabb<t>& val)
+    {
+        return (*this)(val.first)(val.second);
     }
 
     template <class t>

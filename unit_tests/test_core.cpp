@@ -34,6 +34,20 @@
 
 using namespace hexa;
 
+template <typename t>
+t serialize_roundtrip(t& in)
+{
+    std::vector<uint8_t> buf;
+    auto ser (make_serializer(buf));
+    in.serialize(ser);
+
+    t out;
+    auto des (make_deserializer(buf));
+    out.serialize(des);
+
+    return out;
+}
+
 BOOST_AUTO_TEST_CASE (serialize_test)
 {
     typedef std::vector<uint8_t> buffer;
@@ -472,51 +486,47 @@ BOOST_AUTO_TEST_CASE (clientworld_test)
 */
 
 
-    /*
-BOOST_AUTO_TEST_CASE (surface_test)
+BOOST_AUTO_TEST_CASE (surfacedata_serialize_test)
 {
-    chunk_ptr c (new chunk);
+    surface_data test;
+    
+    auto ret1 (serialize_roundtrip(test));
+    BOOST_CHECK(ret1.opaque.empty());
+    BOOST_CHECK(ret1.transparent.empty());
 
-    material& m (register_new_material (1));
-    m.is_solid = true;
+    test.opaque.emplace_back(chunk_index{1, 2, 3}, 4, 12345);
+    test.opaque.emplace_back(chunk_index{2, 3, 5}, 5, 12346);
+    test.opaque.emplace_back(chunk_index{8, 10, 12}, 6, 12347);
 
-    chunk_index blockpos (8, 7, 6);
-    (*c)[blockpos].type = 1;
+    auto ret2 (serialize_roundtrip(test));
+    BOOST_CHECK_EQUAL(ret2.opaque.size(), 3);
+    BOOST_CHECK_EQUAL(ret2.opaque[0].pos.x, 1);
+    BOOST_CHECK_EQUAL(ret2.opaque[0].pos.z, 3);
+    BOOST_CHECK_EQUAL(ret2.opaque[1].dirs, 5);
+    BOOST_CHECK_EQUAL(ret2.opaque[2].type, 12347);
+    BOOST_CHECK(ret2.transparent.empty());
 
-    neighborhood<chunk_ptr> nbh;
-    nbh.add(chunk_index(0, 0, 0), c);
-
+    test.opaque.clear();
+    for (int i (0); i < 2048; ++i)
     {
-    faces result (extract_surface(nbh));
-
-    BOOST_REQUIRE_EQUAL(result.size(), 6);
-    for (int i (0); i < 6; ++i)
-        BOOST_CHECK_EQUAL(result[i].pos, blockpos);
+        test.opaque.emplace_back(chunk_index{1,2,3}, 4, 567 + i);
+        test.transparent.emplace_back(chunk_index{10, 11, 12}, 5, 890 + i);
     }
 
-    chunk_index next (9, 7, 6);
-    (*c)[next].type = 1;
+    auto ret3 (serialize_roundtrip(test));
+    BOOST_CHECK_EQUAL(ret3.opaque.size(), 2048);
+    BOOST_CHECK_EQUAL(ret3.transparent.size(), 2048);
 
-    {
-    faces result (extract_surface(nbh));
-    BOOST_REQUIRE_EQUAL(result.size(), 10);
-    }
+    BOOST_CHECK_EQUAL(ret3.opaque[0].pos.x, 1);
+    BOOST_CHECK_EQUAL(ret3.opaque[2047].pos.x, 1);
+    BOOST_CHECK_EQUAL(ret3.opaque[0].type, 567);
+    BOOST_CHECK_EQUAL(ret3.opaque[2047].type, 567 + 2047);
 
-    (*c).clear(0);
-    (*c)[chunk_index(0,0,0)].type = 1;
-    (*c)[chunk_index(15,0,0)].type = 1;
-
-    nbh.add(chunk_index(-1, 0, 0), c);
-    {
-    faces result (extract_surface(nbh));
-    BOOST_REQUIRE_EQUAL(result.size(), 11);
-    BOOST_REQUIRE_EQUAL(boost::range::count(result, face{chunk_index( 0,0,0), dir_east}), 1);
-    BOOST_REQUIRE_EQUAL(boost::range::count(result, face{chunk_index( 0,0,0), dir_west}), 0);
-    BOOST_REQUIRE_EQUAL(boost::range::count(result, face{chunk_index(15,0,0), dir_east}), 1);
-    BOOST_REQUIRE_EQUAL(boost::range::count(result, face{chunk_index(15,0,0), dir_west}), 1);
-    }
+    BOOST_CHECK_EQUAL(ret3.transparent[0].pos.x, 10);
+    BOOST_CHECK_EQUAL(ret3.transparent[2047].pos.x, 10);
+    BOOST_CHECK_EQUAL(ret3.transparent[0].type, 890);
+    BOOST_CHECK_EQUAL(ret3.transparent[2047].type, 890 + 2047);
 }
-    */
 
 /*
 BOOST_AUTO_TEST_CASE (area_height_test)
@@ -653,6 +663,36 @@ BOOST_AUTO_TEST_CASE (protocol_test)
     upds2.serialize(arch4);
 
     BOOST_CHECK(upds.terrain == upds2.terrain);
+}
+
+BOOST_AUTO_TEST_CASE (protocol2_test)
+{
+    msg::define_materials msg;
+    material mat;
+
+    mat.name = "name1";
+    mat.textures[0] = 10;
+
+    msg.materials.emplace_back(16, mat);
+
+    mat.name = "name2";
+    mat.textures[0] = 20;
+
+    msg.materials.emplace_back(32, mat);
+
+    std::vector<uint8_t> buf;
+    auto p (make_serializer(buf));
+    msg.serialize(p);
+
+    auto arch (make_deserializer(buf));
+    msg::define_materials r;
+    r.serialize(arch);
+
+    BOOST_CHECK_EQUAL(r.materials.size(), 2);
+    BOOST_CHECK_EQUAL(r.materials[0].definition.name, "name1");
+    BOOST_CHECK_EQUAL(r.materials[1].definition.name, "name2");
+    BOOST_CHECK_EQUAL(r.materials[0].definition.textures[0], 10);
+    BOOST_CHECK_EQUAL(r.materials[0].definition.textures[1], 0);
 }
 
 BOOST_AUTO_TEST_CASE (raybundle_test)

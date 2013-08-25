@@ -46,7 +46,7 @@ struct custom_block_part
     template <class archive>
     archive& serialize(archive& ar)
     {
-        ar(box.first)(box.second);
+        ar(box);
         for (int i (0); i < 6; ++i)
             ar(textures[i]);
 
@@ -62,26 +62,23 @@ struct material
 {
     /** Textures for the 6 block faces. */
     std::array<uint16_t, 6> textures;
-    /** Material strength. */
-    uint16_t                strength;
+    /** Human-readable name. */
+    std::string             name;
+    /** 3-D model for fancy custom blocks. */
+    custom_block            model;
+    /** Custom bounding box. */
+    std::vector<aabb<vector>> bounding_box;
     /** How much light can pass through. */
     uint8_t                 transparency;
     /** How much light this material emits. */
     uint8_t                 light_emission;
     /** Whether this material is solid (used in collision checks). */
     bool                    is_solid;
-    /** Human-readable name. */
-    std::string             name;
-    /** 3-D model for fancy custom blocks. */
-    custom_block            model;
-
 
     material()
-        : strength(16)
-        , transparency(0)
+        : transparency(0)
         , light_emission(0)
         , is_solid(true)
-        , name()
     {
         boost::range::fill(textures, 0);
     }
@@ -105,8 +102,7 @@ struct material
         for (int i (0); i < 6; ++i)
             ar(textures[i]);
 
-        return ar(strength)(transparency)(light_emission)(is_solid)
-                 (name)(model);
+        return ar(transparency)(is_solid)(name)(model)(bounding_box);
     }
 };
 

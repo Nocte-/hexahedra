@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <tuple>
 #include <unordered_map>
 
@@ -114,6 +115,8 @@ private:
 
     std::unordered_map<ENetPeer*, uint32_t> entities_;
     std::unordered_map<uint32_t, ENetPeer*> connections_;
+
+    std::atomic_bool    running_;
 };
 
 } // namespace hexa

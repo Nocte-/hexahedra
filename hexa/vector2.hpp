@@ -85,13 +85,13 @@ public:
 
     value_type& operator[] (size_t index)
     {
-        assert (index < 1);
+        assert (index < 2);
         return (&x)[index];
     }
 
     value_type operator[] (size_t index) const
     {
-        assert (index < 1);
+        assert (index < 2);
         return (&x)[index];
     }
 
