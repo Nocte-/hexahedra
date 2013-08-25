@@ -23,7 +23,7 @@ if(WIN32)
   endif()
 endif()
 
-find_package(Boost 1.50 REQUIRED COMPONENTS iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
+find_package(Boost 1.49 REQUIRED COMPONENTS iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
 find_package(SFML 2 REQUIRED COMPONENTS graphics window system)
 
 include_directories(${Boost_INCLUDE_DIRS} ${SFML_INCLUDE_DIR})
