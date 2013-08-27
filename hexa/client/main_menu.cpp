@@ -22,7 +22,6 @@
 #include "main_menu.hpp"
 
 #include <array>
-#include <chrono>
 #include <cstdlib>
 #include <iostream>
 

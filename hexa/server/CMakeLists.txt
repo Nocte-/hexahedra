@@ -24,7 +24,7 @@ if(WIN32)
   endif()
 endif()
 
-find_package(Boost 1.52 REQUIRED COMPONENTS chrono iostreams program_options filesystem system signals thread${BOOST_THREAD_SUFFIX} ${ADDITIONAL_BOOST_LIBS})
+find_package(Boost 1.50 REQUIRED COMPONENTS chrono iostreams program_options filesystem system signals thread${BOOST_THREAD_SUFFIX} ${ADDITIONAL_BOOST_LIBS})
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES})
 

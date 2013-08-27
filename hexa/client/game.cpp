@@ -21,7 +21,7 @@
 
 #include "game.hpp"
 
-#include <chrono>
+#include <boost/chrono.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/range/algorithm.hpp>
 #include <GL/glew.h>
@@ -62,7 +62,7 @@ game::game (const std::string& title, unsigned int width, unsigned int height)
 
 void game::run (std::unique_ptr<game_state> initial_state)
 {
-    using namespace std::chrono;
+    using namespace boost::chrono;
 
     auto size (window_.getSize());
     initial_state->resize(size.x, size.y);

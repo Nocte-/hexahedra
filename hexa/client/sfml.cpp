@@ -21,7 +21,6 @@
 
 #include "sfml.hpp"
 
-#include <chrono>
 #include <list>
 #include <stdexcept>
 #include <sstream>

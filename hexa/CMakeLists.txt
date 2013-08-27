@@ -15,7 +15,7 @@ else()
   file(GLOB SOURCE_FILES "*.cpp" "../libs/sqlite/sqlite3.c" "../libs/lz4/lz4.c")
 endif()
 
-find_package(Boost 1.52 REQUIRED COMPONENTS filesystem signals)
+find_package(Boost 1.50 REQUIRED COMPONENTS filesystem signals)
 include_directories(${Boost_INCLUDE_DIRS} ${SQLITE3_INCLUDE_DIR} ../libs)
 
 file(GLOB HEADER_FILES "*.hpp" "physics/*.hpp")

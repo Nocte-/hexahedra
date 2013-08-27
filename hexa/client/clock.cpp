@@ -21,9 +21,9 @@
 
 #include "clock.hpp"
 
-#include <chrono>
+#include <boost/chrono.hpp>
 
-using namespace std::chrono;
+using namespace boost::chrono;
 
 namespace hexa {
 namespace clock {
