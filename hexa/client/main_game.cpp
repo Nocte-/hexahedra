@@ -263,7 +263,7 @@ void main_game::update(double time_delta)
     system_motion(entities_, time_delta);
     system_terrain_collision(entities_, world());
     system_terrain_friction(entities_, time_delta);
-    system_lag_compensate(entities_, time_delta);
+    //system_lag_compensate(entities_, time_delta);
     } // scoped  lock
 
     on_tick(time_delta);

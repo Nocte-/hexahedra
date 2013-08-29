@@ -52,32 +52,34 @@ void tree_generator::generate(chunk_coordinates pos, chunk& dest)
 
     for (int count (0) ; count < 1; ++count)
     {
-        uint8_t tx (pos.x * chunk_size + (rand() % chunk_size));
-        uint8_t ty (pos.y * chunk_size + (rand() % chunk_size));
+        uint8_t ox (rand() % chunk_size);
+        uint8_t oy (rand() % chunk_size);
 
-        int16_t zpos ((*sm)(tx, ty));
+        int16_t zpos ((*sm)(ox, oy));
         if (zpos < z_offset || zpos > z_offset + chunk_size - 1)
             return;
 
+        uint32_t x (pos.x * chunk_size + ox);
+        uint32_t y (pos.y * chunk_size + oy);
         uint32_t z (water_level + zpos);
-        if (region(tx, ty, z) != dirt_)
+        if (region(x, y, z) != dirt_)
             continue;
 
         for (int c (0); c < 9; ++c)
         {
             if (c > 3)
             {
-                for (int x (-3); x <= 3; ++x)
-                 for (int y (-3); y <= 3; ++y)
+                for (int sx (-3); sx <= 3; ++sx)
+                 for (int sy (-3); sy <= 3; ++sy)
                      if (rand() % 100 > 30)
-                       region(tx+x, ty+y, z) = leaves_;
+                       region(x+sx, y+sy, z) = leaves_;
             }
-            region(tx, ty, z) = wood_;
+            region(x, y, z) = wood_;
             ++z;
         }
-        for (int x (-1); x <= 1; ++x)
-           for (int y (-1); y <= 1; ++y)
-               region(tx+x, ty+y, z) = leaves_;
+        for (int sx (-1); sx <= 1; ++sx)
+           for (int sy (-1); sy <= 1; ++sy)
+               region(x+sx, y+sy, z) = leaves_;
     }
 }
 

@@ -53,28 +53,30 @@ void soil_generator::generate(chunk_coordinates pos, chunk& dest)
     auto region (w_.lock_region({pos + world_vector(0, 0, -1), pos}, *this));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
 
-    for (uint32_t x (pos.x * chunk_size); x < (pos.x + 1) * chunk_size; ++x)
+    for (uint32_t ax (0); ax < chunk_size; ++ax)
     {
-        for (uint32_t y (pos.x * chunk_size); y < (pos.x + 1) * chunk_size; ++y)
+        for (uint32_t ay (0); ay < chunk_size; ++ay)
         {
-            int16_t lz ((*sm)(x, y));
+            int16_t lz ((*sm)(ax, ay));
             if (lz < z_offset || lz >= z_offset + chunk_size)
                 continue;
 
+            uint32_t x (ax + pos.x * chunk_size);
+            uint32_t y (ay + pos.y * chunk_size);
             uint32_t z (water_level + lz);
             if (region(x,y,z) == (uint16_t)16)
             {
                 if (lz >= 5)
                 {
-                    region(x,y,lz  ) = grass_;
-                    region(x,y,lz-1) = dirt_;
-                    region(x,y,lz-2) = rock_;
+                    region(x,y,z  ) = grass_;
+                    region(x,y,z-1) = dirt_;
+                    region(x,y,z-2) = rock_;
                 }
                 else
                 {
-                    region(x,y,lz  ) = sand_;
-                    region(x,y,lz-1) = sand_;
-                    region(x,y,lz-2) = rock_;
+                    region(x,y,z  ) = sand_;
+                    region(x,y,z-1) = sand_;
+                    region(x,y,z-2) = rock_;
                 }
             }
         }
