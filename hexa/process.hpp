@@ -29,7 +29,12 @@
 
 #include <unistd.h>
 
-typedef pid_t  pid_type;
+struct pid_type
+{
+    pid_t  internal_;
+
+    pid_type(pid_t init = 0) : internal_(init) {}
+};
 
 #elif defined(BOOST_WINDOWS_API)
 

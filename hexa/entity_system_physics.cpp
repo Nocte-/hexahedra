@@ -211,15 +211,10 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
             // translate it to the change in velocity, since this is more
             // useful for things like calculating fall damage.
             //
-            trace("impact %1%, v %2%", impact, v);
             if (impact.x != 0) { impact.x = -v.x; v.x = 0; }
             if (impact.y != 0) { impact.y = -v.y; v.y = 0; }
             if (impact.z != 0) { impact.z = -v.z; v.z = 0; }
             v_ = v;
-        }
-        else
-        {
-            trace("no impact, v %1%, bb %2%", v, box);
         }
 
         p = p_;

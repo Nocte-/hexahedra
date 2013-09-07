@@ -56,6 +56,16 @@ struct light
     light(uint8_t sun, uint8_t amb, uint8_t art)
         : sunlight(sun), ambient(amb), artificial(art), padding(0) { }
 
+    bool    operator== (const light& comp) const
+        { return   sunlight   == comp.sunlight
+                && ambient    == comp.ambient
+                && artificial == comp.artificial
+                && padding    == comp.padding;
+        }
+
+    bool    operator!= (const light& comp) const
+        { return !operator==(comp); }
+
     template <class archive>
     archive& serialize(archive& ar)
     {
@@ -92,6 +102,12 @@ public:
     void    emplace_back(value_type&& v) { data.emplace_back(v); }
     void    push_back(value_type v)      { data.push_back(v);    }
     void    resize(size_t s)             { data.resize(s);       }
+
+    bool    operator== (const lightmap& comp) const
+        { return data == comp.data; }
+
+    bool    operator!= (const lightmap& comp) const
+        { return !operator==(comp); }
 
     template <class archive>
     archive& serialize(archive& ar)

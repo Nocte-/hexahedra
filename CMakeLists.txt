@@ -26,8 +26,11 @@ set(USE_VALGRIND 0 CACHE BOOL "Use workarounds for Valgrind")
 set(USE_CALLGRIND 0 CACHE BOOL "Build with -g")
 set(BUILD_STATIC 0 CACHE BOOL "Link executables statically")
 
+find_package(OpenCL)
+
 # Set up the compiler
 #
+set(RES_FILES "")
 if(MSVC)
     add_definitions(/D_WIN32_WINNT=0x0501 /D_CRT_SECURE_NO_WARNINGS /DSFML_STATIC)
 	set(CMAKE_CXX_FLAGS         "${CMAKE_CXX_FLAGS} /MP /EHsc /wd4244 /wd4996 ")
@@ -56,6 +59,10 @@ else() # Most likely gcc or clang
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -msse -mfpmath=sse -DNDEBUG -ffast-math -funsafe-math-optimizations")
     endif()
 
+    if(OPENCL_FOUND)
+        add_definitions("-DHAVE_OPENCL")
+    endif()
+
     if(USE_CALLGRIND)
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g")
     endif()
@@ -75,7 +82,7 @@ else() # Most likely gcc or clang
     endif()
         
     if(MINGW)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthreads -DWIN32 -D_WIN32 -D_WIN32_WINNT=0x0501 -DBOOST_THREAD_USE_LIB -DGLEW_STATIC")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mwindows -mthreads -DWIN32 -D_WIN32 -D_WIN32_WINNT=0x0501 -DBOOST_THREAD_USE_LIB -DGLEW_STATIC")
     else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
     endif()
@@ -112,6 +119,12 @@ if (BUILD_CLIENT)
     if (UNIX)
         install(FILES "install/hexahedra.png"     DESTINATION "${SHAREDIR}/pixmaps")                
         install(FILES "install/hexahedra.desktop" DESTINATION "${SHAREDIR}/applications")
+    endif()
+    if (WIN32)
+        if (MINGW)
+            install(FILES "win32/lib/LuaJIT-2.0.2/src/lua51.dll"
+                          DESTINATION "${BINDIR}")
+        endif()
     endif()
 endif()
 
@@ -189,6 +202,7 @@ elseif(WIN32)
     set(CPACK_NSIS_PACKAGE_INSTALL_REGISTRY_KEY "hexahedra")
     set(CPACK_NSIS_URL_INFO_ABOUT ${WEBPAGE})
     set(CPACK_NSIS_MODIFY_PATH "ON")
+    set(CPACK_PACKAGE_EXECUTABLES "hexahedra;Hexahedra")
     set(CPACK_GENERATOR "NSIS;ZIP")
 endif()
 

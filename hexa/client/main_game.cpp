@@ -42,6 +42,7 @@
 #include <hexa/compression.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/config.hpp>
+#include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/lightmap.hpp>
 #include <hexa/ray.hpp>
@@ -90,7 +91,8 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     {
         try
         {
-            server_process_ = start_process(BIN_DIR "/hexahedra-server", { });
+            fs::path dir (executable_path().parent_path());
+            server_process_ = start_process(dir / "hexahedra-server", { });
         }
         catch (std::runtime_error& e)
         {
@@ -117,9 +119,18 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
         { scene_.send_visibility_requests(pos); });
 
     std::cout << "Trying to connect to " << host << ":" << port << std::endl;
+    int tries (0);
     while (!connect())
     {
         std::cout << "   ... retrying..." << std::endl;
+        ++tries;
+        if (tries > 2)
+        {
+            if (singleplayer_)
+                terminate_process(server_process_);
+
+            throw std::runtime_error("cannot connect to server");
+        }
     }
     std::cout << "Connected!" << std::endl;
 
@@ -143,7 +154,7 @@ void main_game::setup_world (const std::string& host, uint16_t port)
     fs::path data_dir (global_settings["datadir"].as<std::string>());
 
     fs::path gameroot (user_dir / "games");
-    std::string host_id (host + ":" + std::to_string(port));
+    std::string host_id ((format("%1%:%2%") % host % port).str());
     fs::path gamepath (gameroot / host_id);
 
     fs::path db (gamepath / "world.db");

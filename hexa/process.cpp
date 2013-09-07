@@ -82,7 +82,17 @@ start_process (const boost::filesystem::path &exe,
 bool
 terminate_process (pid_type id)
 {
-    return ::kill(id, SIGTERM) != -1;
+    if (id.internal_ == 0)
+        return false;
+
+    return ::kill(id.internal_, SIGTERM) != -1;
+}
+
+void
+kill_process (pid_type id)
+{
+    if (id.internal_ != 0)
+        ::kill(id.internal_, SIGKILL);
 }
 
 #elif defined(BOOST_WINDOWS_API)

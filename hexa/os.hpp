@@ -50,6 +50,12 @@ namespace hexa {
  *  OSX: ~/Libraries/Application Support/Hexahedra */
 boost::filesystem::path app_user_dir();
 
+/** Return the full path of the executable.
+ *  Linux:
+ *  Windows: GetModuleFileName()
+ */
+boost::filesystem::path executable_path();
+
 
 } // namespace hexa
 

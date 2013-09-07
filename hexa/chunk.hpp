@@ -23,6 +23,7 @@
 #pragma once
 
 #include <array>
+#include <memory>
 #include <boost/thread/mutex.hpp>
 #include "block_types.hpp"
 #include "chunk_base.hpp"
@@ -78,21 +79,26 @@ public:
      *  a half finished state.  This variable keeps track of this. */
     uint8_t         generation_phase;
 
+private:
     /** Mutex for multithreaded terrain generation. */
-    boost::mutex  lock;
+    std::unique_ptr<boost::mutex>  lock_;
 
 public:
     chunk()
         : last_used(0)
         , generation_phase(0)
+        , lock_(new boost::mutex)
     { }
 
     chunk(chunk&& move) noexcept
         : base (std::move(move))
         , last_used (move.last_used)
         , generation_phase (move.generation_phase)
-        //, lock (std::move(move.lock))
+        , lock_ (std::move(move.lock_))
     { }
+
+    boost::mutex& lock() { return *lock_; }
+    const boost::mutex& lock() const { return *lock_; }
 
     /** */
     bool    operator== (const chunk& compare) const

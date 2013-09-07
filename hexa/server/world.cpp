@@ -203,17 +203,15 @@ world::is_chunk_available (chunk_coordinates pos)
 lightmap_ptr
 world::get_lightmap (chunk_coordinates pos)
 {
-    lightmap_ptr result;
-
     // Do we have the lightmap in storage?
-    result = storage_.get_lightmap(pos);
+    lightmap_ptr result (storage_.get_lightmap(pos));
     if (result)
         return result;
 
     // Make sure there's a surface available so we can make one
     auto s (get_surface(pos));
-    if (!s || s->empty())
-        return result;
+    if (!s)
+        return nullptr;
 
     // Create a new lightmap and run it through the generators.
     result.reset(new light_data);
@@ -222,14 +220,14 @@ world::get_lightmap (chunk_coordinates pos)
     if (!s->opaque.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, s->opaque, result->opaque, 2);
+            g->generate(pos, s->opaque, result->opaque, 0);
     }
 
     result->transparent.resize(count_faces(s->transparent));
     if (!s->transparent.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, s->transparent, result->transparent, 2);
+            g->generate(pos, s->transparent, result->transparent, 0);
     }
 
     store(pos, result);
@@ -536,14 +534,14 @@ world::update (chunk_coordinates cp)
     if (!srfc->opaque.empty())
     {
         for (auto& g: lightgen_)
-            g->generate(cp, srfc->opaque, lm->opaque, 2);
+            g->generate(cp, srfc->opaque, lm->opaque, 0);
     }
 
     lm->transparent.resize(count_faces(srfc->transparent));
     if (!srfc->transparent.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(cp, srfc->transparent, lm->transparent, 2);
+            g->generate(cp, srfc->transparent, lm->transparent, 0);
     }
 
     storage_.store(cp, srfc);
@@ -698,7 +696,7 @@ world::lock_region(const std::set<chunk_coordinates>& region,
     {
         auto cnk (get_or_generate_chunk(cnk_pos, phase));
         if (cnk)
-            locks.emplace_back(cnk->lock, boost::defer_lock);
+            locks.emplace_back(cnk->lock(), boost::defer_lock);
     }
 
     // Now try to lock them.  Because we always lock them in the same order,
@@ -737,7 +735,7 @@ world::lock_range(const range<chunk_coordinates>& region,
     {
         auto cnk (get_or_generate_chunk(cnk_pos, phase));
         if (cnk)
-            locks.emplace_back(cnk->lock, boost::defer_lock);
+            locks.emplace_back(cnk->lock(), boost::defer_lock);
     }
 
     // Now try to lock them.  Because we always lock them in the same order,

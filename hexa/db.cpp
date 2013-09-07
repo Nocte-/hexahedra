@@ -253,8 +253,8 @@ void transaction::rollback()
 db::db(const fs::path& db_filename, const fs::path& init_filename)
     : pdb_(nullptr)
 {
-    if (!sqlite3_threadsafe())
-        throw std::runtime_error("sqlite is not threadsafe");
+    //if (!sqlite3_threadsafe())
+    //    throw std::runtime_error("sqlite is not threadsafe");
 
     bool db_existed (fs::exists(db_filename));
 

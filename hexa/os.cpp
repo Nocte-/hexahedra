@@ -23,6 +23,7 @@
 
 #include <cstdlib>
 #include <boost/config.hpp>
+#include <boost/format.hpp>
 
 #if (defined(HEXAHEDRA_LINUX))
 #  include <unistd.h>
@@ -31,12 +32,17 @@
 
 #elif (defined(HEXAHEDRA_WINDOWS))
 
+#include <windows.h>
+
 #elif (defined(HEXAHEDRA_MACOS))
 #  include <unistd.h>
 
 #endif
 
+#include "algorithm.hpp"
+
 namespace fs = boost::filesystem;
+using boost::format;
 
 namespace hexa {
 
@@ -79,6 +85,38 @@ fs::path app_user_dir()
         throw std::runtime_error("$HOME not set");
 
     result = fs::path(env) / "Library/Application Support/Hexahedra";
+
+#else
+
+    I have no idea how to fetch the home dir on your platform, sorry.
+
+#endif
+
+    return result;
+}
+
+fs::path executable_path()
+{
+    fs::path result;
+
+#if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
+
+    char buf[1024];
+    int count (::readlink("/proc/self/exe", buf, sizeof(buf)));
+    if (count < 0)
+        throw std::runtime_error("readlink() failed on /proc/self/exe");
+
+    buf[count] = 0;
+    result = fs::path(buf);
+
+#elif (defined(HEXAHEDRA_WINDOWS))
+
+    char buf[1024];
+    auto len (::GetModuleFileName(NULL, buf, sizeof(buf)));
+    if (len == 0 || len == sizeof(buf))
+        throw std::runtime_error((format("GetModuleFileName failed, error code %1%") % GetLastError()).str());
+
+    result = fs::path(buf);
 
 #else
 

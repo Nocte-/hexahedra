@@ -23,8 +23,11 @@
 
 #include <cassert>
 #include <stdexcept>
+#include <boost/format.hpp>
 
 #include "opengl.hpp"
+
+using boost::format;
 
 namespace hexa {
 namespace gl {
@@ -45,13 +48,25 @@ vbo::vbo(const void* buffer, size_t count, size_t vertex_size)
     else
     {
         glCheck(glGenBuffers(1, &id_));
+
+        if (glGetError() != GL_NO_ERROR)
+            throw std::runtime_error((format("glGenBuffers failed, error code %1%") % glGetError()).str());
+
         glCheck(glBindBuffer(GL_ARRAY_BUFFER, id_));
+
+        if (glGetError() != GL_NO_ERROR)
+            throw std::runtime_error((format("glBindBuffer failed, error code %1%") % glGetError()).str());
+
         glCheck(glBufferData(GL_ARRAY_BUFFER, count * vertex_size,
                              buffer, GL_STATIC_DRAW));
+
+        if (glGetError() != GL_NO_ERROR)
+            throw std::runtime_error((format("glBufferData failed, error code %1%") % glGetError()).str());
+
         glCheck(glBindBuffer(GL_ARRAY_BUFFER, 0));
 
         if (glGetError() != GL_NO_ERROR)
-            throw std::runtime_error("vbo create failed");
+            throw std::runtime_error((format("glBindBuffer(0) failed, error code %1%") % glGetError()).str());
     }
 }
 

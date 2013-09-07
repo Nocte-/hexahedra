@@ -113,7 +113,7 @@ struct standard_world_generator::impl
         if (hm == nullptr)
             throw std::runtime_error("no height map was generated");
 
-        boost::lock_guard<boost::mutex> lock (dest.lock);
+        boost::lock_guard<boost::mutex> lock (dest.lock());
 
         for (int x (0); x < chunk_size; ++x)
         {

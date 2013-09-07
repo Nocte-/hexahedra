@@ -28,6 +28,8 @@
 
 #include <boost/format.hpp>
 #include <boost/math/constants/constants.hpp>
+#include <boost/thread.hpp>
+#include <boost/chrono.hpp>
 
 #include <hexa/compression.hpp>
 #include <hexa/entity_system.hpp>
@@ -95,7 +97,7 @@ void network::run()
         ++count;
         if (count % 20 == 0)
         {
-        trace("network tick");
+        //trace("network tick");
 
         msg::entity_update_physics msg;
         auto lock (es_.acquire_read_lock());
@@ -162,7 +164,7 @@ void network::stop()
 {
     jobs.push({ job::quit, chunk_coordinates(), 0 });
     while (running_.load())
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
 }
 
 void network::on_connect (ENetPeer* c)
@@ -364,8 +366,8 @@ void network::send_surface(const chunk_coordinates& cpos)
     reply.terrain  = world_.get_compressed_surface(cpos);
     reply.light    = world_.get_compressed_lightmap(cpos);
 
-    assert(count_faces(world_.get_surface(cpos)->opaque) == world_.get_lightmap(cpos)->opaque.size());
-    assert(count_faces(world_.get_surface(cpos)->transparent) == world_.get_lightmap(cpos)->transparent.size());
+    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).opaque) == world_.get_lightmap(cpos)->opaque.size());
+    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).transparent) == world_.get_lightmap(cpos)->transparent.size());
 
     for (auto& conn : connections_)
     {
@@ -390,6 +392,13 @@ void network::send_surface(const chunk_coordinates& cpos, ENetPeer* dest)
     reply.position = cpos;
     reply.terrain  = world_.get_compressed_surface(cpos);
     reply.light    = world_.get_compressed_lightmap(cpos);
+
+    assert(deserialize_as<surface_data>(decompress(reply.terrain)).opaque == world_.get_surface(cpos)->opaque);
+    assert(world_.get_lightmap(cpos) != nullptr);
+    assert(deserialize_as<light_data>(decompress(reply.light)).opaque == world_.get_lightmap(cpos)->opaque);
+    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).opaque) == world_.get_lightmap(cpos)->opaque.size());
+    assert(deserialize_as<surface_data>(decompress(reply.terrain)).transparent == world_.get_surface(cpos)->transparent);
+    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).transparent) == world_.get_lightmap(cpos)->transparent.size());
 
     send(dest, serialize_packet(reply), reply.method());
 }
