@@ -53,11 +53,7 @@ struct standard_world_generator::impl
     double granularity;
     double rough_size;
 
-    uint16_t grass_id;
-    uint16_t dirt_id;
     uint16_t rock_id;
-    uint16_t sand_id;
-    uint16_t snow_id;
 
     impl(world& w)
         : map         (w)
@@ -79,11 +75,7 @@ struct standard_world_generator::impl
         granularity = 40.;
         rough_size = 30.;
 
-        grass_id = find_material("grass");
-        dirt_id  = find_material("dirt");
         rock_id  = find_material("stone");
-        sand_id  = find_material("sand");
-        snow_id  = find_material("snow");
     }
 
     ~impl()

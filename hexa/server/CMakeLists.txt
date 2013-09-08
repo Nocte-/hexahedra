@@ -51,7 +51,11 @@ foreach (LIB ENet ES)
     target_link_libraries(${LIBNAME} ${${ULIB}_LIBRARIES})
 endforeach()
 
-target_link_libraries(${LIBNAME} hexacommon z ${OPENCL_LIBRARIES} ${ADD_DL})
+target_link_libraries(${LIBNAME} hexacommon z ${ADD_DL})
+if(OPENCL_FOUND)
+    target_link_libraries(${LIBNAME} ${OPENCL_LIBRARIES})
+endif()
+
 if(WIN32)
     target_link_libraries(${LIBNAME} ws2_32 winmm)
 endif()
