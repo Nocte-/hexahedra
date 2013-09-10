@@ -137,7 +137,6 @@ BOOL WINAPI win32_signal_handler (DWORD)
 void print_opencl()
 {
 #if HAVE_OPENCL
-    int i, j;
     char* value;
     size_t valueSize;
     cl_uint platformCount;
@@ -151,7 +150,7 @@ void print_opencl()
     platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
     clGetPlatformIDs(platformCount, platforms, NULL);
 
-    for (i = 0; i < platformCount; i++) {
+    for (cl_uint i = 0; i < platformCount; i++) {
 
         // get all devices
         clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
@@ -159,7 +158,7 @@ void print_opencl()
         clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
 
         // for each device print critical attributes
-        for (j = 0; j < deviceCount; j++) {
+        for (cl_uint j = 0; j < deviceCount; j++) {
 
             // print device name
             clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
@@ -310,6 +309,7 @@ int main (int argc, char* argv[])
         fs::path db_file (dbdir / "world.db");
 
         trace("Game DB %1%", db_file.string());
+        std::cout << "Server game DB: " << db_file.string() << std::endl;
 
         persistence_sqlite          db_per (io_srv, db_file, datadir / "dbsetup.sql");
         memory_cache                storage (db_per);
@@ -327,6 +327,7 @@ int main (int argc, char* argv[])
         //                vm["chroot"].as<std::string>());
 
         trace("Run Lua scripts");
+        std::cout << "Run Lua scripts" << std::endl;
 
         for(fs::recursive_directory_iterator i (gamedir);
             i != fs::recursive_directory_iterator(); ++i)
@@ -347,12 +348,15 @@ int main (int argc, char* argv[])
             throw std::runtime_error(std::string("cannot open ") + conf_file.string());
 
         trace("Set up game world (%1%)", conf_file.string());
+        std::cout << "Set up game world " << conf_file.string() << std::endl;
 
         boost::property_tree::read_json(conf_str, config);
         hexa::init_terrain_gen(world, config);
         boost::thread gameloop ([&]{ server.run(); });
         boost::thread physics_thread ([&]{ physics(entities, world); });
         trace("All systems go");
+        std::cout << "All systems go" << std::endl;
+
 
 #ifndef _WIN32
         // Restore previous signals.

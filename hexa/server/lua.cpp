@@ -400,7 +400,7 @@ lua::lua(server_entity_system& entities, world &w)
                 value("impact",     entity_system::c_impact),
                 value("model",      entity_system::c_model),
                 value("name",       entity_system::c_name),
-                value("lookat",     entity_system::c_lookat),
+                value("look_at",    entity_system::c_lookat),
                 value("free",       server_entity_system::c_last_server_component)
                 ]
             .property("id", &lua_component::get_id)
@@ -418,7 +418,7 @@ lua::lua(server_entity_system& entities, world &w)
             .property("impact", &lua_entity::get_impact)
             .property("model", &lua_entity::get_model, &lua_entity::set_model)
             .property("name", &lua_entity::get_name, &lua_entity::set_name)
-            .property("lookat", &lua_entity::get_lookat)
+            .property("look_at", &lua_entity::get_lookat)
             .property("on_ground", &lua_entity::on_ground)
             ,
         class_<hotbar_slot>("hotbar_slot")
@@ -751,7 +751,10 @@ void lua::on_action(int type, const object& callback)
 {
     try
     {
-        cb_on_action[type] = callback;
+        if (callback.is_valid())
+            cb_on_action[type] = callback;
+        else
+            std::cerr << "No valid callback for action " << type << std::endl;
     }
     catch (luabind::error& e)
     {
@@ -759,7 +762,7 @@ void lua::on_action(int type, const object& callback)
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_action" << std::endl;
+        std::cerr << "Unknown error in on_action " << type << std::endl;
     }
 }
 
@@ -780,7 +783,7 @@ void lua::on_stop_action(int type, const object& callback)
 }
 
 void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
-                       yaw_pitch look)
+                       yaw_pitch look, wfpos pos)
 {
     auto found (cb_on_action.find(button));
     if (found == cb_on_action.end())
@@ -788,11 +791,21 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
         trace("Action %1% not defined in Lua", (int)button);
         return;
     }
+    if (!found->second.is_valid())
+    {
+        std::cout << "No valid action bound" << std::endl;
+        return;
+    }
+    if (found->second == luabind::object())
+    {
+        std::cout << "Nil action bound" << std::endl;
+        return;
+    }
 
+    std::cout << "calling action " << (int)button << std::endl;
     trace("Calling action %1%", (int)button);
     lua_entity tmp (entities_, plr);
-    call_function<void>(found->second, tmp, (int)button,
-                        (int)slot, look);
+    call_function<void>(found->second, tmp, (int)slot, look, pos);
 }
 
 void lua::stop_action(es::entity plr, uint8_t button)
@@ -803,7 +816,7 @@ void lua::stop_action(es::entity plr, uint8_t button)
 
     trace("Stopping action %1%", (int)button);
     lua_entity tmp (entities_, plr);
-    call_function<void>(found->second, tmp, (int)button);
+    call_function<void>(found->second, tmp);
 }
 
 void lua::console(es::entity plr, const std::string& text)

@@ -534,14 +534,14 @@ world::update (chunk_coordinates cp)
     if (!srfc->opaque.empty())
     {
         for (auto& g: lightgen_)
-            g->generate(cp, srfc->opaque, lm->opaque, 0);
+            g->generate(cp, srfc->opaque, lm->opaque, 2);
     }
 
     lm->transparent.resize(count_faces(srfc->transparent));
     if (!srfc->transparent.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(cp, srfc->transparent, lm->transparent, 0);
+            g->generate(cp, srfc->transparent, lm->transparent, 2);
     }
 
     storage_.store(cp, srfc);

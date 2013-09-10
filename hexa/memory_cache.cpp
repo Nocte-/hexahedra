@@ -37,6 +37,12 @@ std::shared_ptr<type> unpack_as(const compressed_data& data)
     return std::make_shared<type>(deserialize_as<type>(tmp));
 }
 
+template <typename ptr>
+bool is_not_in_use (ptr p)
+{
+    return p.unique();
+}
+
 } // anonymous namespace
 
 memory_cache::~memory_cache()
@@ -53,7 +59,7 @@ memory_cache::cleanup ()
         next_.store(persistent_storage_i::area, p, compress(serialize(*areas_.get(p))));
 
     areas_dirty_.clear();
-    areas_.prune(size_limit_);
+    areas_.prune_if(size_limit_, is_not_in_use<area_ptr>);
     }
     {
     boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
@@ -61,7 +67,7 @@ memory_cache::cleanup ()
         next_.store(persistent_storage_i::chunk, p, compress(serialize(*chunks_.get(p))));
 
     chunks_dirty_.clear();
-    chunks_.prune(size_limit_);
+    chunks_.prune_if(size_limit_, is_not_in_use<chunk_ptr>);
     }
     {
     boost::lock_guard<boost::mutex> lightmaps_lock (lightmaps_mutex_);
@@ -69,7 +75,7 @@ memory_cache::cleanup ()
         next_.store(persistent_storage_i::light, p, compress(serialize(*lightmaps_.get(p))));
 
     lightmaps_dirty_.clear();
-    lightmaps_.prune(size_limit_);
+    lightmaps_.prune_if(size_limit_, is_not_in_use<lightmap_ptr>);
     }
     {
     boost::lock_guard<boost::mutex> surfaces_lock (surfaces_mutex_);
@@ -77,7 +83,7 @@ memory_cache::cleanup ()
         next_.store(persistent_storage_i::surface, p, compress(serialize(*surfaces_.get(p))));
 
     surfaces_dirty_.clear();
-    surfaces_.prune(size_limit_);
+    surfaces_.prune_if(size_limit_, is_not_in_use<surface_ptr>);
     }
     {
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);

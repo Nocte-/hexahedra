@@ -136,7 +136,7 @@ public:
     void player_logged_in (es::entity plr);
 
     void start_action(es::entity plr, uint8_t button, uint8_t slot,
-                      yaw_pitch look);
+                      yaw_pitch look, wfpos pos);
 
     void stop_action(es::entity plr, uint8_t button);
 

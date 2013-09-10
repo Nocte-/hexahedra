@@ -41,8 +41,8 @@ game::game (const std::string& title, unsigned int width, unsigned int height)
     : window_(sf::VideoMode(width, height, 32), title,
               sf::Style::Resize | sf::Style::Close,
               sf::ContextSettings(16, 8, 4))
-    , width_(0)
-    , height_(0)
+    , width_(width)
+    , height_(height)
     , rel_mouse_(false)
 {
     std::string icon_file (PIXMAP_PATH "/hexahedra.png");

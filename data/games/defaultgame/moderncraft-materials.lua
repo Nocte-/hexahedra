@@ -13,10 +13,10 @@ end
 
 local function place_fence(p, id)
   local shape = 0
-  local e = p + vec(1, 0, 0)
-  local n = p + vec(0, 1, 0)
-  local w = p + vec(-1, 0, 0)
-  local s = p + vec(0, -1, 0)
+  local e = p + veci(1, 0, 0)
+  local n = p + veci(0, 1, 0)
+  local w = p + veci(-1, 0, 0)
+  local s = p + veci(0, -1, 0)
   
   if (is_fence(id, get_block(e))) then
     shape = shape + 1
@@ -39,10 +39,10 @@ local function place_fence(p, id)
 end
 
 local function remove_fence(p, id)
-  local e = p + vec(1, 0, 0)
-  local n = p + vec(0, 1, 0)
-  local w = p + vec(-1, 0, 0)
-  local s = p + vec(0, -1, 0)
+  local e = p + veci(1, 0, 0)
+  local n = p + veci(0, 1, 0)
+  local w = p + veci(-1, 0, 0)
+  local s = p + veci(0, -1, 0)
   
   if (is_fence(id, get_block(e))) then
     change_block(e, get_block(e) - 2)

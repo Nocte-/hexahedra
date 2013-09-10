@@ -576,7 +576,7 @@ void main_game::walk(float dir, float speed)
 
 void main_game::action(uint8_t code)
 {
-    msg::button_press msg (code, player_.active_slot, player_.head_angle());
+    msg::button_press msg (code, player_.active_slot, player_.head_angle(), player_.get_wfpos());
     send(serialize_packet(msg), msg.method());
 
     if (code == 0 && player_entity_ != 0xffffffff)

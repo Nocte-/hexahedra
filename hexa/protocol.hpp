@@ -633,15 +633,16 @@ public:
     reliability method() const { return sequenced; }
 
     button_press() { }
-    button_press(uint8_t button_, uint8_t slot_, yaw_pitch look_)
-        : button (button_), slot (slot_), look (look_) { }
+    button_press(uint8_t button_, uint8_t slot_, yaw_pitch look_, wfpos pos_)
+        : button (button_), slot (slot_), look (look_), pos(pos_) { }
 
     uint8_t     button;
     uint8_t     slot;
     yaw_pitch   look;
+    wfpos       pos;
 
     template <class archive>
-    void serialize(archive& ar) { ar(button)(slot)(look); }
+    void serialize(archive& ar) { ar(button)(slot)(look)(pos); }
 };
 
 /** Player has stopped performing an action. */

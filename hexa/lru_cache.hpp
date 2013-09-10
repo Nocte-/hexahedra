@@ -100,6 +100,34 @@ public:
         }
     }
 
+    /** Prune the cache back to a given size, deleting only items that
+     ** satisfy a given condition.
+     *  If the cache is larger than the maximum, the oldest entries
+     *  will be deleted.  Unlike prune(), there is no guarantee the
+     *  cache will be smaller than max_size after the function returns.
+     * @param max_size  The maximum cache size */
+    template <typename pred>
+    void prune_if (size_t max_size, pred op)
+    {
+        if (list_.empty())
+            return;
+
+        auto i (std::prev(list_.end()));
+        while (size_ > max_size)
+        {
+            if (op(i->second))
+            {
+                map_.erase(i->first);
+                i = list_.erase(i);
+                --size_;
+            }
+            if (i == list_.begin())
+                return;
+
+            --i;
+        }
+    }
+
     /** Prune the cache back to a given size.
      *  If the cache is larger than the maximum, the oldest entries
      *  will be deleted.  This version of prune() will invoke a callback

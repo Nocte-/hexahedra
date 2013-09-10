@@ -54,6 +54,9 @@ public:
     yaw_pitch   walk_angle() const;
     float       height() const;
 
+    wfpos get_wfpos() const
+        { return wfpos(position_, position_fraction_); }
+
     world_coordinates position() const
         { return position_; }
 

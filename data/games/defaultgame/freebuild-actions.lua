@@ -1,11 +1,11 @@
 -- Left click places a block of the player's color, right click digs it.
 
 
-function place_block (plr, inv)
-    local blk = raycast(plr.position, plr.aiming_at, 9)
+function place_block (plr, inv, look_at, pos)
+    local blk = raycast(pos + vecf(0,0,1.7), look_at, 9)
     local actions = { 
-      "fence.0000", 
       "sandstone",
+      "fence.0000", 
       "water",
       "bookshelf",
       "obsidian",
@@ -27,8 +27,8 @@ function place_block (plr, inv)
     end
 end
 
-function remove_block (plr, inv)
-    local blk = raycast(plr.position, plr.aiming_at, 9)
+function remove_block (plr, inv, look_at, pos)
+    local blk = raycast(pos + vecf(0,0,1.7), look_at, 9)
     if (blk[1] ~= blk[2]) then
         local mat_id = get_block(blk[2])
         local info = material_definition(mat_id)

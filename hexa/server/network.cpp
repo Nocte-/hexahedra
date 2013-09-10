@@ -303,24 +303,6 @@ bool network::send (uint32_t entity, const std::vector<uint8_t>& msg,
 }
 
 /*
-std::tuple<world_coordinates, world_coordinates>
-network::raycast (const world_coordinates& o, const ray<float>& r, float range)
-{
-    typedef std::tuple<world_coordinates, world_coordinates> tuple_type;
-
-    auto line (voxel_raycast(r.origin, r.at(range)));
-    if (line.size() < 2)
-        return tuple_type(o, o);
-
-    auto lock (acquire_read_lock());
-    for (auto i (line.begin() + 1); i != line.end(); ++i)
-    {
-        if (get_block(*i + o).type != type::air)
-            return tuple_type(o + *(i-1), o + *i);
-    }
-
-    return tuple_type(o, o);
-}
 
 void network::change_block(const world_coordinates& pos, uint16_t material)
 {
@@ -748,7 +730,9 @@ void network::look_at (const packet_info& info)
 void network::button_press (const packet_info& info)
 {
     auto msg (make<msg::button_press>(info.p));
-    lua_.start_action(info.plr, msg.button, msg.slot, msg.look);
+    //es_.set(info.plr, entity_system::c_position, msg.pos);
+    //es_.set(info.plr, entity_system::c_lookat, msg.look);
+    lua_.start_action(info.plr, msg.button, msg.slot, msg.look, msg.pos);
 }
 
 void network::button_release (const packet_info& info)
