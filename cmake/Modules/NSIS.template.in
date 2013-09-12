@@ -534,9 +534,9 @@ FunctionEnd
 
 ;--------------------------------
 ; Define some macro setting for the gui
-!define MUI_ICON "\hd\devel\hexahedra\install\hexahedra.ico"
-!define MUI_HEADERIMAGE_BITMAP "\hd\devel\hexahedra\install\nsis-header.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "\hd\devel\hexahedra\install\nsis-welcome.bmp"
+!define MUI_ICON "..\..\..\..\install\hexahedra.ico"
+!define MUI_HEADERIMAGE_BITMAP "..\..\..\..\install\nsis-header.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "..\..\..\..\install\nsis-welcome.bmp"
 
 @CPACK_NSIS_INSTALLER_MUI_ICON_CODE@
 @CPACK_NSIS_INSTALLER_ICON_CODE@

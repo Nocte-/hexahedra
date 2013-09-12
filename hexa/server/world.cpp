@@ -178,7 +178,7 @@ world::store (chunk_coordinates pos, chunk_ptr data)
     if (!updated_surface->opaque.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, updated_surface->opaque, lm->opaque, 0);
+            g->generate(pos, updated_surface->opaque, lm->opaque, 1);
     }
 
     lm->transparent.resize(count_faces(updated_surface->transparent));
@@ -186,7 +186,7 @@ world::store (chunk_coordinates pos, chunk_ptr data)
     if (!updated_surface->transparent.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, updated_surface->transparent, lm->transparent, 0);
+            g->generate(pos, updated_surface->transparent, lm->transparent, 1);
     }
 
     store(pos, updated_surface);
@@ -220,14 +220,14 @@ world::get_lightmap (chunk_coordinates pos)
     if (!s->opaque.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, s->opaque, result->opaque, 0);
+            g->generate(pos, s->opaque, result->opaque, 1);
     }
 
     result->transparent.resize(count_faces(s->transparent));
     if (!s->transparent.empty())
     {
         for (auto& g : lightgen_)
-            g->generate(pos, s->transparent, result->transparent, 0);
+            g->generate(pos, s->transparent, result->transparent, 1);
     }
 
     store(pos, result);

@@ -167,6 +167,7 @@ set(CPACK_PACKAGE_VENDOR "Nocte")
 set(CPACK_PACKAGE_CONTACT "Nocte <hexahedra.maintainer@gmail.com>")
 set(CPACK_SOURCE_IGNORE_FILES "CMakefiles;Makefile;CMakeCache.txt;_CPack_Packages;/.git/;")
 set(CPACK_PACKAGE_FILE_NAME "${PROJECT_NAME}_${VERSION}")
+set(CPACK_STRIP_FILES TRUE)
  
 if(UNIX)
     macro(GZIP_FILE INFILE)
