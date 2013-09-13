@@ -269,12 +269,29 @@ void main_game::update(double time_delta)
 
     {
     //boost::mutex::scoped_lock lock (entities_mutex_);
-    system_gravity(entities_, time_delta);
-    system_walk(entities_, time_delta);
-    system_motion(entities_, time_delta);
-    system_terrain_collision(entities_, world());
-    system_terrain_friction(entities_, time_delta);
-    //system_lag_compensate(entities_, time_delta);
+    double delta (time_delta);
+    while (delta > 0)
+    {
+        constexpr double max_step = 0.05;
+        double step;
+        if (delta > max_step)
+        {
+            step = max_step;
+            delta -= max_step;
+        }
+        else
+        {
+            step = delta;
+            delta = 0;
+        }
+
+        system_gravity(entities_, step);
+        system_walk(entities_, step);
+        system_motion(entities_, step);
+        system_terrain_collision(entities_, world());
+        system_terrain_friction(entities_, step);
+        //system_lag_compensate(entities_, time_delta);
+    }
     } // scoped  lock
 
     on_tick(time_delta);

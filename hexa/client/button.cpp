@@ -31,6 +31,13 @@ void center (t& obj)
     obj.setOrigin((int)rect.width * 0.5, (int)rect.height * 0.5);
 }
 
+template <typename t>
+void align_right (t& obj, int w)
+{
+    auto rect (obj.getLocalBounds());
+    obj.setOrigin(rect.width - w, (int)rect.height * 0.5);
+}
+
 button::button(const std::wstring& label)
     : button(0, 0, label)
 { }
@@ -51,7 +58,8 @@ button::button(int x, int y, const std::wstring& label)
     highlight_.setTexture(*images("button_hl"));
     highlight_.setPosition(x, y);
 
-    center(label_);
+    //center(label_);
+    align_right(label_, 140);
     center(normal_);
     center(highlight_);
 }
@@ -66,7 +74,8 @@ void button::set_position (int x, int y)
 
 void button::draw(sf::RenderWindow& win)
 {
-    win.draw(is_hl_ ? highlight_ : normal_);
+    //win.draw(is_hl_ ? highlight_ : normal_);
+    if (is_hl_) win.draw(highlight_);
     win.draw(label_);
 }
 

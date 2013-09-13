@@ -179,7 +179,7 @@ main_menu::main_menu(game& the_game)
     copyright_.setFont(*fonts("default"));
     logo_img_.setSmooth(true);
 
-    menus_.emplace_back(std::vector<button>{ button{L"Play"}, button{L"Play online"}, button{L"Settings"}, button{L"Exit"} });
+    menus_.emplace_back(std::vector<button>{ button{L"Singleplayer"}, button{L"Multiplayer"}, button{L"Settings"}, button{L"Exit"} });
     menus_.emplace_back(std::vector<button>());
 
     auto& buttons (menus_[0]);
@@ -207,8 +207,8 @@ void main_menu::resize (unsigned int x, unsigned int y)
     width_ = x;
     height_ = y;
 
-    float logo_scale (float(x - 100) / (float)logo_img_.getSize().x);
-    logo_.setScale(logo_scale, logo_scale);
+    //float logo_scale (float(x - 100) / (float)logo_img_.getSize().x);
+    //logo_.setScale(logo_scale, logo_scale);
     logo_.setPosition(50, 30);
     copyright_.setPosition(0, y - 20);
 
@@ -219,7 +219,8 @@ void main_menu::resize (unsigned int x, unsigned int y)
         int py ((y - menu.size() * spacing) * 0.5);
         for (auto& btn : menu)
         {
-            btn.set_position(x * 0.5, py);
+            //btn.set_position(x * 0.5, py);
+            btn.set_position(170, py);
             py += spacing;
         }
     }
@@ -322,6 +323,9 @@ void main_menu::render()
 
     auto& win (window());
 
+    sf::RectangleShape rect ({ 340, height_ });
+    rect.setFillColor(sf::Color(45, 45, 45, 19));
+    win.draw(rect);
     win.draw(logo_);
     win.draw(copyright_);
 
