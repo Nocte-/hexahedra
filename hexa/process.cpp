@@ -33,6 +33,7 @@ namespace fs = boost::filesystem;
 #if defined(BOOST_POSIX_API)
 
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <signal.h>
 
 void
@@ -85,14 +86,23 @@ terminate_process (pid_type id)
     if (id.internal_ == 0)
         return false;
 
-    return ::kill(id.internal_, SIGTERM) != -1;
+    if (::kill(id.internal_, SIGTERM) == -1)
+        return false;
+
+    int status (0);
+    ::waitpid(id.internal_, &status, 0);
+    return true;
 }
 
 void
 kill_process (pid_type id)
 {
     if (id.internal_ != 0)
+    {
         ::kill(id.internal_, SIGKILL);
+        int status (0);
+        ::waitpid(id.internal_, &status, 0);
+    }
 }
 
 #elif defined(BOOST_WINDOWS_API)

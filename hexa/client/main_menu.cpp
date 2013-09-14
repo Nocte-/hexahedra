@@ -279,7 +279,7 @@ void main_menu::render()
     if (exit_)
         return;
 
-    float step (time_);
+    float step (time_ + 40.f);
 
     glClearColor(0, 0, 0, 255);
     glCheck(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -324,7 +324,7 @@ void main_menu::render()
     auto& win (window());
 
     sf::RectangleShape rect ({ 340, height_ });
-    rect.setFillColor(sf::Color(45, 45, 45, 19));
+    rect.setFillColor(sf::Color(10, 10, 10, 70));
     win.draw(rect);
     win.draw(logo_);
     win.draw(copyright_);

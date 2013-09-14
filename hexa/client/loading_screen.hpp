@@ -33,6 +33,8 @@ public:
                     std::string text = "Connecting ...",
                     double fadeout_seconds = 0.5);
 
+    std::string name() const { return "loading screen"; }
+
     void update (double time_delta);
     void render();
     void process_event (const event&);

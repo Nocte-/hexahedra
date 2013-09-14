@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <string>
 #include <memory>
 #include <SFML/Window.hpp>
 #include "game.hpp"
@@ -51,6 +52,8 @@ public:
     game_state (game& the_game) : game_(the_game), is_done_(false) { }
 
     virtual ~game_state() {}
+
+    virtual std::string name() const = 0;
 
     virtual void update(double time_delta) = 0;
     virtual void render() = 0;

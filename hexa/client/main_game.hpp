@@ -66,6 +66,7 @@ public:
                 make_terrain_mesher();
 
 public:
+    std::string name() const override { return "main game"; }
     void update(double time_delta) override;
     void render() override;
     void process_event(const event&) override;
@@ -146,6 +147,7 @@ private:
     uint32_t            player_entity_;
 
     bool                waiting_for_data_;
+    mutable bool        loading_screen_;
     bool                singleplayer_;
     pid_type            server_process_;
 };

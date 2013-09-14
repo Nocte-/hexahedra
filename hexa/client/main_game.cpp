@@ -85,6 +85,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     , asio_          ([=]{io_.run();})
     , player_entity_ (0xffffffff)
     , waiting_for_data_(true)
+    , loading_screen_(false)
     , singleplayer_  (host == "localhost")
 {
     if (singleplayer_)
@@ -293,7 +294,6 @@ void main_game::update(double time_delta)
         //system_lag_compensate(entities_, time_delta);
     }
     } // scoped  lock
-
     on_tick(time_delta);
     player_controls();
     player_motion();
@@ -534,8 +534,11 @@ double main_game::elapsed_time()
 
 game_state::transition main_game::next_state() const
 {
-    if (waiting_for_data_)
+    if (!loading_screen_)
+    {
+        loading_screen_ = true;
         return { game_.make_state<loading_screen>(waiting_for_data_), false };
+    }
 
     return { nullptr, false };
 }

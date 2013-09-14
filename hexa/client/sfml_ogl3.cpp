@@ -70,20 +70,20 @@ static interpolated_map<float, color> sky_grad
       { 1.0f , { 0.10f, 0.10f, 0.12f } } };
 
 static interpolated_map<float, color> amb_grad
-    { { 0.0f , { 0.2f, 0.2f, 0.2f } },
-      { 0.2f , { 0.2f, 0.2f, 0.2f } },
-      { 0.3f , { 0.3f, 0.1f, 0.1f } },
-      { 0.4f , { 0.56f, 0.67f, 1.0f } },
-      { 0.6f , { 0.56f, 0.67f, 1.0f } },
+    { { 0.0f , { 0.15f, 0.15f, 0.15f } },
+      { 0.1f , { 0.2f, 0.2f, 0.2f } },
+      { 0.2f , { 0.3f, 0.1f, 0.1f } },
+      { 0.3f , { 0.56f, 0.67f, 1.0f } },
+      { 0.7f , { 0.56f, 0.67f, 1.0f } },
       { 0.8f , { 0.2f, 0.2f, 0.2f } },
-      { 1.0f , { 0.2f, 0.2f, 0.2f } } };
+      { 1.0f , { 0.15f, 0.15f, 0.15f } } };
 
 static interpolated_map<float, color> sun_grad
     { { 0.0f , { 0.0f, 0.0f, 0.0f } },
       { 0.2f , { 0.0f, 0.0f, 0.0f } },
       { 0.3f , { 1.0f, 1.0f, 0.7f } },
-      { 0.6f , { 1.0f, 1.0f, 0.7f } },
-      { 0.7f , { 0.0f, 0.0f, 0.0f } },
+      { 0.7f , { 1.0f, 1.0f, 0.7f } },
+      { 0.8f , { 0.0f, 0.0f, 0.0f } },
       { 1.0f , { 0.0f, 0.0f, 0.0f } } };
 
 static interpolated_map<float, color> art_grad

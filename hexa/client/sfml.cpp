@@ -391,6 +391,7 @@ void sfml::draw_chunk_cube (const chunk_coordinates& p)
 void sfml::prepare(const player& plr)
 {
     const float eye_height (1.7f);
+    camera_wpos_ = wfpos(plr.position(), vector(0,0,0));
 
     vector c (plr.rel_world_position(world_offset_));
     c.z += eye_height;
@@ -403,7 +404,7 @@ void sfml::prepare(const player& plr)
     }
 
     camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
-                     1.22173048f, (float)width_ / (float)height_, 0.1f, 64000.f);
+                     1.22173048f, (float)width_ / (float)height_, 0.2f, 8000.f);
 
     vector target (from_spherical(plr.head_angle()) * 1000.f);
 
@@ -640,7 +641,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
         info.setPosition(10, 10);
         info.setCharacterSize(14);
 
-        //world_coordinates p (plr.position());
+        auto p (camera_wpos_.pos);
         //world_coordinates r (p - world_center);
 
         GLint total_mem_kb = 0;
@@ -657,8 +658,9 @@ void sfml::draw_ui(double elapsed, const hud& h)
             % int(total_mem_kb / 1024)
             ).str());
 */
-        info.setString((boost::format("%i FPS")
+        info.setString((boost::format("%1% FPS  |   %2% , %3% , %4%")
             % int((double)step / acc_elapsed + 0.5f)
+            % p.x % p.y % p.z
             ).str());
 
         step = 0;

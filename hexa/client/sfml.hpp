@@ -92,6 +92,7 @@ protected:
 
 protected:
     camera          camera_;
+    wfpos           camera_wpos_;
     color           horizon_color_;
 
     int     width_;

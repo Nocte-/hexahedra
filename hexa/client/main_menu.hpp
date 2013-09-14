@@ -38,13 +38,14 @@ class main_menu : public game_state
 public:
     main_menu (game& the_game);
 
-    virtual void update (double time_delta);
-    virtual void render();
-    virtual void process_event (const event&);
-    virtual void resize (unsigned int x, unsigned int y);
-    virtual void expose();
+    std::string name() const override { return "main menu"; }
+    void update (double time_delta) override;
+    void render() override;
+    void process_event (const event&) override;
+    void resize (unsigned int x, unsigned int y) override;
+    void expose() override;
 
-    virtual bool is_transparent() const { return false; }
+    bool is_transparent() const { return false; }
 
     transition next_state() const;
     void switch_menu(int i);

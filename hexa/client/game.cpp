@@ -93,6 +93,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
                 (**i).render();
             }
             window_.display();
+
         }
         catch (std::exception& e)
         {
@@ -107,7 +108,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
         {
             try
             {
-                auto t (states_.back()->next_state());
+                auto t (states_.back()->next_state());               
                 if (t.state == nullptr)
                 {
                     states_.pop_back();
