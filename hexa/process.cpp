@@ -26,6 +26,7 @@
 #include <stdexcept>
 #include <boost/format.hpp>
 #include <boost/filesystem/operations.hpp>
+#include "log.hpp"
 
 using boost::format;
 namespace fs = boost::filesystem;
@@ -35,6 +36,8 @@ namespace fs = boost::filesystem;
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+
+namespace hexa {
 
 void
 zombie_handler (int code)
@@ -105,18 +108,26 @@ kill_process (pid_type id)
     }
 }
 
+}
+
 #elif defined(BOOST_WINDOWS_API)
+
+namespace hexa {
 
 pid_type
 start_process (const boost::filesystem::path &exe,
                const std::vector<std::string>& args)
 {
+    log_msg("A");
     PROCESS_INFORMATION proc_info;
     ZeroMemory(&proc_info, sizeof(proc_info));
 
+    log_msg("B");
     STARTUPINFO start_info;
+    ZeroMemory(&start_info, sizeof(start_info));
     start_info.cb = sizeof(start_info);
 
+    log_msg("C");
     std::string cmdline_params;
     for (auto& arg : args)
     {
@@ -125,16 +136,26 @@ start_process (const boost::filesystem::path &exe,
 
         cmdline_params += arg;
     }
+    log_msg("D");
+    // Can't use c_str() here, add our own null terminator.
     cmdline_params.push_back(0);
 
-    if (!CreateProcess(exe.string().c_str(), &cmdline_params[0],
+    auto launch (exe);
+    if (launch.extension() != ".exe")
+        launch += ".exe";
+
+    log_msg("E");
+    log_msg(launch.string());
+    if (!CreateProcess(launch.string().c_str(), &cmdline_params[0],
                        nullptr, nullptr,
-                       FALSE, CREATE_NO_WINDOW, nullptr, nullptr,
+                       FALSE, 0, nullptr, nullptr,
                        &start_info, &proc_info))
     {
+        log_msg("F");
         throw std::runtime_error((format("CreateProcess failed, error code %1%") % GetLastError()).str());
     }
 
+    log_msg("G");
     return proc_info;
 }
 
@@ -144,7 +165,6 @@ terminate_process (pid_type id)
     return CloseHandle(id.hThread) && CloseHandle(id.hProcess);
 }
 
+}
+
 #endif
-
-
-

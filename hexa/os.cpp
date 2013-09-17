@@ -28,6 +28,7 @@
 #if (defined(HEXAHEDRA_LINUX))
 #  include <unistd.h>
 #  include <sys/types.h>
+#  include <paths.h>
 #  include <pwd.h>
 
 #elif (defined(HEXAHEDRA_WINDOWS))
@@ -97,8 +98,6 @@ fs::path app_user_dir()
 
 fs::path executable_path()
 {
-    fs::path result;
-
 #if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
 
     char buf[1024];
@@ -107,24 +106,50 @@ fs::path executable_path()
         throw std::runtime_error("readlink() failed on /proc/self/exe");
 
     buf[count] = 0;
-    result = fs::path(buf);
+    return buf;
 
 #elif (defined(HEXAHEDRA_WINDOWS))
 
     char buf[1024];
     auto len (::GetModuleFileName(NULL, buf, sizeof(buf)));
-    if (len == 0 || len == sizeof(buf))
+    if (len == 0 || len >= sizeof(buf))
         throw std::runtime_error((format("GetModuleFileName failed, error code %1%") % GetLastError()).str());
 
-    result = fs::path(buf);
+    buf[len] = 0;
+    return buf;
 
 #else
 
-    I have no idea how to fetch the home dir on your platform, sorry.
+    I have no idea how to fetch the executable's' path on your platform, sorry.
 
 #endif
+}
 
-    return result;
+fs::path temp_dir()
+{
+#if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
+
+    auto env (::getenv("TMPDIR"));
+    if (env)
+        return env;
+
+    if (P_tmpdir)
+        return P_tmpdir;
+
+    return _PATH_TMP;
+
+#elif (defined(HEXAHEDRA_WINDOWS))
+
+    char buf[MAX_PATH + 1];
+    auto len (::GetTempPath(sizeof(buf), buf));
+    if (len == 0 || len >= sizeof(buf))
+        throw std::runtime_error((format("GetModuleFileName failed, error code %1%") % GetLastError()).str());
+
+    return buf;
+
+#else
+
+#endif
 }
 
 } // namespace hexa

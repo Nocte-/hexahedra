@@ -802,7 +802,6 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
         return;
     }
 
-    std::cout << "calling action " << (int)button << std::endl;
     trace("Calling action %1%", (int)button);
     lua_entity tmp (entities_, plr);
     call_function<void>(found->second, tmp, (int)slot, look, pos);

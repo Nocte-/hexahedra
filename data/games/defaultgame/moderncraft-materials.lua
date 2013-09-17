@@ -66,7 +66,7 @@ mc(  1,  0, { name = "stone", texture = {"mc.smoothstone"} } )
 mc(  2,  0, { name = "grass", texture = {"grass.side", "grass"} } )
 mc(  3,  0, { name = "dirt", texture = {"dirt"} } )
 mc(  4,  0, { name = "cobblestone", texture = {"cobblestone"} } )
-mc(  5,  0, { name = "white wall", texture = {"horizontal.white"} } )
+mc(  5,  0, { name = "planks", texture = {"wood"} } )
 
 -- Saplings use metadata to determine the tree type and growth stage
 mc(  6,  0, { name = "saplings (oak 0)",    texture = {"leaves.oak"} } )

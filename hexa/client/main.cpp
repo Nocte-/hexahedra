@@ -48,6 +48,7 @@
 
 #include <hexa/config.hpp>
 #include <hexa/drop_privileges.hpp>
+#include <hexa/log.hpp>
 #include <hexa/os.hpp>
 #include <hexa/packet.hpp>
 #include <hexa/persistence_sqlite.hpp>
@@ -82,6 +83,7 @@ int main (int argc, char* argv[])
 {
     setup_minidump();
     std::setlocale(LC_ALL, "C.UTF-8");
+    trace("Trace on");
 
     auto& vm (global_settings);
     po::options_description generic("Command line options");
@@ -154,11 +156,26 @@ int main (int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    if (enet_initialize() != 0)
+    std::ofstream logfile ((temp_dir() / "hexahedra_log.txt").string());
+    if (logfile)
     {
+        set_log_output(logfile);
+    }
+    else
+    {
+        std::cerr << "Warning: could not open logfile " << logfile << std::endl;
+        set_log_output(std::cout);
+    }
+
+    log_msg("Initializing Enet");
+    auto enet_rc (enet_initialize());
+    if (enet_rc != 0)
+    {
+        log_msg("Enet init failed");
         std::cerr << "Could not initialize ENet, exiting" << std::endl;
         return EXIT_FAILURE;
     }
+    log_msg("Enet running");
 
     try
     {
@@ -168,20 +185,21 @@ int main (int argc, char* argv[])
         //game_states.run(game_states.make_state<hexa::main_game>("localhost", 15556, global_settings["viewdist"].as<unsigned int>()));
         //game_states.run(game_states.make_state<hexa::main_game>("hexahedra.net", 15556));
 
-        std::cout << "Shut down..." << std::endl;
+        log_msg("Shut down...");
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        log_msg(e.what());
         return -1;
     }
     catch (...)
     {
-        std::cerr << "unknown exception caught"  << std::endl;
+        log_msg("unknown exception caught");
         return -1;
     }
 
     enet_deinitialize();
+    log_msg("end");
 
     return EXIT_SUCCESS;
 }

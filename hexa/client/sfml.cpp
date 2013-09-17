@@ -45,6 +45,7 @@
 
 #include <hexa/basic_types.hpp>
 #include <hexa/block_types.hpp>
+#include <hexa/log.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
 
@@ -127,19 +128,20 @@ std::array<vector, 4> make_quad (yaw_pitch pos, float radius, float dist = 1.0f)
 void init_opengl()
 {
 	glewInit();
-    std::cout << glGetString(GL_EXTENSIONS) << std::endl;
+
+    log_msg(reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS)));
 
 	if (GLEW_ARB_shading_language_100)
-		std::cout << "Found: GLSL"<< std::endl;
+        log_msg("Found: GLSL");
 
 	if (GLEW_ARB_shader_objects)
-		std::cout << "Found: Shader objects"<< std::endl;
+        log_msg("Found: Shader objects");
 
     if (GLEW_ARB_vertex_shader)
-		std::cout << "Found: Vertex shader"<< std::endl;
+        log_msg("Found: Vertex shader");
 
 	if (GLEW_ARB_fragment_shader)
-		std::cout << "Found: Fragment shader"<< std::endl;
+        log_msg("Found: Fragment shader");
 
     GLfloat fogColor[4] = {0.56f, 0.67f, 1.0f, 1.0f};
     //GLfloat fogColor[4] = {0.8f, 0.3f, 0.5f, 1.0f};
@@ -404,7 +406,7 @@ void sfml::prepare(const player& plr)
     }
 
     camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
-                     1.22173048f, (float)width_ / (float)height_, 0.2f, 8000.f);
+                     1.22173048f, (float)width_ / (float)height_, 0.2f, 800.f);
 
     vector target (from_spherical(plr.head_angle()) * 1000.f);
 
@@ -427,7 +429,7 @@ void sfml::prepare(const player& plr)
     glCheck(glDepthMask(GL_FALSE));
 
     static float hack (0.5f);
-    hack += 0.0001f * 2.0f * pi<float>();
+    //hack += 0.0001f * 2.0f * pi<float>();
 
     {
     glMatrixMode(GL_PROJECTION);
@@ -441,7 +443,7 @@ void sfml::prepare(const player& plr)
     skydome lulz;
     std::vector<color> colors;
 
-    skylight pretty (yaw_pitch(0, hack), 1.9f);
+    skylight pretty (yaw_pitch(-0.5f * pi<float>(), hack), 1.9f);
 
     for(auto p : lulz.vertices())
     {
@@ -481,7 +483,7 @@ void sfml::prepare(const player& plr)
     glCheck(glEnd());
 
     {
-    glRotatef(hack * 57.2957795, -1, 0, 0);
+    glRotatef(hack * 57.2957795, 0, -1, 0);
     float sun_size(5);
 
     gl::enable({ GL_TEXTURE_2D, GL_BLEND });
@@ -554,6 +556,9 @@ void sfml::prepare(const player& plr)
     }
 
     texture::unbind();
+
+    camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
+                     1.22173048f, (float)width_ / (float)height_, 2.0f, 16000.f);
 
     camera_.move_to((c + vector(0, 0, bob)) * 16.f);
     glMatrixMode(GL_PROJECTION);

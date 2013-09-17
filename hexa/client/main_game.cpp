@@ -42,6 +42,7 @@
 #include <hexa/compression.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/config.hpp>
+#include <hexa/log.hpp>
 #include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/lightmap.hpp>
@@ -69,6 +70,7 @@ using namespace boost;
 using namespace boost::math::float_constants;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+using boost::format;
 
 namespace hexa {
 
@@ -92,13 +94,17 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     {
         try
         {
+            log_msg("Launching server...");
             fs::path dir (executable_path().parent_path());
+            log_msg("Path is %1%", dir);
             server_process_ = start_process(dir / "hexahedra-server", { });
+            log_msg("Done.");
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
         }
         catch (std::runtime_error& e)
         {
-            std::cout << "Cannot launch server: " << e.what() << std::endl
-                      << "Still attempting to connect..." << std::endl;
+            log_msg("Cannot launch server (%1%), attempt to connect to localhost",
+                    e.what());
         }
     }
 
@@ -119,11 +125,11 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     renderer().on_new_vbo.connect([&](chunk_coordinates pos)
         { scene_.send_visibility_requests(pos); });
 
-    std::cout << "Trying to connect to " << host << ":" << port << std::endl;
+    log_msg("Trying to connect to %1%:%2% ...", host, port);
     int tries (0);
     while (!connect())
     {
-        std::cout << "   ... retrying..." << std::endl;
+        log_msg("   ... retrying...");
         ++tries;
         if (tries > 2)
         {
@@ -133,10 +139,10 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
             throw std::runtime_error("cannot connect to server");
         }
     }
-    std::cout << "Connected!" << std::endl;
+    log_msg("Connected!");
 
     login();
-    std::cout << "Logged in!" << std::endl;
+    log_msg("Logged in successfully");
 }
 
 main_game::~main_game()
@@ -183,7 +189,7 @@ void main_game::setup_renderer()
     extern po::variables_map global_settings;
 
     std::string ogl_version ((const char*)glGetString(GL_VERSION));
-    std::cout << "Driver: " << ogl_version << std::endl;
+    log_msg("OpenGL version: %1%", ogl_version);
     int ogl_major (ogl_version[0] - '0'), ogl_minor (ogl_version[2] - '0');
     if (ogl_major == 1 && ogl_minor < 5)
     {
@@ -604,7 +610,7 @@ void main_game::action(uint8_t code)
         if (entities_.get<vector>(player_entity_, entity_system::c_impact).z > 0)
         {
             auto v (entities_.get<vector>(player_entity_, entity_system::c_velocity));
-            v.z += 7.0f;
+            v.z = 6.0f;
             entities_.set(player_entity_, entity_system::c_velocity, v);
         }
     }
@@ -663,7 +669,7 @@ void main_game::handshake (deserializer<packet>& p)
 {
     msg::handshake mesg;
     mesg.serialize(p);
-    std::cout << "Connected to " << mesg.server_name << std::endl;
+    log_msg("Connected to %1%", mesg.server_name );
 }
 
 void main_game::greeting (deserializer<packet>& p)
@@ -672,15 +678,15 @@ void main_game::greeting (deserializer<packet>& p)
     mesg.serialize(p);
 
     clock::sync(mesg.client_time);
-    trace("initial clock synced to %1%", mesg.client_time);
+    log_msg("initial clock synced to %1%", mesg.client_time);
 
     player_entity_ = mesg.entity_id;
 
     renderer().set_offset(mesg.position);
     player_.move_to(mesg.position, vector3<float>(.5f, .5f, 5.f));
 
-    trace(mesg.motd);
-    trace("player %1% spawned at %2%", mesg.entity_id, mesg.position);
+    log_msg("MOTD: %1%", mesg.motd);
+    log_msg("player %1% spawned at %2%", mesg.entity_id, mesg.position);
 
     msg::time_sync_request sync;
     sync.request = clock::time();
@@ -700,13 +706,9 @@ void main_game::define_resources (deserializer<packet>& p)
     msg::define_resources msg;
     msg.serialize(p);
 
-    std::cout << "Registered " << msg.textures.size() << " textures."
-              << std::endl;
-
     renderer().load_textures(msg.textures);
 
-    std::cout << "Registered " << msg.models.size() << " models."
-              << std::endl;
+    log_msg("Registered %1% textures and %2% models", msg.textures.size(), msg.models.size());
 }
 
 void main_game::define_materials (deserializer<packet>& p)
@@ -717,8 +719,7 @@ void main_game::define_materials (deserializer<packet>& p)
     for (auto& rec : msg.materials)
         register_new_material(rec.material_id) = rec.definition;
 
-    std::cout << "Registered " << msg.materials.size() << " materials."
-              << std::endl;
+    log_msg("Registered %1% materials", msg.materials.size());
 }
 
 void main_game::entity_update (deserializer<packet>& p)
@@ -830,7 +831,7 @@ void main_game::lightmap_update (deserializer<packet>& p)
 
     if (!world().is_surface_available(msg.position))
     {
-        std::cout << "Error: light map update without surface " << msg.position << std::endl;
+        log_msg("Error: light map update without surface %1%", msg.position);
         return;
     }
 
@@ -871,8 +872,6 @@ void main_game::configure_hotbar (deserializer<packet>& p)
 {
     msg::player_configure_hotbar msg;
     msg.serialize(p);
-
-    std::cout << "Hotbar msg " << msg.slots.size() << std::endl;
 
     hud_.hotbar = msg.slots;
     hud_.hotbar_needs_update = true;
@@ -931,7 +930,7 @@ void main_game::bg_thread()
             {
                 if (++count > 20000)
                 {
-                    std::cout << "Warning: request queue full" << std::endl;
+                    log_msg("Warning: request queue full");
                     break;
                 }
 

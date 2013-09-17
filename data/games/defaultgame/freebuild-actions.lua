@@ -4,7 +4,7 @@
 function place_block (plr, inv, look_at, pos)
     local blk = raycast(pos + vecf(0,0,1.7), look_at, 9)
     local actions = { 
-      "sandstone",
+      "planks",
       "fence.0000", 
       "water",
       "bookshelf",

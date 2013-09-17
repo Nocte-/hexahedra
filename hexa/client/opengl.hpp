@@ -34,11 +34,11 @@
 
 
 // glCheck() only checks for errors in debug.
-#ifndef NDEBUG
+//#ifndef NDEBUG
 #  define glCheck(x) ((x), hexa::gl::check_error(__FILE__, __LINE__))
-#else
-#  define glCheck(x) (x)
-#endif
+//#else
+//#  define glCheck(x) (x)
+//#endif
 
 namespace hexa {
 namespace gl {

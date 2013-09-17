@@ -48,6 +48,9 @@ typedef PROCESS_INFORMATION  pid_type;
 
 #endif
 
+
+namespace hexa {
+
 /** Start a new process in the background.
  * \throw std::runtime_error
  * \param exe   Path to executable
@@ -63,3 +66,4 @@ bool terminate_process (pid_type id);
 /** Forcefully end a process. */
 void kill_process (pid_type id);
 
+}

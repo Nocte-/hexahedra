@@ -22,17 +22,23 @@
 #include "game.hpp"
 
 #include <boost/chrono.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/range/algorithm.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <SFML/Graphics.hpp>
+
 #include <hexa/config.hpp>
+#include <hexa/log.hpp>
+#include <hexa/os.hpp>
 
 #include "game_state.hpp"
 #include "event.hpp"
 
 using namespace boost::range;
+using boost::format;
 namespace fs = boost::filesystem;
 
 namespace hexa {
@@ -97,7 +103,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
         }
         catch (std::exception& e)
         {
-            std::cerr << "Uncaught exception in game state: " << e.what() << std::endl;
+            log_msg("Uncaught exception in game state: %1%", e.what());
 
             states_.pop_back();
             if (!states_.empty())
@@ -126,7 +132,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
             }
             catch (std::exception& e)
             {
-                std::cerr << "Game state transition failed: " << e.what() << std::endl;
+                log_msg("Game state transition failed: %1%", e.what());
 
                 if (!states_.empty())
                     states_.back()->expose();
@@ -168,13 +174,21 @@ void game::poll_events()
             key_pressed_[ev.key.code] = true;
             curr.process_event({event::key_down, (uint32_t)ev.key.code});
 
-            if (ev.key.code == sf::Keyboard::Key::F1)
+            if (ev.key.code == sf::Keyboard::Key::F2)
             {
-                window().capture().saveToFile("screenshot.png");
+                using namespace boost::posix_time;
+
+                std::string png_file
+                    ((format("%1%/screenshot-%2%.png")
+                        % temp_dir().string()
+                        % to_iso_string(second_clock::local_time())).str());
+
+                window().capture().saveToFile(png_file);
+                log_msg("screenshot saved to %1%", png_file);
             }
             else if (ev.key.code == sf::Keyboard::Key::F3)
             {
-                std::cout << "-----------------" << std::endl;
+                log_msg("-----------------");
             }
 
             break;

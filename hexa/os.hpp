@@ -51,11 +51,16 @@ namespace hexa {
 boost::filesystem::path app_user_dir();
 
 /** Return the full path of the executable.
- *  Linux:
+ *  Linux: /proc/self/exe
  *  Windows: GetModuleFileName()
  */
 boost::filesystem::path executable_path();
 
+/** Return the temp directory.
+ * Linux: $TEMP (usually /tmp)
+ * Windows:
+ */
+boost::filesystem::path temp_dir();
 
 } // namespace hexa
 

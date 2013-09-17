@@ -9,12 +9,15 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="34.687489"
+   width="39.43"
    height="39.429649"
    id="svg3031"
    version="1.1"
    inkscape:version="0.48.4 r9939"
-   sodipodi:docname="hexahedra.svg">
+   sodipodi:docname="hexahedra.svg"
+   inkscape:export-filename="/home/unicorn/hexahedra32.png"
+   inkscape:export-xdpi="73.041481"
+   inkscape:export-ydpi="73.041481">
   <defs
      id="defs3033" />
   <sodipodi:namedview
@@ -60,7 +63,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -71,7 +74,8 @@
      transform="translate(-82.180333,-39.815716)">
     <g
        id="g3854"
-       style="fill:none;stroke:#4c5153;stroke-opacity:1">
+       style="fill:none;stroke:#4c5153;stroke-opacity:1"
+       transform="translate(2.4867893,0)">
       <path
          id="path3052"
          style="fill:none;stroke:#4c5153;stroke-width:2;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
@@ -94,13 +98,13 @@
     <path
        id="path3975"
        style="fill:#f6f8fa;fill-opacity:1;stroke:none"
-       d="m 87.296775,52.402638 0,6.68675 8.64607,-11.66975 z m -3.0686,15.94489 0,-17.71654 15.34297,-8.85827 3.068605,1.77166 z"
+       d="m 89.783564,52.402638 0,6.68675 8.64607,-11.66975 z m -3.0686,15.94489 0,-17.71654 15.342966,-8.85827 3.06861,1.77166 z"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />
     <path
        inkscape:connector-curvature="0"
        style="fill:#f6f8fa;fill-opacity:1;stroke:none"
-       d="m 114.9016,50.639868 -30.687505,17.71875 15.34375,8.84375 15.343755,-8.84375 0,-17.71875 z m -3.0625,5.3125 0,10.625 -12.281255,7.09375 -9.1875,-5.3125 21.468755,-12.40625 z"
+       d="m 117.38839,50.639868 -30.687506,17.71875 15.343746,8.84375 15.34376,-8.84375 0,-17.71875 z m -3.0625,5.3125 0,10.625 -12.28126,7.09375 -9.187496,-5.3125 21.468756,-12.40625 z"
        id="path3977" />
   </g>
 </svg>
