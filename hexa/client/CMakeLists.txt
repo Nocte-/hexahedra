@@ -56,6 +56,12 @@ if(WIN32)
   target_link_libraries(${LIBNAME} ws2_32 winmm freetype jpeg png z bz2)
 endif()
 
+if(SFML_STATIC_LIBRARIES)
+  if(NOT WIN32)
+    target_link_libraries(${LIBNAME} freetype jpeg png z bz2 Xrandr)
+  endif()
+endif()
+
 target_link_libraries(${LIBNAME} hexacommon)
 target_link_libraries(${EXE} ${LIBNAME})
 

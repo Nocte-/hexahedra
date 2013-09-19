@@ -24,9 +24,12 @@ set(BUILD_UNITTESTS 0 CACHE BOOL "Build the unit tests")
 set(BUILD_DOCUMENTATION 0 CACHE BOOL "Generate Doxygen documentation")
 set(USE_VALGRIND 0 CACHE BOOL "Use workarounds for Valgrind")
 set(USE_CALLGRIND 0 CACHE BOOL "Build with -g")
+set(USE_OPENCL 0 CACHE BOOL "Use OpenCL")
 set(BUILD_STATIC 0 CACHE BOOL "Link executables statically")
 
-find_package(OpenCL)
+if(USE_OPENCL)
+  find_package(OpenCL)
+endif()
 
 # Set up the compiler
 #
