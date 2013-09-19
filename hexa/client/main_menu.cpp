@@ -323,8 +323,8 @@ void main_menu::render()
 
     auto& win (window());
 
-    sf::RectangleShape rect ({ 340, height_ });
-    rect.setFillColor(sf::Color(10, 10, 10, 70));
+    sf::RectangleShape rect ({ 340.f, static_cast<float>(height_) });
+    rect.setFillColor(sf::Color(10, 10, 10, 80));
     win.draw(rect);
     win.draw(logo_);
     win.draw(copyright_);
