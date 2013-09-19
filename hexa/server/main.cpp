@@ -58,6 +58,7 @@
 #include <hexa/trace.hpp>
 #include <hexa/entity_system_physics.hpp>
 #include <hexa/win32_minidump.hpp>
+#include <hexa/log.hpp>
 
 #include "clock.hpp"
 #include "lua.hpp"
@@ -207,7 +208,6 @@ int main (int argc, char* argv[])
 {
     setup_minidump();
     auto& vm (global_settings);
-
     print_opencl();
 
     po::options_description generic("Command line options");
@@ -235,6 +235,8 @@ int main (int argc, char* argv[])
             "the server database directory")
         ("game", po::value<std::string>()->default_value("defaultgame"),
             "which game to start")
+        ("log", po::value<bool>()->default_value(true),
+            "log debug info to file")
         ;
 
     po::options_description cmdline;
@@ -261,6 +263,20 @@ int main (int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    if (vm["log"].as<bool>())
+    {
+        std::ofstream logfile ((temp_dir() / "hexahedra-server_log.txt").string());
+        if (logfile)
+        {
+            set_log_output(logfile);
+        }
+        else
+        {
+            std::cerr << "Warning: could not open logfile in " << temp_dir().string() << std::endl;
+            set_log_output(std::cout);
+        }
+    }
+
     try
     {
         std::string game_name (vm["game"].as<std::string>());
@@ -271,14 +287,13 @@ int main (int argc, char* argv[])
 
         if (!fs::is_directory(datadir))
         {
-            std::cerr << "Cannot open " << datadir.string() << std::endl;
+            log_msg("Datadir '%1%' is not a directory", datadir.string());
             return -1;
         }
 
         if (!fs::is_directory(gamedir))
         {
-            std::cerr << "Cannot open game '" << game_name << "'"
-                      << std::endl;
+            log_msg("Gamedir '%1%' is not a directory", datadir.string());
             return -1;
         }
 
@@ -286,8 +301,7 @@ int main (int argc, char* argv[])
         {
             if (!fs::create_directories(dbdir))
             {
-                std::cerr << "Cannot create directory '" << dbdir.string()
-                          << "'" << std::endl;
+                log_msg("Cannot create dir %1%", dbdir.string());
                 return -2;
             }
         }
@@ -303,13 +317,14 @@ int main (int argc, char* argv[])
         clock::init();
 
         boost::asio::io_service io_srv;
+        boost::asio::io_service::work io_srv_keepalive (io_srv);
 
         // Set up the game world
         //hexa::network::connections_t players;
         fs::path db_file (dbdir / "world.db");
 
         trace("Game DB %1%", db_file.string());
-        std::cout << "Server game DB: " << db_file.string() << std::endl;
+        log_msg("Server game DB: %1%", db_file.string());
 
         persistence_sqlite          db_per (io_srv, db_file, datadir / "dbsetup.sql");
         memory_cache                storage (db_per);
@@ -317,6 +332,7 @@ int main (int argc, char* argv[])
         hexa::world                 world (storage);
         hexa::lua                   scripting (entities, world);
         hexa::network               server (vm["port"].as<unsigned int>(), world, entities, scripting);
+        boost::thread               asio_thread ([&]{ io_srv.run(); log_msg("io_service::run() done"); });
 
         scripting.uglyhack(&server);
 
@@ -326,16 +342,12 @@ int main (int argc, char* argv[])
         //drop_privileges(vm["uid"].as<std::string>(),
         //                vm["chroot"].as<std::string>());
 
-        trace("Run Lua scripts");
-        std::cout << "Run Lua scripts" << std::endl;
-
         for(fs::recursive_directory_iterator i (gamedir);
             i != fs::recursive_directory_iterator(); ++i)
         {
             if (fs::is_regular_file(*i) && i->path().extension() == ".lua")
             {
-                trace(i->path().string());
-                std::cout << i->path().string() << std::endl;
+                log_msg("Read Lua script %1%", i->path().string());
                 if (!scripting.load(i->path()))
                     throw std::runtime_error(scripting.get_error());
             }
@@ -347,15 +359,13 @@ int main (int argc, char* argv[])
         if (!conf_str)
             throw std::runtime_error(std::string("cannot open ") + conf_file.string());
 
-        trace("Set up game world (%1%)", conf_file.string());
-        std::cout << "Set up game world " << conf_file.string() << std::endl;
+        log_msg("Set up game world from %1%", conf_file.string());
 
         boost::property_tree::read_json(conf_str, config);
         hexa::init_terrain_gen(world, config);
         boost::thread gameloop ([&]{ server.run(); });
         boost::thread physics_thread ([&]{ physics(entities, world); });
-        trace("All systems go");
-        std::cout << "All systems go" << std::endl;
+        log_msg("All systems go");
 
 
 #ifndef _WIN32
@@ -380,37 +390,39 @@ int main (int argc, char* argv[])
         ::CloseHandle(stopEvent);
 #endif
 
-        trace("Stopping network...");
+        log_msg("Stopping network...");
         server.stop();
 
-        trace("Stopping server...");
+        log_msg("Stopping server...");
         server.jobs.push({ network::job::quit, chunk_coordinates(), 0 });
 
-        trace("Stopping threads...");
+        log_msg("Stopping threads...");
         lolquit.store(true);
         physics_thread.join();
         gameloop.join();
+        io_srv.stop();
+        asio_thread.join();
 
-        trace("Shutting down...");
+        log_msg("Shutting down...");
     }
     catch (luabind::error& e)
     {
-        std::cerr << "Uncaught Lua error: " << lua_tostring(e.state(), -1) << std::endl;
+        log_msg("Uncaught Lua error: %1%", lua_tostring(e.state(), -1));
         return -1;
     }
     catch (boost::property_tree::ptree_error& e)
     {
-        std::cerr << "Error in JSON: " << e.what() << std::endl;
+        log_msg("Error in JSON: %1%", e.what());
         return -1;
     }
     catch (std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        log_msg("Uncaught exception: %1%", e.what());
         return -1;
     }
     catch (...)
     {
-        std::cerr << "unknown exception caught"  << std::endl;
+        log_msg("Unknown exception caught");
         return -1;
     }
 

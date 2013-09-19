@@ -222,13 +222,13 @@ void scene::on_update_chunk(chunk_coordinates pos)
 {
     if (!is_in_view(pos))
     {
-        //trace((format("chunk %1% is not in view") % world_rel_coordinates(pos - world_chunk_center)).str());
+        trace("chunk %1% is not in view", world_rel_coordinates(pos - world_chunk_center));
         return;
     }
 
     if (is_air_chunk(pos, map().get_coarse_height(pos)))
     {
-        //trace((format("chunk %1% is air") % world_rel_coordinates(pos - world_chunk_center)).str());
+        trace("chunk %1% is air", world_rel_coordinates(pos - world_chunk_center));
 
         // Tell the renderer this chunk is empty.
         game_.renderer().queue_meshes(pos, game_.make_terrain_mesher(),
@@ -243,7 +243,7 @@ void scene::on_update_chunk(chunk_coordinates pos)
     auto m (terrain_.find(pos));
     if (m != terrain_.end() && m->second.status == scene::chunk::visible)
     {
-        //trace((format("scheduling build_mesh for chunk %1%") % world_rel_coordinates(pos - world_chunk_center)).str());
+        trace("scheduling build_mesh for chunk %1%", world_rel_coordinates(pos - world_chunk_center));
         pool.schedule(task(8, [=]{ build_mesh(pos); }));
     }
 }

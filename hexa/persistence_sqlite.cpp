@@ -23,6 +23,7 @@
 
 #include <boost/range.hpp>
 #include <sqlite3.h>
+#include "log.hpp"
 
 using namespace boost;
 namespace fs = boost::filesystem;
@@ -77,7 +78,10 @@ void persistence_sqlite::begin_transaction()
 {
     boost::mutex::scoped_lock tr_lock (transaction_lock_);
     if (!transaction_)
+    {
+        log_msg("Begin SQLite transaction");
         transaction_.reset(new sql::transaction(db_.begin_transaction()));
+    }
 }
 
 void persistence_sqlite::end_transaction()
@@ -85,6 +89,7 @@ void persistence_sqlite::end_transaction()
     boost::mutex::scoped_lock tr_lock (transaction_lock_);
     if (transaction_)
     {
+        log_msg("Commit SQLite transaction");
         transaction_->commit();
         transaction_ = nullptr;
     }

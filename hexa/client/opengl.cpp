@@ -78,7 +78,7 @@ void check_error(const char* file, unsigned int line)
             ;
     }
 
-    log_msg("An internal OpenGL call failed in %1% line %2%:", file, line);
+    log_msg("An OpenGL call failed in %1% line %2%:", file, line);
     log_msg("%1%, %2%: %3%", errorCode, error, description);
 }
 

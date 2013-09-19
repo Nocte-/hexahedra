@@ -22,6 +22,7 @@
 #include "memory_cache.hpp"
 
 #include <boost/format.hpp>
+#include "log.hpp"
 #include "trace.hpp"
 
 namespace hexa {
