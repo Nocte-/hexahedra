@@ -70,6 +70,7 @@ public:
 public:
     surface_data () { }
     surface_data (surface o, surface t) : opaque(o), transparent(t) { }
+    surface_data (surface_data&&) = default;
 
     bool empty() const
         { return opaque.empty() && transparent.empty(); }
