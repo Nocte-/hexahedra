@@ -163,7 +163,7 @@ int main (int argc, char* argv[])
     }
     else
     {
-        std::cerr << "Warning: could not open logfile " << logfile << std::endl;
+        std::cerr << "Warning: could not open logfile in " << temp_dir().string() << std::endl;
         set_log_output(std::cout);
     }
 

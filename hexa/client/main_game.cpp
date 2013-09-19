@@ -159,25 +159,25 @@ void main_game::setup_world (const std::string& host, uint16_t port)
 
     fs::path user_dir (global_settings["userdir"].as<std::string>());
     fs::path data_dir (global_settings["datadir"].as<std::string>());
+    fs::path db_setup (data_dir / "dbsetup.sql");
 
     fs::path gameroot (user_dir / "games");
-    std::string host_id ((format("%1%:%2%") % host % port).str());
+    std::string host_id ((format("%1%.%2%") % host % port).str());
     fs::path gamepath (gameroot / host_id);
 
     fs::path db (gamepath / "world.db");
 
-    if (   !singleplayer_
-        && !fs::exists(gamepath)
+    if (   !fs::exists(gamepath)
         && !fs::create_directories(gamepath))
     {
         throw std::runtime_error((format("error: cannot create directory '%1%'") % gamepath.string()).str());
     }
 
     if (singleplayer_)
-        //aux_.reset(new persistence_sqlite(io_, "local.db", data_dir / "dbsetup.sql"));
-        aux_ = make_unique<persistence_null>();
+        aux_ = make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
+        //aux_ = make_unique<persistence_null>();
     else
-        aux_ = make_unique<persistence_sqlite>(io_, db, data_dir / "dbsetup.sql");
+        aux_ = make_unique<persistence_sqlite>(io_, db, db_setup);
 
     world_ = make_unique<memory_cache>(*aux_);
 }
@@ -808,6 +808,13 @@ void main_game::surface_update (deserializer<packet>& p)
     auto temp (decompress(msg.terrain));
     surface_ptr s (new surface_data(deserialize_as<surface_data>(temp)));
 
+    trace("receive surface %1%", msg.position);
+
+    if (is_air_chunk(msg.position, world().get_coarse_height(msg.position)))
+    {
+        trace("WARNING: %1% is registered as an air chunk", msg.position);
+    }
+
     world().store(msg.position, s);
     lightmap_ptr lm (world().get_lightmap(msg.position));
     if (lm == nullptr)
@@ -860,11 +867,11 @@ void main_game::heightmap_update (deserializer<packet>& p)
     boost::mutex::scoped_lock lock (scene_.lock);
     for (auto& r : msg.data)
     {
-        //trace("height at %1%: %2%", r.pos, r.height);
-
+        trace("height at %1%: %2%", r.pos, r.height);
         world().store(r.pos, r.height);
         scene_.on_update_height(r.pos, r.height);
         renderer().on_update_height(r.pos, r.height);
+        trace("height at %1% done", r.pos);
     }
 }
 
