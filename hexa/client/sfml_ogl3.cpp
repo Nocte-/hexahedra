@@ -475,7 +475,7 @@ void sfml_ogl3::prepare(const player& plr)
     ambient_color(amb_grad(count));
     sun_color(sun_grad(count));
     terrain_shader_.use();
-    artificial_light_ = color(1,1,.8f); // art_grad(count);
+    artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);
     fog_density_ = 2.2f / (float)(view_dist_ * chunk_size * 6);
     terrain_shader_.stop_using();
 
@@ -514,7 +514,7 @@ void sfml_ogl3::opaque_pass()
             if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
             {
                 auto mtx (translate(camera_.model_view_matrix(), offset));
-                glCheck(glLoadMatrixf(mtx.as_ptr()));
+                glLoadMatrixf(mtx.as_ptr());
                 v.second.bind();
                 bind_attributes<ogl3_terrain_vertex>();
                 v.second.draw();
@@ -606,7 +606,7 @@ void sfml_ogl3::transparent_pass()
             if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
             {
                 auto mtx (translate(camera_.model_view_matrix(), offset));
-                glCheck(glLoadMatrixf(mtx.as_ptr()));
+                glLoadMatrixf(mtx.as_ptr());
 
                 v.second.bind();
                 bind_attributes<ogl3_terrain_vertex>();
@@ -652,7 +652,10 @@ void sfml_ogl3::handle_occlusion_queries()
             if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
             {
                 occlusion_query& qry (v.second);
-                glTranslatef(offset.x, offset.y, offset.z);
+                auto mtx (translate(camera_.model_view_matrix(), offset));
+                glLoadMatrixf(mtx.as_ptr());
+
+                //glTranslatef(offset.x, offset.y, offset.z);
 
                 if (qry.state() == occlusion_query::busy)
                 {
@@ -684,7 +687,7 @@ void sfml_ogl3::handle_occlusion_queries()
                     occlusion_block_.draw();
                     qry.end_query();
                 }
-                glTranslatef(-offset.x, -offset.y, -offset.z);
+                //glTranslatef(-offset.x, -offset.y, -offset.z);
             }
         }
     }
@@ -694,6 +697,7 @@ void sfml_ogl3::handle_occlusion_queries()
     glCheck(glEnable(GL_CULL_FACE));
     glCheck(glEnable(GL_TEXTURE_2D));
     glCheck(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
+    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
 }
 
 void sfml_ogl3::draw(const gl::vbo& v) const

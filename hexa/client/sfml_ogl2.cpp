@@ -66,13 +66,6 @@ namespace {
 
 typedef vertex_1<vtx_xyz<int16_t> > occ_cube_vtx;
 
-void opengl_check(int line)
-{
-    GLenum code (glGetError());
-    if (code != GL_NO_ERROR)
-        std::cerr << "opengl 2.x line " << line << " : " << gluErrorString(code) << std::endl;
-}
-
 } // anonymous namespace
 
 class terrain_mesher_ogl2 : public terrain_mesher_i
@@ -234,7 +227,6 @@ void sfml_ogl2::load_textures(const std::vector<std::string>& name_list)
 void sfml_ogl2::sky_color(const color& c)
 {
     glClearColor(c.r(), c.g(), c.b(), 1.0);
-    opengl_check(__LINE__);
 }
 
 void sfml_ogl2::sun_color(const color&)
@@ -300,11 +292,11 @@ void sfml_ogl2::opaque_pass()
 
             if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
             {
-                glCheck(glTranslatef(offset.x, offset.y, offset.z));
+                glTranslatef(offset.x, offset.y, offset.z);
                 v.second.bind();
                 bind_attributes_ogl2<ogl2_terrain_vertex>();
                 v.second.draw();
-                glCheck(glTranslatef(-offset.x, -offset.y, -offset.z));
+                glTranslatef(-offset.x, -offset.y, -offset.z);
             }
         }
     }
@@ -335,11 +327,11 @@ void sfml_ogl2::transparent_pass()
 
             if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
             {
-                glCheck(glTranslatef(offset.x, offset.y, offset.z));
+                glTranslatef(offset.x, offset.y, offset.z);
                 v.second.bind();
                 bind_attributes_ogl2<ogl2_terrain_vertex>();
                 v.second.draw();
-                glCheck(glTranslatef(-offset.x, -offset.y, -offset.z));
+                glTranslatef(-offset.x, -offset.y, -offset.z);
             }
         }
     }
@@ -349,7 +341,6 @@ void sfml_ogl2::transparent_pass()
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_FOG);
-    opengl_check(__LINE__);
 }
 
 void sfml_ogl2::handle_occlusion_queries()
