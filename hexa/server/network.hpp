@@ -103,6 +103,7 @@ private:
     void send_surface (const chunk_coordinates& pos);
     void send_surface (const chunk_coordinates& pos, uint32_t dest);
     void send_surface (const chunk_coordinates& pos, ENetPeer* dest);
+    void send_coarse_height (const map_coordinates& mpos);
     void send_height  (const map_coordinates& pos, ENetPeer* dest);
 
 private:

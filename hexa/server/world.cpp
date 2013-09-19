@@ -154,7 +154,7 @@ world::store (chunk_coordinates pos, chunk_ptr data)
     map_coordinates mc (pos);
     auto h (get_coarse_height(mc));
     if (needs_chunk_height_adjustment(pos, h))
-        store(mc, adjust_chunk_height(pos, h));
+        set_coarse_height(pos, h);
 
     //boost::lock_guard<std::recursive_mutex> chunk_lock (data->lock);
 
@@ -470,6 +470,8 @@ world::change_block (world_coordinates pos, uint16_t material)
     chunk_coordinates cp (pos / chunk_size);
     chunk_index       ci (pos % chunk_size);
 
+    trace("change block at %1% to %2%", pos, material);
+
     chunk_ptr cnk;
     auto coarse_h (get_coarse_height(cp));
 
@@ -478,11 +480,12 @@ world::change_block (world_coordinates pos, uint16_t material)
         if (material == 0)
             return; // It's already air, quit
 
-        storage_.store(cp, adjust_chunk_height(cp, coarse_h));
+        set_coarse_height(cp, coarse_h);
         cnk = get_or_create_chunk(cp);
     }
     else
     {
+        trace("coarse height map %1% is still OK (is %2%)", cp, coarse_h);
         cnk = get_chunk(cp);
     }
 
@@ -602,7 +605,7 @@ world::get_or_create_chunk(chunk_coordinates pos)
 
         auto coarse_h (get_coarse_height(pos));
         if (needs_chunk_height_adjustment(pos, coarse_h))
-            storage_.store(pos, adjust_chunk_height(pos, coarse_h));
+            set_coarse_height(pos, coarse_h);
     }
 
     return result;
@@ -646,7 +649,7 @@ world::get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_heigh
 
             // If this is an air chunk, don't run it through the generators.
             result->generation_phase = phase;
-            storage_.store(pos, adjust_chunk_height(pos, coarse_h));
+            set_coarse_height(pos, coarse_h);
         }
         else
         {
@@ -798,6 +801,15 @@ world::get_type(chunk_coordinates xyz) const
         return air_chunk;
 
     return normal_chunk;
+}
+
+void
+world::set_coarse_height(chunk_coordinates cp, chunk_height coarse_h)
+{
+    auto new_h (adjust_chunk_height(cp, coarse_h));
+    trace("setting coarse height map %1% (was %2%)", new_h, coarse_h);
+    storage_.store(map_coordinates(cp), new_h);
+    height_changeset.insert(cp);
 }
 
 void

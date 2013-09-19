@@ -30,11 +30,13 @@
 #include <boost/math/constants/constants.hpp>
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
+#include <boost/program_options.hpp>
 
 #include <hexa/compression.hpp>
 #include <hexa/entity_system.hpp>
 #include <hexa/entity_system_physics.hpp>
 #include <hexa/geometric.hpp>
+#include <hexa/log.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/voxel_algorithm.hpp>
@@ -48,6 +50,7 @@
 
 using boost::format;
 using namespace boost::math::constants;
+namespace po = boost::program_options;
 
 namespace hexa {
 
@@ -93,6 +96,11 @@ void network::run()
 
         world_.changeset.clear();
 
+        for (map_coordinates c : world_.height_changeset)
+            send_coarse_height(c);
+
+        world_.height_changeset.clear();
+
         // Send changes in the entity system
         ++count;
         if (count % 20 == 0)
@@ -118,6 +126,12 @@ void network::run()
             send(c.second, serialize_packet(msg), msg.method());
         }
 
+        }
+
+        // Flush caches every now and then
+        if (count % 207 == 0)
+        {
+            world_.cleanup();
         }
 
         while (!jobs.empty())
@@ -184,7 +198,7 @@ void network::on_connect (ENetPeer* c)
 
     es_.set(player_id, server_entity_system::c_ip_addr, ip_address(c->address.host));
 
-    trace("Player #%1% connected.", player_id);
+    log_msg("Player #%1% connected.", player_id);
     }
 
     //player& new_player (players_[c]);
@@ -234,10 +248,10 @@ void network::on_disconnect (ENetPeer* c)
     auto e (entities_.find(c));
     if (e == entities_.end())
     {
-        trace("disconnect received from an unknown player");
+        log_msg("disconnect received from an unknown player");
         return;
     }
-    trace((format("disconnecting player %1%") % e->second).str());
+    log_msg("disconnecting player %1%", e->second);
 
     {
     auto write_lock (es_.acquire_write_lock());
@@ -283,11 +297,11 @@ void network::on_receive (ENetPeer* c, const packet& p)
     }
     catch (luabind::error& e)
     {
-        std::cout << "Lua error: " << lua_.get_error() << std::endl;
+        log_msg("Lua error: %1%", lua_.get_error());
     }
     catch (std::exception& e)
     {
-        std::cout << "Could not handle packet: " << e.what() << std::endl;
+        log_msg("Could not handle packet: %1%", e.what());
     }
 }
 
@@ -385,6 +399,24 @@ void network::send_surface(const chunk_coordinates& cpos, ENetPeer* dest)
     send(dest, serialize_packet(reply), reply.method());
 }
 
+void network::send_coarse_height(const map_coordinates& mpos)
+{
+    auto height (world_.get_coarse_height(mpos));
+    if (height == undefined_height)
+        return;
+
+    log_msg("broadcast heightmap %1%", map_rel_coordinates(mpos - map_chunk_center));
+
+    msg::heightmap_update heights;
+    heights.data.emplace_back(mpos, height);
+
+    for (auto& conn : connections_)
+    {
+        send(conn.second, serialize_packet(heights), heights.method());
+    }
+    log_msg("broadcast heightmap %1% done", map_rel_coordinates(mpos - map_chunk_center));
+}
+
 void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
 {
     auto height (world_.get_coarse_height(cpos));
@@ -401,7 +433,7 @@ void network::login (const packet_info& info)
 {
     auto msg (make<msg::login>(info.p));
 
-    trace("player %1% login", info.plr);
+    log_msg("player %1% login", info.plr);
     world_coordinates start_pos (world_center);
 
     // Move the spawn point to the lowlands.
@@ -451,7 +483,7 @@ void network::login (const packet_info& info)
     }
 
     start_pos.z += 12;
-    trace("Spawning new player at %1%", start_pos);
+    log_msg("Spawning new player at %1%", start_pos);
     wfpos start_pos_sub (start_pos, vector(0.5, 0.5, 0.5));
     {
     auto write_lock (es_.acquire_write_lock());
@@ -479,7 +511,7 @@ entities_.set(te, c_model, uint16_t(0));
     }
 */
     // Log in
-    trace((format("player %1% sending greeting") % info.plr).str());
+    log_msg("send greeting to player %1%", info.plr);
 
     msg::greeting reply;
     reply.position = start_pos;
@@ -489,7 +521,7 @@ entities_.set(te, c_model, uint16_t(0));
     send(info.conn, serialize_packet(reply), reply.method());
 
     // Send height maps
-    trace((format("player %1% sending height maps") % info.plr).str());
+    log_msg("send height maps to player %1%", info.plr);
     chunk_coordinates pcp (start_pos / chunk_size);
     int hmr (12);
     msg::heightmap_update heights;
@@ -511,7 +543,7 @@ entities_.set(te, c_model, uint16_t(0));
     }
     send(info.conn, serialize_packet(heights), heights.method());
 
-    trace((format("player %1% sending terrain") % info.plr).str());
+    log_msg("send terrain to player %1%", info.plr);
 
     // Send the surrounding terrain
 
@@ -552,7 +584,7 @@ entities_.set(te, c_model, uint16_t(0));
     }
 */
 
-    trace("player %1% sending position", info.plr);
+    log_msg("send position to player %1%", info.plr);
 
     // Send the position to the player
     msg::entity_update posmsg;
@@ -575,28 +607,27 @@ entities_.set(te, c_model, uint16_t(0));
 
     try
     {
-        trace("player %1% setting up in Lua", info.plr);
         lua_.player_logged_in(info.plr);
     }
     catch (luabind::error& e)
     {
-        std::cout << "Lua error while logging in: " << lua_.get_error() << std::endl;
+        log_msg("Lua error while logging in: %1%", lua_.get_error());
     }
     catch (std::exception& e)
     {
-        std::cout << "Error while logging in: " << e.what() << std::endl;
+        log_msg("Error while logging in: %1%", e.what());
     }
     catch (...)
     {
-        std::cout << "Unknown error while logging in." << std::endl;
+        log_msg("Unknown error while logging in.");
     }
 
-    trace("Player is logged in");
+    log_msg("player %1% is logged in", info.plr);
 }
 
 void network::logout (const packet_info& info)
 {
-    trace("player %1% logout", info.plr);
+    log_msg("player %1% logout", info.plr);
     {
     //boost::mutex::scoped_lock lock (entities_mutex_);
     //entities_.delete_entity(plr.entity);
@@ -688,7 +719,7 @@ void network::req_chunks (const packet_info& info)
         }
         catch (std::exception& e)
         {
-            trace("cannot provide surface data at %1%, because: %2%",
+            log_msg("Cannot provide surface data at %1%, because: %2%",
                   req.position, std::string(e.what()));
         }
     }
@@ -749,7 +780,7 @@ void network::console (const packet_info& info)
 
 void network::unknown (const packet_info& info)
 {
-    trace((format("Unknown packet type %1% received") % (int)info.p.message_type()).str());
+    log_msg("Unknown packet type %1% received", (int)info.p.message_type());
 }
 
 void network::tick()
@@ -851,3 +882,4 @@ void network::tick()
 }
 
 } // namespace hexa
+

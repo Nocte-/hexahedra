@@ -159,6 +159,7 @@ public:
 
 
     std::unordered_set<chunk_coordinates> changeset;
+    std::unordered_set<map_coordinates>   height_changeset;
 
 protected:
     block get_block_nolocking(world_coordinates pos);
@@ -182,6 +183,8 @@ protected:
     void  update (chunk_coordinates pos);
 
     void worker(int id);
+
+    void set_coarse_height(chunk_coordinates pos, chunk_height h);
 
 protected:
     es::storage  entities_;
