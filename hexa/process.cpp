@@ -118,16 +118,13 @@ pid_type
 start_process (const boost::filesystem::path &exe,
                const std::vector<std::string>& args)
 {
-    log_msg("A");
     PROCESS_INFORMATION proc_info;
     ZeroMemory(&proc_info, sizeof(proc_info));
 
-    log_msg("B");
     STARTUPINFO start_info;
     ZeroMemory(&start_info, sizeof(start_info));
     start_info.cb = sizeof(start_info);
 
-    log_msg("C");
     std::string cmdline_params;
     for (auto& arg : args)
     {
@@ -136,7 +133,6 @@ start_process (const boost::filesystem::path &exe,
 
         cmdline_params += arg;
     }
-    log_msg("D");
     // Can't use c_str() here, add our own null terminator.
     cmdline_params.push_back(0);
 
@@ -144,24 +140,36 @@ start_process (const boost::filesystem::path &exe,
     if (launch.extension() != ".exe")
         launch += ".exe";
 
-    log_msg("E");
     log_msg(launch.string());
     if (!CreateProcess(launch.string().c_str(), &cmdline_params[0],
                        nullptr, nullptr,
                        FALSE, 0, nullptr, nullptr,
                        &start_info, &proc_info))
     {
-        log_msg("F");
         throw std::runtime_error((format("CreateProcess failed, error code %1%") % GetLastError()).str());
     }
 
-    log_msg("G");
+    // Set up a Job, so the child process is ended after the parent
+    // exits.
+    HANDLE job_obj (CreateJobObject(0, 0));
+    if (job_obj)
+    {
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION ext_info;
+        ZeroMemory(&ext_info, sizeof(ext_info));
+        ext_info.BasicLimitInformation.LimitFlags
+                = 0x00002000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+
+        SetInformationJobObject(job_obj, JobObjectExtendedLimitInformation, &ext_info, sizeof(ext_info));
+        AssignProcessToJobObject(job_obj, proc_info.hProcess);
+    }
+
     return proc_info;
 }
 
 bool
 terminate_process (pid_type id)
 {
+    GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id.dwProcessId);
     return CloseHandle(id.hThread) && CloseHandle(id.hProcess);
 }
 
