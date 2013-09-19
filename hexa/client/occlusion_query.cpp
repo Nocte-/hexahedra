@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2011, 2012, nocte@hippie.nu
+// Copyright 2012, 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "occlusion_query.hpp"
@@ -26,16 +26,9 @@
 #include <GL/gl.h>
 #include <GL/glu.h>
 
-#include <iostream>
+#include "opengl.hpp"
+
 namespace hexa {
-namespace {
-void opengl_check(int line)
-{
-    GLenum code (glGetError());
-    if (code != GL_NO_ERROR)
-        std::cerr << "oq line " << line << " : " << gluErrorString(code) << std::endl;
-}
-}
 
 occlusion_query::occlusion_query()
     : id_ (0)
@@ -46,10 +39,7 @@ occlusion_query::occlusion_query()
 occlusion_query::~occlusion_query()
 {
     if (id_ != 0)
-    {
-        glDeleteQueries(1, &id_);
-        opengl_check(__LINE__);
-    }
+        glCheck(glDeleteQueries(1, &id_));
 }
 
 occlusion_query& occlusion_query::operator=(occlusion_query&& move) noexcept
@@ -57,11 +47,7 @@ occlusion_query& occlusion_query::operator=(occlusion_query&& move) noexcept
     if (&move != this)
     {
         if (id_ != 0)
-        {
-            opengl_check(__LINE__);
-            glDeleteQueries(1, &id_);
-            opengl_check(__LINE__);
-        }
+            glCheck(glDeleteQueries(1, &id_));
 
         id_ = move.id_;
         state_ = move.state_;
@@ -77,9 +63,8 @@ bool occlusion_query::is_result_available() const
         return false;
 
     GLuint temp (0);
-    opengl_check(__LINE__);
-    glGetQueryObjectuiv(id_, GL_QUERY_RESULT_AVAILABLE, &temp);
-    opengl_check(__LINE__);
+    glCheck(glGetQueryObjectuiv(id_, GL_QUERY_RESULT_AVAILABLE, &temp));
+
     return temp == GL_TRUE;
 }
 
@@ -87,9 +72,7 @@ unsigned int occlusion_query::result()
 {
     assert(id_ != 0);
     GLuint count (0);
-    opengl_check(__LINE__);
-    glGetQueryObjectuiv(id_, GL_QUERY_RESULT, &count);
-    opengl_check(__LINE__);
+    glCheck(glGetQueryObjectuiv(id_, GL_QUERY_RESULT, &count));
 
     return count;
 }
@@ -97,20 +80,15 @@ unsigned int occlusion_query::result()
 void occlusion_query::begin_query()
 {
     state_ = busy;
-    opengl_check(__LINE__);
     if (id_ == 0)
-        glGenQueries(1, &id_);
+        glCheck(glGenQueries(1, &id_));
 
-    opengl_check(__LINE__);
-    glBeginQuery(GL_SAMPLES_PASSED, id_);
-    opengl_check(__LINE__);
+    glCheck(glBeginQuery(GL_SAMPLES_PASSED, id_));
 }
 
 void occlusion_query::end_query() const
 {
-    opengl_check(__LINE__);
-    glEndQuery(GL_SAMPLES_PASSED);
-    opengl_check(__LINE__);
+    glCheck(glEndQuery(GL_SAMPLES_PASSED));
 }
 
 } // namespace hexa
