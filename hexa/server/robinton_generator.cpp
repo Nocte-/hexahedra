@@ -1450,7 +1450,7 @@ struct robinton_generator::impl
 robinton_generator::robinton_generator (world& w, const ptree& conf)
     : terrain_generator_i   (w, conf)
     , pimpl_ (new impl(conf.get<std::string>("path"),
-                       conf.get<world_rel_coordinates>("offset", world_rel_coordinates(8,8,0)),
+                       conf.get<world_rel_coordinates>("offset", world_rel_coordinates(8,60,0)),
                        w, *this))
 { }
 
