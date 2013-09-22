@@ -537,6 +537,8 @@ FunctionEnd
 !define MUI_ICON "..\..\..\..\install\hexahedra.ico"
 !define MUI_HEADERIMAGE_BITMAP "..\..\..\..\install\nsis-header.bmp"
 !define MUI_WELCOMEFINISHPAGE_BITMAP "..\..\..\..\install\nsis-welcome.bmp"
+!define MUI_FINISHPAGE_RUN "$INSTDIR\hexahedra.exe"
+!define MUI_FINISHPAGE_RUN_TEXT "Launch Hexahedra"
 
 @CPACK_NSIS_INSTALLER_MUI_ICON_CODE@
 @CPACK_NSIS_INSTALLER_ICON_CODE@
