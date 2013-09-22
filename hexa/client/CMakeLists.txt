@@ -22,7 +22,7 @@ if(WIN32)
   set(RC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../install/hexahedra-client.rc)
   if(MINGW)
       set(BOOST_THREAD_LIBNAME thread_win32)
-      set(RC_OBJ_FILE ${CMAKE_CURRENT_BINARY_DIR}/win_rc.o)
+      set(RC_OBJ_FILE ${CMAKE_CURRENT_BINARY_DIR}/client_win_rc.o)
       add_custom_command(OUTPUT ${RC_OBJ_FILE}
                          COMMAND ${CMAKE_RC_COMPILER} -I{CMAKE_CURRENT_SOURCE_DIR}
                          -i${RC_FILE} -o${RC_OBJ_FILE}
