@@ -16,5 +16,7 @@ CMakeCache.txt
 CMakeLists.txt.user
 tags
 
-hexa/config.hpp
-
+/hexa/config.hpp
+/install/hexahedra-server.rc
+/install/hexahedra-client.rc
+/win32/
