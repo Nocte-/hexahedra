@@ -97,7 +97,6 @@ void physics (server_entity_system& s, storage_i& terrain)
 
         {
         auto write_lock (s.acquire_write_lock());
-        //trace("physics timestep %1%", delta);
         while (delta > 0)
         {
             constexpr double max_step = 0.05;
@@ -106,6 +105,10 @@ void physics (server_entity_system& s, storage_i& terrain)
             {
                 step = max_step;
                 delta -= max_step;
+            }
+            else if (delta < 0.001)
+            {
+                break;
             }
             else
             {
@@ -257,18 +260,14 @@ int main (int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    if (enet_initialize() != 0)
-    {
-        std::cerr << "Could not initialize ENet, exiting" << std::endl;
-        return EXIT_FAILURE;
-    }
-
+    std::ofstream logfile;
     if (vm["log"].as<bool>())
     {
-        std::ofstream logfile ((temp_dir() / "hexahedra-server_log.txt").string());
+        logfile.open((temp_dir() / "hexahedra-server_log.txt").string());
         if (logfile)
         {
             set_log_output(logfile);
+            log_msg("Server started");
         }
         else
         {
@@ -276,6 +275,15 @@ int main (int argc, char* argv[])
             set_log_output(std::cout);
         }
     }
+
+    log_msg("Initializing Enet...");
+
+    if (enet_initialize() != 0)
+    {
+        log_msg("Could not initialize ENet, exiting");
+        return EXIT_FAILURE;
+    }
+    log_msg("ENet initialized");
 
     try
     {

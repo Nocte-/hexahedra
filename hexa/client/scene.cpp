@@ -305,8 +305,11 @@ void scene::build_mesh(chunk_coordinates pos)
 
     {
     auto lmi (plm->opaque.begin());
+    auto check (surfaces->opaque.size());
     for(const faces& f : surfaces->opaque)
     {
+        assert(surfaces->opaque.size() == check);
+        auto pos (f.pos);
         const material& m (material_prop[f.type]);
 
         if (m.is_custom_block())
@@ -322,7 +325,7 @@ void scene::build_mesh(chunk_coordinates pos)
                 }
                 intensities[d] = *lmi++;
             }
-            opaque_mesh->add_custom_block(f.pos, m.model, intensities);
+            opaque_mesh->add_custom_block(pos, m.model, intensities);
         }
         else
         {
@@ -339,7 +342,7 @@ void scene::build_mesh(chunk_coordinates pos)
                     lmi = plm->opaque.begin();
                 }
                 assert(lmi != plm->opaque.end());
-                opaque_mesh->add_face(f.pos, (direction_type)d, tex, *lmi);
+                opaque_mesh->add_face(pos, (direction_type)d, tex, *lmi);
                 ++lmi;
             }
         }
@@ -351,6 +354,7 @@ void scene::build_mesh(chunk_coordinates pos)
     auto lmi (plm->transparent.begin());
     for(const faces& f : surfaces->transparent)
     {
+        auto pos (f.pos);
         const material& m (material_prop[f.type]);
         for (int d (0); d < 6; ++d)
         {
@@ -359,7 +363,7 @@ void scene::build_mesh(chunk_coordinates pos)
 
             uint16_t tex (m.textures[d]);
             assert(lmi != plm->transparent.end());
-            transparent_mesh->add_face(f.pos, (direction_type)d, tex, *lmi);
+            transparent_mesh->add_face(pos, (direction_type)d, tex, *lmi);
             ++lmi;
         }
     }

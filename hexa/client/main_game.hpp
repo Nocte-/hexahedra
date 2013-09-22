@@ -108,6 +108,7 @@ private:
 
     void entity_update(deserializer<packet>& p);
     void entity_update_physics(deserializer<packet>& p);
+    void entity_delete(deserializer<packet>& p);
     void surface_update(deserializer<packet>& p);
     void lightmap_update(deserializer<packet>& p);
     void heightmap_update(deserializer<packet>& p);

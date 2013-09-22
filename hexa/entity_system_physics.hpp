@@ -47,7 +47,8 @@ void system_terrain_collision (es::storage& s,storage_i& terrain);
 void system_terrain_friction (es::storage& s, float timestep);
 
 /// Client-side lag compensation
-void system_lag_compensate (es::storage& s, float timestep);
+void system_lag_compensate (es::storage& s, float timestep,
+                            uint32_t skip = 0xffffffff);
 
 } // namespace hexa
 

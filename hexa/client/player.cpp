@@ -39,6 +39,7 @@ player::player()
     , velocity (0,0,0)
     , active_slot (0)
     , hotbar_needs_update (false)
+    , is_airborne (true)
 { }
 
 void player::move_to(const world_coordinates& pos, const vector& fraction)

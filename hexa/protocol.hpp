@@ -331,6 +331,25 @@ public:
     }
 };
 
+/** Remove an entity completely. */
+class entity_delete : public msg_i
+{
+public:
+    enum { msg_id = 12 };
+    uint8_t type() const { return msg_id; }
+    reliability method() const { return reliable; }
+
+    uint32_t    entity_id;
+
+    /** (De)serialize this message. */
+    template <class archive>
+    void serialize(archive& ar)
+    {
+        ar(entity_id);
+    }
+};
+
+
 /** A part of the world's height map. */
 class heightmap_update : public msg_i
 {
@@ -710,10 +729,12 @@ public:
     uint8_t     move_dir;
     /** Movement speed (0 = standstill, 255 = fastest) */
     uint8_t     move_speed;
+    /** Current position. */
+    wfpos       position;
 
     template <class archive>
     void serialize(archive& ar)
-        { ar(move_dir)(move_speed); }
+    { ar(move_dir)(move_speed)(position); }
 };
 
 /**@}*/

@@ -26,11 +26,6 @@
 #include <boost/format.hpp>
 #include <boost/range/algorithm.hpp>
 
-#include <es/component.hpp>
-#include <es/entity.hpp>
-
-#include <hexa/entity_system.hpp>
-#include <hexa/entity_system_physics.hpp>
 #include <hexa/geometric.hpp>
 #include <hexa/memory_cache.hpp>
 #include <hexa/surface.hpp>

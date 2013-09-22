@@ -108,13 +108,11 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
         }
     }
 
-    hud_.console_message(u8"Test. \u00A9\u00C6\u0270\u03C1");
+    hud_.console_message(u8"Testing UTF-8 text... \u00A9 \u00C6 \u0270 \u03C1");
     hud_.time_tick(1);
-    hud_.console_message(u8"Эксперты: здоровью Филина причинен тяжкий вред");
+    hud_.console_message(u8"это русский текст");
     hud_.time_tick(1);
-    hud_.console_message(u8"España");
-    hud_.time_tick(1);
-    hud_.console_message(u8"Ὕμνος εἰς τὴν Ἐλευθερίαν");
+    hud_.console_message(u8"Español Straße Türkçe ελληνικά");
 
     game_.relative_mouse(true);
     setup_renderer();
@@ -242,6 +240,7 @@ void main_game::player_controls()
     static const std::array<uint8_t, 9> dirs {{ 0xA0, 0x80, 0x60, 0xC0, 0x00, 0x40, 0xE0, 0x00, 0x20 }};
     int index (x + y * 3);
 
+    mesg.position = player_.get_wfpos();
     mesg.move_dir = dirs[index];
     mesg.move_speed = (index == 4 ? 0x00 : 0xff);
 
@@ -277,6 +276,8 @@ void main_game::update(double time_delta)
     {
     //boost::mutex::scoped_lock lock (entities_mutex_);
     double delta (time_delta);
+    system_lag_compensate(entities_, time_delta, player_entity_);
+
     while (delta > 0)
     {
         constexpr double max_step = 0.05;
@@ -285,6 +286,10 @@ void main_game::update(double time_delta)
         {
             step = max_step;
             delta -= max_step;
+        }
+        else if (delta < 0.001)
+        {
+            break;
         }
         else
         {
@@ -297,9 +302,9 @@ void main_game::update(double time_delta)
         system_motion(entities_, step);
         system_terrain_collision(entities_, world());
         system_terrain_friction(entities_, step);
-        //system_lag_compensate(entities_, time_delta);
     }
     } // scoped  lock
+
     on_tick(time_delta);
     player_controls();
     player_motion();
@@ -341,20 +346,16 @@ void main_game::render()
     scene_.on_pre_render_loop();
     renderer().prepare(player_);
     renderer().opaque_pass();
-
     {
-
-    wfpos plp (player_.position(), player_.position_fraction());
-    renderer().draw_model(plp, 0);
-
     entities_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
             es::storage::var_ref<wfpos> pos)
     {
-        renderer().draw_model(pos, 0);
+        wfpos p (pos);
+        p.normalize();
+        renderer().draw_model(p, 0);
     });
     }
-
     renderer().handle_occlusion_queries();
     renderer().transparent_pass();
     renderer().draw_ui(elapsed_, hud_);
@@ -626,6 +627,9 @@ void main_game::receive (const packet& p)
 {
     auto archive (make_deserializer(p));
 
+    unsigned int mt (p.message_type());
+    trace("Receive packet type %1%", mt);
+
     try
     {
         switch(p.message_type())
@@ -644,6 +648,8 @@ void main_game::receive (const packet& p)
             entity_update(archive); break;
         case msg::entity_update_physics::msg_id:
             entity_update_physics(archive); break;
+        case msg::entity_delete::msg_id:
+            entity_delete(archive); break;
         case msg::surface_update::msg_id:
             surface_update(archive); break;
         case msg::lightmap_update::msg_id:
@@ -656,12 +662,12 @@ void main_game::receive (const packet& p)
             global_config(archive); break;
 
         default:
-            std::cout << "Unknown packet type " << p.message_type() << std::endl;
+            log_msg("Unknown packet type %1%", mt);
         }
     }
     catch (std::exception& e)
     {
-        std::cerr << "Cannot parse packet : " << e.what() << std::endl;
+        log_msg("Cannot parse packet type %1%: %2%", mt, e.what());
     }
 }
 
@@ -735,8 +741,7 @@ void main_game::entity_update (deserializer<packet>& p)
         switch (upd.component_id)
         {
         case entity_system::c_position:
-            entities_.set(e, upd.component_id,
-                          deserialize_as<wfpos>(upd.data));
+            entities_.set(e, upd.component_id, deserialize_as<wfpos>(upd.data));
             break;
 
         case entity_system::c_velocity:
@@ -774,6 +779,7 @@ void main_game::entity_update_physics (deserializer<packet>& p)
     msg::entity_update_physics msg;
     msg.serialize(p);
 
+    trace("Update entity physics");
     int32_t lag_msec (clock::time() - msg.timestamp);
     float   lag (lag_msec * 0.001f);
 
@@ -783,6 +789,9 @@ void main_game::entity_update_physics (deserializer<packet>& p)
     {
         auto e (entities_.make(upd.entity_id));
         auto newpos (upd.pos + upd.velocity * lag);
+
+        trace("Set entity %1% to position %2%", upd.entity_id, upd.pos);
+        trace("  velocity %1%, lag %2%", upd.velocity, lag);
 
         if (   entities_.entity_has_component(e, entity_system::c_position)
             && entities_.entity_has_component(e, entity_system::c_velocity))
@@ -796,6 +805,16 @@ void main_game::entity_update_physics (deserializer<packet>& p)
             entities_.set(e, entity_system::c_velocity, upd.velocity);
         }
     }
+}
+
+void main_game::entity_delete (deserializer<packet>& p)
+{
+    msg::entity_delete msg;
+    msg.serialize(p);
+
+    log_msg("Delete entity %1%", msg.entity_id);
+    boost::mutex::scoped_lock lock (entities_mutex_);
+    entities_.delete_entity(msg.entity_id);
 }
 
 void main_game::surface_update (deserializer<packet>& p)
@@ -835,6 +854,8 @@ void main_game::lightmap_update (deserializer<packet>& p)
 {
     msg::lightmap_update msg;
     msg.serialize(p);
+
+    trace("Lightmap update for %1%", msg.position);
 
     if (!world().is_surface_available(msg.position))
     {

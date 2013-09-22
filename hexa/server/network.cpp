@@ -105,26 +105,26 @@ void network::run()
         ++count;
         if (count % 20 == 0)
         {
-        //trace("network tick");
+            //trace("network tick");
 
-        msg::entity_update_physics msg;
-        auto lock (es_.acquire_read_lock());
+            msg::entity_update_physics msg;
+            auto lock (es_.acquire_read_lock());
 
-        es_.for_each<wfpos, vector>(entity_system::c_position,
-                                    entity_system::c_velocity,
-            [&](es::storage::iterator i,
-                es::storage::var_ref<wfpos> p_,
-                es::storage::var_ref<vector> v_)
-        {
-            msg.updates.emplace_back(i->first, p_, v_);
-        });
+            es_.for_each<wfpos, vector>(entity_system::c_position,
+                                        entity_system::c_velocity,
+                [&](es::storage::iterator i,
+                    es::storage::var_ref<wfpos> p_,
+                    es::storage::var_ref<vector> v_)
+            {
+                msg.updates.emplace_back(i->first, p_, v_);
+            });
 
-        auto n (clock::now());
-        for (auto& c : connections_)
-        {
-            msg.timestamp = n - clock_offset_[c.second];
-            send(c.second, serialize_packet(msg), msg.method());
-        }
+            auto n (clock::now());
+            for (auto& c : connections_)
+            {
+                msg.timestamp = n - clock_offset_[c.second];
+                send(c.second, serialize_packet(msg), msg.method());
+            }
 
         }
 
@@ -201,11 +201,6 @@ void network::on_connect (ENetPeer* c)
     log_msg("Player #%1% connected.", player_id);
     }
 
-    //player& new_player (players_[c]);
-
-    //new_player.entity = entity_id;
-    //new_player.conn = c;
-
     // Greet the new player with the server name and our public key.
     msg::handshake m;
 
@@ -243,7 +238,7 @@ void network::on_connect (ENetPeer* c)
 
 void network::on_disconnect (ENetPeer* c)
 {
-    players_.erase(c);
+    clock_offset_.erase(c);
 
     auto e (entities_.find(c));
     if (e == entities_.end())
@@ -251,16 +246,21 @@ void network::on_disconnect (ENetPeer* c)
         log_msg("disconnect received from an unknown player");
         return;
     }
-    log_msg("disconnecting player %1%", e->second);
+    auto entity_id (e->second);
+    log_msg("disconnecting player %1%", entity_id);
 
     {
     auto write_lock (es_.acquire_write_lock());
-    es_.delete_entity(e->second);
+    es_.delete_entity(entity_id);
     }
 
-    connections_.erase(e->second);
-    entities_.erase(c);
-    clock_offset_.erase(c);
+    connections_.erase(entity_id);
+    entities_.erase(e);
+
+    msg::entity_delete msg;
+    msg.entity_id = entity_id;
+    for (auto& conn : connections_)
+        send(conn.second, serialize_packet(msg), msg.method());
 }
 
 void network::on_receive (ENetPeer* c, const packet& p)
@@ -495,21 +495,6 @@ void network::login (const packet_info& info)
     es_.set(info.plr, server_entity_system::c_lookat, yaw_pitch(0, 0));
     }
 
-/*
-    {
-    boost::mutex::scoped_lock lock(entities_mutex_);
-    entities_.set(plr.entity, c_position, wfpos(plr.position, plr.position_fraction));
-    entities_.set(plr.entity, c_name, plr.name);
-    entities_.set(plr.entity, c_velocity, vector::zero());
-    entities_.set(plr.entity, c_model, uint16_t(0));
-
-// Make another entity just fur die lulz
-auto te (entities_.new_entity());
-entities_.set(te, c_position, wfpos(plr.position, plr.position_fraction));
-entities_.set(te, c_velocity, vector(0, -1, 0));
-entities_.set(te, c_model, uint16_t(0));
-    }
-*/
     // Log in
     log_msg("send greeting to player %1%", info.plr);
 
@@ -603,6 +588,39 @@ entities_.set(te, c_model, uint16_t(0));
     rec.data = serialize_c(yaw_pitch(0, 0));
     posmsg.updates.push_back(rec);
 
+    rec.component_id = entity_system::c_velocity;
+    rec.data = serialize_c(vector(0, 0, 0));
+    posmsg.updates.push_back(rec);
+
+    for (auto& conn : connections_)
+    {
+        if (conn.first == info.plr)
+            continue;
+
+        log_msg("inform player %1% of player %2%", conn.first, info.plr);
+        send(conn.second, serialize_packet(posmsg), msg::reliable);
+    }
+
+    es_.for_each<wfpos>(entity_system::c_position,
+        [&](es::storage::iterator i,
+            es::storage::var_ref<wfpos> p_)
+    {
+        if (info.plr == i->first)
+            return;
+
+        log_msg("inform player %1% of player %2%", info.plr, i->first);
+        rec.entity_id = i->first;
+        rec.component_id = entity_system::c_boundingbox;
+        rec.data = serialize_c(vector(0.4,0.4,1.7));
+        posmsg.updates.push_back(rec);
+        rec.component_id = entity_system::c_position;
+        rec.data = serialize_c(wfpos(p_));
+        posmsg.updates.push_back(rec);
+        rec.component_id = entity_system::c_velocity;
+        rec.data = serialize_c(vector(0, 0, 0));
+        posmsg.updates.push_back(rec);
+    });
+
     send(info.conn, serialize_packet(posmsg), msg::reliable);
 
     try
@@ -628,11 +646,6 @@ entities_.set(te, c_model, uint16_t(0));
 void network::logout (const packet_info& info)
 {
     log_msg("player %1% logout", info.plr);
-    {
-    //boost::mutex::scoped_lock lock (entities_mutex_);
-    //entities_.delete_entity(plr.entity);
-    }
-    //players_.erase(plr.conn);
 }
 
 void network::timesync (const packet_info& info)
@@ -746,6 +759,8 @@ void network::motion (const packet_info& info)
 
     v += rotate(move, -l.x) * lag;
     p += v * lag;
+    // hack
+    p = msg.position;
 
     es_.set(info.plr, entity_system::c_position, p);
     es_.set(info.plr, entity_system::c_velocity, v);

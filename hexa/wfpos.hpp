@@ -157,6 +157,13 @@ public:
         pos.z += static_cast<int>(i);
     }
 
+    wfpos normalized() const
+    {
+        wfpos result (*this);
+        result.normalize();
+        return result;
+    }
+
     world_coordinates int_pos() const
     {
         return world_coordinates(frac.x + pos.x, frac.y + pos.y, frac.z + pos.z);
@@ -295,8 +302,6 @@ inline wfvec
 operator/ (wfvec lhs, float rhs)
     { return lhs /= rhs; }
 
-
-
 // Some specializations of functions found in algorithms.hpp:
 
 template <> inline
@@ -316,7 +321,6 @@ wfpos lerp (const wfpos& from, const wfpos& to, double amount)
 {
     return from + to.relative_to(from) * amount;
 }
-
 
 } // namespace hexa
 

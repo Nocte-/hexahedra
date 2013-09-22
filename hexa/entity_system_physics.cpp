@@ -83,12 +83,11 @@ void system_gravity (es::storage& s, float timestep)
             es::storage::var_ref<vector> v_)
     {
         constexpr float gravity (15.f); // 9.81 doesn't feel right
-        constexpr float air_viscosity (0.01f);
+        constexpr float air_viscosity (0.008f);
         vector v (v_);
 
         v += vector(0, 0, -gravity) * timestep;
         v -= (v * absolute(v) * air_viscosity) * timestep;
-
         v_ = v;
     });
 }
@@ -102,7 +101,10 @@ void system_motion (es::storage& s, float timestep)
             es::storage::var_ref<vector> v_)
     {
         vector v (v_);
-        p_ += v * timestep;
+        wfpos  p (p_);
+        p += v * timestep;
+        p.normalize();
+        p_ = p;
     });
 }
 
@@ -148,7 +150,7 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
             }
             else
             {
-                for (auto& c : data->opaque)
+                for (auto c : data->opaque)
                 {
                     vector bp (c.pos + local_offset);
 
@@ -204,7 +206,7 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
         {
             // Move the entity according to the impact, plus a little
             // nudge to prevent rounding errors.
-            p_ += impact + normalize(impact) * 0.0001f;
+            p += impact + normalize(impact) * 0.0001f;
 
             // The impact we get back from the collision detection is the
             // offset in meters.  For the rest of the system, we're going to
@@ -217,7 +219,7 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
             v_ = v;
         }
 
-        p = p_;
+        p_ = p;
         s.set(i, entity_system::c_impact, impact);
     });
 }
@@ -250,7 +252,7 @@ void system_terrain_friction (es::storage& s, float timestep)
     });
 }
 
-void system_lag_compensate (es::storage& s, float timestep)
+void system_lag_compensate (es::storage& s, float timestep, uint32_t skip)
 {
     s.for_each<wfpos, vector, last_known_phys>
                              (entity_system::c_position,
@@ -261,6 +263,9 @@ void system_lag_compensate (es::storage& s, float timestep)
             es::storage::var_ref<vector> v_,
             es::storage::var_ref<last_known_phys> d_)
     {
+        if (i->first == skip)
+            return;
+
         last_known_phys d (d_);
 
         d.position += d.speed * timestep;

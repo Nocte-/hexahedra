@@ -111,9 +111,7 @@ private:
     server_entity_system&   es_;
     lua&                    lua_;
 
-    std::unordered_map<ENetPeer*, player>   players_;
     std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
-
     std::unordered_map<ENetPeer*, uint32_t> entities_;
     std::unordered_map<uint32_t, ENetPeer*> connections_;
 

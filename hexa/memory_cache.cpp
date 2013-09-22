@@ -92,7 +92,11 @@ memory_cache::cleanup ()
     }
     {
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
-    heights_.prune(size_limit_);
+    heights_.prune(size_limit_,
+        [&](map_coordinates xy, chunk_height h)
+        {
+            next_.store(xy, h);
+        });
     }
 }
 
@@ -163,7 +167,6 @@ memory_cache::store (map_coordinates xy, chunk_height data)
 
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
     heights_[xy] = data;
-    next_.store(xy, data);
 }
 
 bool
