@@ -133,7 +133,7 @@ load_meshes (const std::vector<char>& buf)
     for  (size_t i {0}; i < hdr.num_triangles; ++i)
     {
         for (uint16_t j {0}; j < 3; ++j)
-            result.edge_buffer[i][j] = static_cast<uint16_t>(tris[i][j]);
+            result.edge_buffer[i][j] = static_cast<uint16_t>(tris[i][2-j]);
     }
 
     const char* str {(char *)&buf[hdr.ofs_text]};
