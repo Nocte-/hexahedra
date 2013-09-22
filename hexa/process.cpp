@@ -143,7 +143,7 @@ start_process (const boost::filesystem::path &exe,
     log_msg(launch.string());
     if (!CreateProcess(launch.string().c_str(), &cmdline_params[0],
                        nullptr, nullptr,
-                       FALSE, 0, nullptr, nullptr,
+                       FALSE, CREATE_BREAKAWAY_FROM_JOB, nullptr, nullptr,
                        &start_info, &proc_info))
     {
         throw std::runtime_error((format("CreateProcess failed, error code %1%") % GetLastError()).str());
@@ -151,6 +151,7 @@ start_process (const boost::filesystem::path &exe,
 
     // Set up a Job, so the child process is ended after the parent
     // exits.
+    /*
     HANDLE job_obj (CreateJobObject(0, 0));
     if (job_obj)
     {
@@ -159,9 +160,21 @@ start_process (const boost::filesystem::path &exe,
         ext_info.BasicLimitInformation.LimitFlags
                 = 0x00002000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
-        SetInformationJobObject(job_obj, JobObjectExtendedLimitInformation, &ext_info, sizeof(ext_info));
-        AssignProcessToJobObject(job_obj, proc_info.hProcess);
+        if (SetInformationJobObject(job_obj, JobObjectExtendedLimitInformation,
+                                    &ext_info, sizeof(ext_info)) == 0)
+        {
+            throw std::runtime_error((format("SetInformationJobObject failed, error code %1%") % GetLastError()).str());
+        }
+        if (AssignProcessToJobObject(job_obj, proc_info.hProcess) == 0)
+        {
+            throw std::runtime_error((format("AssignProcessToJobObject failed, error code %1%") % GetLastError()).str());
+        }
     }
+    else
+    {
+        log_msg("Cannot create JobObject, child process might not exit.");
+    }
+    */
 
     return proc_info;
 }
