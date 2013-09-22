@@ -74,6 +74,20 @@ public:
     terrain_mesher_ogl2 () : empty_(true)
     { }
 
+    static vector3<uint8_t> light_to_rgb (light l)
+    {
+        vector temp (0, 0, 0);
+        temp  = vector(0.5f, 0.6f, 1.0f) * 0.7f * (float(l.ambient)  / 15.f);
+        temp += vector(1.0f, 1.0f, 0.7f) * 0.9f * (float(l.sunlight) / 15.f);
+        temp += vector(1.0f, 1.0f, 0.6f) * 0.3f * (float(l.artificial) / 15.f);
+
+        const float gamma (0.7f);
+        vector3<uint8_t> rgb (std::min(255.f, 255 * std::pow(temp[0], gamma)),
+                              std::min(255.f, 255 * std::pow(temp[1], gamma)),
+                              std::min(255.f, 255 * std::pow(temp[2], gamma)));
+
+        return rgb;
+    }
 
     void add_face(chunk_index p, direction_type side,
                   uint16_t texture, light l)
@@ -97,14 +111,7 @@ public:
         float v0 ((float(texture / 16)) / 16.f + 1.f/64.f);
         float v1 (v0 + 1.f/32.f);
 
-        vector temp;
-        temp  = vector(0.56f, 0.67f, 1.0f) * 0.6f * (float(l.ambient)  / 15.f);
-        temp += vector(1.00f, 1.00f, 0.7f) * 0.6f * (float(l.sunlight) / 15.f);
-
-        const float gamma (0.8f);
-        vector3<uint8_t> rgb (std::min(255.f, 255 * std::pow(temp[0], gamma)), 
-                              std::min(255.f, 255 * std::pow(temp[1], gamma)), 
-                              std::min(255.f, 255 * std::pow(temp[2], gamma))); 
+        vector3<uint8_t> rgb (light_to_rgb(l));
 
         data_.emplace_back(ogl2_terrain_vertex
             (vector3<float>(p.x+o[0][0], p.y+o[0][1], p.z+o[0][2]) * 16.f,
@@ -123,10 +130,146 @@ public:
              vector2<float>(u1, v0), rgb));
     }
 
-    void add_custom_block (chunk_index voxel,
-                           const custom_block& model,
-                           const std::vector<light>& intensities)
+
+    void add_custom_block (chunk_index i, const custom_block& model, const std::vector<light>& l)
     {
+        empty_ = false;
+
+        vector3<float> offset (i);
+        offset *= chunk_size;
+
+        for (auto& part : model)
+        {
+            const auto& a (part.box.first);
+            auto b (part.box.second);
+            b += chunk_index(1,1,1);
+
+            // Face: +x
+            float u0 ((float(part.textures[0] % 16)) / 16.f + 1.f/64.f);
+            float v0 ((float(part.textures[0] / 16)) / 16.f + 1.f/64.f);
+            vector3<uint8_t> rgb (light_to_rgb(l[0]));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + b.y / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + a.y / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + a.y / 512.f, v0 + a.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + b.y / 512.f, v0 + a.z / 512.f), rgb));
+
+            // Face: -x
+            u0 = (float(part.textures[1] % 16)) / 16.f + 1.f/64.f;
+            v0 = (float(part.textures[1] / 16)) / 16.f + 1.f/64.f;
+            rgb = light_to_rgb(l[1]);
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + a.y / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + b.y / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + b.y / 512.f, v0 + a.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + a.y / 512.f, v0 + a.z / 512.f), rgb));
+
+            // Face: +y
+            u0 = (float(part.textures[2] % 16)) / 16.f + 1.f/64.f;
+            v0 = (float(part.textures[2] / 16)) / 16.f + 1.f/64.f;
+            rgb = light_to_rgb(l[2]);
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + a.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + a.z / 512.f), rgb));
+
+            // Face: -y
+            u0 = (float(part.textures[3] % 16)) / 16.f + 1.f/64.f;
+            v0 = (float(part.textures[3] / 16)) / 16.f + 1.f/64.f;
+            rgb = light_to_rgb(l[3]);
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + b.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + a.z / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + a.z / 512.f), rgb));
+
+            // Face: +z
+            u0 = (float(part.textures[4] % 16)) / 16.f + 1.f/64.f;
+            v0 = (float(part.textures[4] / 16)) / 16.f + 1.f/64.f;
+            rgb = light_to_rgb(l[4]);
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + a.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, b.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + a.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + b.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, b.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + b.y / 512.f), rgb));
+
+            // Face: -z
+            u0 = (float(part.textures[5] % 16)) / 16.f + 1.f/64.f;
+            v0 = (float(part.textures[5] / 16)) / 16.f + 1.f/64.f;
+            rgb = light_to_rgb(l[5]);
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + b.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, b.y, a.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + b.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(b.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + b.x / 512.f, v0 + a.y / 512.f), rgb));
+
+            data_.emplace_back(ogl2_terrain_vertex
+                (vector3<float>(a.x, a.y, a.z) + offset,
+                 vector2<float>(u0 + a.x / 512.f, v0 + a.y / 512.f), rgb));
+        }
     }
 
     bool empty() const { return empty_; }
