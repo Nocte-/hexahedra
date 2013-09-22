@@ -19,8 +19,14 @@ set(BOOST_THREAD_SUFFIX "")
 if(WIN32)
   set(ADD_DL "")
   set(ADDITIONAL_BOOST_LIBS date_time regex)
-  if(MSYS)
+  set(RC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../install/hexahedra-server.rc)
+  if(MINGW)
       set(BOOST_THREAD_SUFFIX "_win32")
+      set(RC_OBJ_FILE ${CMAKE_CURRENT_BINARY_DIR}/win_rc.o)
+      add_custom_command(OUTPUT ${RC_OBJ_FILE}
+                         COMMAND ${CMAKE_RC_COMPILER} -I{CMAKE_CURRENT_SOURCE_DIR}
+                         -i${RC_FILE} -o${RC_OBJ_FILE}
+                         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   endif()
 endif()
 

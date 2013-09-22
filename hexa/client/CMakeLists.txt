@@ -19,11 +19,9 @@ set(RC_OBJ_FILE "")
 if(WIN32)
   set(ADDITIONAL_BOOST_LIBS regex)
   set(ADDITIONAL_SFML_LIBS main)
-  set(RC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../install/hexahedra.rc)
-  if(MSYS)
-      set(BOOST_THREAD_LIBNAME thread_win32)
-  endif()
+  set(RC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../install/hexahedra-client.rc)
   if(MINGW)
+      set(BOOST_THREAD_LIBNAME thread_win32)
       set(RC_OBJ_FILE ${CMAKE_CURRENT_BINARY_DIR}/win_rc.o)
       add_custom_command(OUTPUT ${RC_OBJ_FILE}
                          COMMAND ${CMAKE_RC_COMPILER} -I{CMAKE_CURRENT_SOURCE_DIR}
