@@ -55,7 +55,7 @@ else(LUAJIT_FOUND)
   endif(LUA51_FOUND)
 endif(LUAJIT_FOUND)
 
-foreach (LIB ENet ES zlib)
+foreach (LIB ENet ES ZLIB)
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)
     include_directories(${${ULIB}_INCLUDE_DIR})

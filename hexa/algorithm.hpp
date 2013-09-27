@@ -31,15 +31,6 @@
 
 namespace hexa {
 
-/** "That C++11 doesn’t include make_unique is partly an oversight, and it
- **  will almost certainly be added in the future." -- Herb Sutter */
-template<typename type, typename... args>
-std::unique_ptr<type> make_unique(args&&... params)
-{
-    //return std::unique_ptr<type>(new type(std::forward<args>(params)...));
-    return std::make_unique<type>(params);
-}
-
 /** Round a number to the nearest integer. */
 template <typename type>
 int round (type x) { return std::lround(x); }

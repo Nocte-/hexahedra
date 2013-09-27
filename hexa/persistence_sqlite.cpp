@@ -24,6 +24,8 @@
 #include <boost/range.hpp>
 #include <sqlite3.h>
 
+#include "log.hpp"
+
 using namespace boost;
 namespace fs = boost::filesystem;
 
@@ -172,6 +174,7 @@ persistence_sqlite::retrieve (data_type type, chunk_coordinates xyz)
     auto rc (query.step());
     if (rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
+        log_msg("retrieve() %1% failed, error code %2%", (int)type, rc);
         std::stringstream msg;
         msg << "data type " << (int)type << " at " << xyz << ": " << err_str_(rc);
         throw not_in_storage_error(msg.str());
@@ -196,8 +199,9 @@ persistence_sqlite::retrieve (map_coordinates xy)
     auto rc (query.step());
     if (rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
+        log_msg("retrieve() height failed, error code %1%", rc);
         std::stringstream msg;
-        msg << "coarse map height at " << xy << ": " << err_str_(rc);
+        msg << "heigtmap at " << xy << ": " << err_str_(rc);
         throw not_in_storage_error(msg.str());
     }
 
@@ -223,6 +227,7 @@ persistence_sqlite::is_available (data_type type, chunk_coordinates xyz)
     int rc (query.step());
     if (rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
+        log_msg("is_available() failed, data type %1%, error code %2%", (int)type, rc);
         assert(false); // Not unrecoverable, but shouldn't happen.
         return false;
     }
@@ -246,6 +251,7 @@ persistence_sqlite::is_available (data_type type, map_coordinates xy)
     int rc (query.step());
     if (rc != SQLITE_DONE && rc != SQLITE_ROW)
     {
+        log_msg("is_available() failed, data type %1%, error code %2%", (int)type, rc);
         assert(false); // Not unrecoverable, but shouldn't happen.
         return false;
     }

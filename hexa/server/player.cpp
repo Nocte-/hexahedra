@@ -24,12 +24,12 @@
 namespace hexa {
 
 player::player()
-    : entity(0xfffffff)
+    : conn(nullptr)
+    , entity(0xfffffff)
     , last_move_speed(0x00)
     , last_move_dir(0xff)
     , last_button_mask(0x00)
     , selected_hotbar(0)
-	, conn(0)
 {
 }
 

@@ -27,6 +27,8 @@
 #include <boost/thread/locks.hpp>
 #include <boost/format.hpp>
 
+#include "log.hpp"
+
 using boost::format;
 
 #ifdef __MINGW32__
@@ -64,6 +66,7 @@ void trace_impl(const char* func, const char* file, unsigned int line,
 {
     boost::lock_guard<boost::mutex> g (debug_trace_mutex);
     std::cout << file << ':' << line << " (" << func << ") : " << msg << std::endl;
+    log_msg("%1%:%2%  %3%", file, line, msg);
 }
 
 void trace_impl_s(const char* func, const char* file, unsigned int line,
@@ -72,6 +75,8 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
     boost::lock_guard<boost::mutex> g (debug_trace_mutex);
     std::cout << file << ':' << line << " (" << func << ") : "
         << (format(msg) % a).str() << std::endl;
+
+    log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
 }
 
 void trace_impl_s(const char* func, const char* file, unsigned int line,
@@ -81,6 +86,8 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
     boost::lock_guard<boost::mutex> g (debug_trace_mutex);
     std::cout << file << ':' << line << " (" << func << ") : "
         << (format(msg) % a % b).str() << std::endl;
+
+    log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
 }
 
 

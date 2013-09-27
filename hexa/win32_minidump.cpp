@@ -19,6 +19,9 @@
 // Copyright 2011, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
+#include "win32_minidump.hpp"
+
+// Checking for _MSC_VER instead of Win32, since MinGW doesn't support this.
 #ifdef _MSC_VER
 
 #include <boost/format.hpp>
@@ -81,7 +84,7 @@ void setup_minidump(const std::string& appname)
     SetUnhandledExceptionFilter(GenerateDump);
 }
 
-#else
+#else // ifdef MSC_VER
 
 void setup_minidump(const std::string&) {} 
 

@@ -305,7 +305,7 @@ void scene::build_mesh(chunk_coordinates pos)
 
     {
     auto lmi (plm->opaque.begin());
-    auto check (surfaces->opaque.size());
+    auto check (surfaces->opaque.size()); (void)check;
     for(const faces& f : surfaces->opaque)
     {
         assert(surfaces->opaque.size() == check);

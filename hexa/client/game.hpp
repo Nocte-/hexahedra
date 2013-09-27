@@ -27,6 +27,7 @@
 #include <vector>
 #include <SFML/Graphics.hpp>
 #include "../algorithm.hpp"
+#include "../compiler_fix.hpp"
 #include "../vector2.hpp"
 #include "keycodes.hpp"
 
