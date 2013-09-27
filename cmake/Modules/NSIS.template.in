@@ -116,7 +116,7 @@ Var AR_RegFlags
  "exit_${SecName}:"
 !macroend
 
-!macro RemoveSection SecName
+!macro RemoveSection_CPack SecName
   ;  This macro is used to call section's Remove_... macro
   ;from the uninstaller.
   ;Input: section index constant name specified in Section command.
@@ -534,9 +534,8 @@ FunctionEnd
 
 ;--------------------------------
 ; Define some macro setting for the gui
-!define MUI_ICON "..\..\..\..\install\hexahedra.ico"
-!define MUI_HEADERIMAGE_BITMAP "..\..\..\..\install\nsis-header.bmp"
-!define MUI_WELCOMEFINISHPAGE_BITMAP "..\..\..\..\install\nsis-welcome.bmp"
+!define MUI_HEADERIMAGE_BITMAP "@CPACK_NSIS_MUI_HEADERIMAGE_BITMAP@"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "@CPACK_NSIS_MUI_WELCOMEFINISHPAGE_BITMAP@"
 !define MUI_FINISHPAGE_RUN "$INSTDIR\hexahedra.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Launch Hexahedra"
 
@@ -843,7 +842,7 @@ Section "Uninstall"
   DeleteRegKey SHCTX "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
 
   ; Removes all optional components
-  !insertmacro SectionList "RemoveSection"
+  !insertmacro SectionList "RemoveSection_CPack"
 
   !insertmacro MUI_STARTMENU_GETFOLDER Application $MUI_TEMP
 
