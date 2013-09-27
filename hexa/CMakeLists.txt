@@ -25,7 +25,7 @@ add_library(${LIBNAME} STATIC ${SOURCE_FILES} ${HEADER_FILES})
 
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES} ${SQLITE3_LIBRARY})
 
-if(NOT MSYS)
+if(LINUX)
     target_link_libraries(${LIBNAME} dl)
 endif()
 

@@ -24,7 +24,7 @@
 
 #include <unordered_set>
 #include <boost/asio.hpp>
-#include <boost/signal.hpp>
+#include <boost/signals2.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
@@ -84,7 +84,7 @@ public:
     void set_view_distance(unsigned int dist);
 
 public:
-    boost::signal<void(double)> on_tick;
+    boost::signals2::signal<void(double)> on_tick;
     void   bg_thread();
     void   network_thread();
 

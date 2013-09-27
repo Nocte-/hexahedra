@@ -46,7 +46,12 @@ public:
 public:
     compressed_data() : unpacked_len(0) { }
 
-    compressed_data(compressed_data&&) = default;
+	compressed_data(compressed_data&& m)
+		: buf(std::move(m.buf))
+		, unpacked_len(m.unpacked_len)
+	{
+		m.unpacked_len = 0;
+	}
 
     compressed_data& operator= (compressed_data&& m)
     {
@@ -54,6 +59,7 @@ public:
         {
             buf = std::move(m.buf);
             unpacked_len = m.unpacked_len;
+			m.unpacked_len = 0;
         }
         return *this;
     }

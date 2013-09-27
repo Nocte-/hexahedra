@@ -240,8 +240,6 @@ private:
     float thetas_;
     /// CIE color at the zenith
     color zenith_color_;
-    /// Luminance conversion for an eye adapted to screen luminance (40 cd/m2)
-    float eye_luminance_;
     /// Distribution coefficients
     color A, B, C, D, E;
     /// Precomputed term

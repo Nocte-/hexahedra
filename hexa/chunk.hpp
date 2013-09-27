@@ -27,6 +27,7 @@
 #include <boost/thread/mutex.hpp>
 #include "block_types.hpp"
 #include "chunk_base.hpp"
+#include "compiler_fix.hpp"
 #include "serialize.hpp"
 
 namespace hexa {

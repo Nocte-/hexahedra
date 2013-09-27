@@ -42,7 +42,7 @@ namespace hexa {
 class game;
 class player;
 class hud;
-class event;
+struct event;
 
 /** Interface for rendering backends. */
 class renderer_i

@@ -27,6 +27,7 @@
 #include <boost/utility.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <hexa/compiler_fix.hpp>
 
 namespace hexa {
 namespace gl {
@@ -60,6 +61,7 @@ public:
         : id_ (move.id_), count_ (move.count_)
     {
         move.id_ = 0;
+		move.count_ = 0;
     }
 
     vbo& operator= (vbo&& move) noexcept;

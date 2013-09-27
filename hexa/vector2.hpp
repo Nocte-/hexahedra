@@ -276,6 +276,16 @@ struct hash <hexa::vector2<type>>
         { return v.x ^ (v.y << 9) ^ (v.y >> 21); }
 };
 
+template <>
+struct hash <hexa::vector2<uint8_t>>
+	: public std::unary_function<hexa::vector2<uint8_t>, size_t>
+{
+	size_t operator() (const hexa::vector2<uint8_t>& v) const
+	{
+		return v.x + (uint16_t(v.y) << 8);
+	}
+};
+
 
 /** Print a vector2 to a stream. */
 template <typename type> inline

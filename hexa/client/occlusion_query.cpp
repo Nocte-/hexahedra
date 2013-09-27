@@ -27,6 +27,7 @@
 #include <GL/glu.h>
 
 #include "opengl.hpp"
+#include <hexa/log.hpp>
 
 namespace hexa {
 

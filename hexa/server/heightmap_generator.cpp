@@ -127,7 +127,7 @@ struct heightmap_generator::impl
 
 heightmap_generator::heightmap_generator (world& w, const ptree& conf)
     : area_generator_i (w, conf)
-    , pimpl_ (make_unique<impl>(conf))
+    , pimpl_(std::make_unique<impl>(conf))
 { }
 
 heightmap_generator::~heightmap_generator()

@@ -58,10 +58,10 @@ struct event
     {
         key             keycode;
         uint32_t        code;
-        vector2<float>  xy;
         axis_info       axis;
         int             delta;
     };
+	vector2<float>  xy;
 
     event(ev_type t) : type (t) {}
     event(ev_type t, uint32_t c) : type (t), code (c) {}

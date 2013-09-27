@@ -545,7 +545,10 @@ world::update (chunk_coordinates cp)
     storage_.store(cp, srfc);
     storage_.store(cp, lm);
 
-    changeset.insert(cp);
+    {
+        boost::lock_guard<boost::mutex> lock(changeset_lock);
+        changeset.insert(cp);
+    }
 }
 
 void
@@ -804,7 +807,10 @@ world::set_coarse_height(chunk_coordinates cp, chunk_height coarse_h)
     auto new_h (adjust_chunk_height(cp, coarse_h));
     trace("setting coarse height map %1% (was %2%)", new_h, coarse_h);
     storage_.store(map_coordinates(cp), new_h);
-    height_changeset.insert(cp);
+    {
+        boost::lock_guard<boost::mutex> lock (height_changeset_lock);
+        height_changeset.insert(cp);
+    }
 }
 
 void

@@ -73,9 +73,9 @@ fs::path app_user_dir()
 
     // Not using SHGet(Known)FolderPath here because of MinGW.
 
-    auto env (::getenv("LOCALAPPDATA"));
+    auto env (::getenv("APPDATA"));
     if (!env)
-        throw std::runtime_error("%LOCALAPPDATA% not set");
+        throw std::runtime_error("%APPDATA% not set");
 
     result = fs::path(env) / "Hexahedra";
 

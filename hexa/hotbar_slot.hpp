@@ -49,6 +49,7 @@ struct hotbar_slot
         : type (type_)
         , name (name_)
         , counter (0xffff)
+		, progress_bar (0)
         , can_drag (false)
         , cooldown (0)
     { }

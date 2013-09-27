@@ -22,24 +22,34 @@
 #ifdef _MSC_VER
 
 #include <boost/format.hpp>
+#include <boost/filesystem/operations.hpp>
+
 #include <Windows.h>
 #include <dbghelp.h>
 #include <shellapi.h>
 #include <shlobj.h>
 
-using namespace boost;
+#include "os.hpp"
 
 #pragma comment(lib, "dbghelp.lib")
+
+using namespace boost;
+
+namespace {
+    std::string appname_;
+}
 
 LONG WINAPI GenerateDump(EXCEPTION_POINTERS* pointers)
 {
     SYSTEMTIME local_time;
     MINIDUMP_EXCEPTION_INFORMATION param;
-
+    boost::filesystem::create_directory(hexa::app_user_dir());
     GetLocalTime(&local_time);
     
     std::string filename (
-        (format("hexaclient-%04d%02d%02d-%02d%02d%0d2.dmp")
+        (format("%s\\%s-%04d%02d%02d-%02d%02d%0d2.dmp")
+          % hexa::app_user_dir().string()
+          % appname_
           % local_time.wYear % local_time.wMonth % local_time.wDay
           % local_time.wHour % local_time.wMinute % local_time.wSecond).str());
 
@@ -47,31 +57,33 @@ LONG WINAPI GenerateDump(EXCEPTION_POINTERS* pointers)
     param.ExceptionPointers = pointers;
     param.ClientPointers = TRUE;
 
-	HANDLE hFile = CreateFile( filename.c_str(), GENERIC_READ | GENERIC_WRITE, 
+	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 
 							  0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL ); 
 
-    BOOL success (MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
-                                    hFile,
-                                    MiniDumpWithProcessThreadData, &param,
-                                    nullptr, nullptr));
+    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
+                      hFile,
+                      MiniDumpWithProcessThreadData, &param,
+                      nullptr, nullptr);
 
-    MessageBox(0, "Something went terribly, terribly wrong.  The folder that "
-                  "contains hexaclient.exe now also contains a *.dmp file.  "
-                  "You can help fixing this bug by sending this file to " 
-                  "hexahedra.maintainer@gmail.com .  Thanks!", 
-                  "Hexahedra client", MB_ICONWARNING);
+    std::string msg((format("Something went terribly, terribly wrong.  "
+        "Information about this crash has been saved to a dump file: \n%s\n\n"
+        "You can help fixing this bug by sending this file to "
+        "hexahedra.maintainer@gmail.com .  Thanks!") % filename).str());
+ 
+    MessageBox(0, msg.c_str(), "Hexahedra", MB_ICONWARNING);
 
     return EXCEPTION_EXECUTE_HANDLER;
 }
 
-void setup_minidump()
+void setup_minidump(const std::string& appname)
 {
+    appname_ = appname;
     SetUnhandledExceptionFilter(GenerateDump);
 }
 
 #else
 
-void setup_minidump() {} 
+void setup_minidump(const std::string&) {} 
 
 #endif
 

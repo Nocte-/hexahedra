@@ -388,7 +388,7 @@ void sfml_ogl2::prepare(const player& plr)
         textures_ready_ = false;
     }
 
-    sky_color(color(0.56, 0.67, 1.0));
+    sky_color(color(0.56f, 0.67f, 1.0f));
     sfml::prepare(plr);
     move_player(plr.chunk_position());
     boost::range::for_each(process_vbo_queue(), [&](chunk_coordinates c)
@@ -400,7 +400,7 @@ void sfml_ogl2::prepare(const player& plr)
 
 void sfml_ogl2::opaque_pass()
 {
-    static const float fog_color[4] = { 0.56, 0.67, 1.0, 1.0 };
+    static const float fog_color[4] = { 0.56f, 0.67f, 1.0f, 1.0f };
 
     if (!texture_atlas_)
         return;

@@ -59,7 +59,7 @@ public:
     template <typename t, typename... args>
     std::unique_ptr<game_state> make_state(args&&... parameters)
     {
-        return make_unique<t>(*this, std::forward<args>(parameters)...);
+        return std::make_unique<t>(*this, std::forward<args>(parameters)...);
     }
 
     sf::RenderWindow& window() { return window_; }

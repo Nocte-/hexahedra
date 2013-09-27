@@ -56,8 +56,8 @@ bool f (uint16_t t)
 
 sun_lightmap::sun_lightmap (storage_i& c, const ptree& conf)
     : lightmap_generator_i (c, conf)
-    , direction_ (-0.4, 0.75)
-    , radius_    (3.0 * 0.01745)
+    , direction_ (-0.4f, 0.75f)
+    , radius_    (3.0f * 0.01745f)
 {
     detail_levels_.emplace_back(generate(10, 0));
     detail_levels_.emplace_back(generate(60, 1));

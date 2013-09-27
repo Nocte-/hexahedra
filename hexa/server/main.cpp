@@ -80,7 +80,7 @@ static std::string default_db_path()
     return (app_user_dir() / fs::path(SERVER_DB_PATH)).string();
 }
 
-std::atomic_bool lolquit (false);
+std::atomic<bool> lolquit (false);
 void physics (server_entity_system& s, storage_i& terrain)
 {
     using namespace boost::chrono;
@@ -209,7 +209,7 @@ void print_opencl()
 
 int main (int argc, char* argv[])
 {
-    setup_minidump();
+    setup_minidump("hexahedra-server");
     auto& vm (global_settings);
     print_opencl();
 
@@ -263,7 +263,7 @@ int main (int argc, char* argv[])
     std::ofstream logfile;
     if (vm["log"].as<bool>())
     {
-        logfile.open((temp_dir() / "hexahedra-server_log.txt").string());
+        logfile.open((app_user_dir() / "hexahedra-server_log.txt").string());
         if (logfile)
         {
             set_log_output(logfile);

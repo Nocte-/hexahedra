@@ -29,6 +29,7 @@
 #include <vector>
 
 #include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
 
 #include <es/storage.hpp>
 
@@ -78,7 +79,8 @@ public:
 
     public:
         exclusive_section(const exclusive_section&) = delete;
-        exclusive_section(exclusive_section&&) = default;
+		exclusive_section(exclusive_section&& m) : subsection<chunk_ptr>(std::move(m)), locked_(std::move(m.locked_)) { }
+
         ~exclusive_section();
 
     protected:
@@ -159,7 +161,9 @@ public:
 
 
     std::unordered_set<chunk_coordinates> changeset;
+    boost::mutex                          changeset_lock;
     std::unordered_set<map_coordinates>   height_changeset;
+    boost::mutex                          height_changeset_lock;
 
 protected:
     block get_block_nolocking(world_coordinates pos);

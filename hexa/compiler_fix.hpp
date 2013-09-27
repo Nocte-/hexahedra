@@ -26,6 +26,7 @@
 
 #elif (defined(_MSC_VER))
 #  define constexpr const
+#  define noexcept 
 
 #elif (defined(__GNUC__))
 

@@ -36,7 +36,8 @@ namespace hexa {
 template<typename type, typename... args>
 std::unique_ptr<type> make_unique(args&&... params)
 {
-    return std::unique_ptr<type>(new type(std::forward<args>(params)...));
+    //return std::unique_ptr<type>(new type(std::forward<args>(params)...));
+    return std::make_unique<type>(params);
 }
 
 /** Round a number to the nearest integer. */

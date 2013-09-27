@@ -458,7 +458,7 @@ void sfml::prepare(const player& plr)
         colors.push_back(xyY_to_srgb(t));
     }
 
-    color amb (pretty(normalize(vector(1, 1, 0.4))));
+    color amb (pretty(normalize(vector(1.0f, 1.0f, 0.4f))));
 
     amb.Y() *= 2.5f;
     amb.x() -= 0.33f;

@@ -33,13 +33,13 @@ void check_error(const char* file, unsigned int line)
     if (errorCode == GL_NO_ERROR)
         return;
 
-    std::string fileString (file);
     std::string error ("unknown error");
     std::string description;
 
     switch (errorCode)
     {
         case GL_INVALID_ENUM:
+            return; // too many false positives on virtualbox
             error = "GL_INVALID_ENUM";
             description = "an unacceptable value has been specified for an enumerated argument";
             break;

@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <cstdint>
 #include <boost/utility.hpp>
+#include <hexa/compiler_fix.hpp>
 
 namespace hexa {
 

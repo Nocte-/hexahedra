@@ -23,7 +23,6 @@
 #pragma once
 
 #include <stdexcept>
-#include <boost/signal.hpp>
 #include <boost/thread/mutex.hpp>
 #include "basic_types.hpp"
 #include "compression.hpp"

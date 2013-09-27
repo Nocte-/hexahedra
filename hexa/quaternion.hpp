@@ -44,7 +44,6 @@ public:
     using base::z;
     using base::w;
 
-    using base::operator=;
     using base::operator==;
     using base::operator!=;
     using base::operator+=;
@@ -137,6 +136,12 @@ public:
     }
 
 public:
+	self& operator= (const self& a)
+	{
+		base::operator=(a);
+		return *this;
+	}
+
     self& operator*= (const self& b)
     {
         return *this = self(

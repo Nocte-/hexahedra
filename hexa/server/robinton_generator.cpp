@@ -1305,7 +1305,7 @@ struct robinton_generator::impl
 
         int mcx (  int(pos.x) - origin_.x);
         int mcy (0);
-        int mcz (-(int(pos.y) - origin_.y));
+        int mcz (-(int(pos.y - origin_.y)));
 
         //boost::mutex::scoped_lock lock (lock_);
         bool any (false);
@@ -1362,7 +1362,7 @@ struct robinton_generator::impl
 
         int mcx (   int(pos.x) - origin_.x);
         int mcy (   int(pos.z) - origin_.z);
-        int mcz (- (int(pos.y) - origin_.y));
+        int mcz (- (int(pos.y  - origin_.y)));
 
         chunk_coordinates mapped (pos.x, pos.y, pos.z);
 
@@ -1438,10 +1438,12 @@ struct robinton_generator::impl
         }
         catch (bad_region& e)
         {
+			(void) e;
             trace("Bad minecraft region: %1%", std::string(e.what()));
         }
         catch (std::exception& e)
         {
+			(void) e;
             trace("Exception: %1%", std::string(e.what()));
         }
     }

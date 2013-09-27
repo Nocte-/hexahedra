@@ -22,7 +22,7 @@
 
 #pragma once
 
-#include <boost/signal.hpp>
+#include <boost/signals2.hpp>
 #include <boost/thread/mutex.hpp>
 #include "terrain_source_i.hpp"
 #include "compression.hpp"
@@ -88,11 +88,11 @@ public:
 
 public:
     /// Signal for updated chunks.
-    boost::signal<void(const chunk_coordinates&, chunk_ptr)>
+    boost::signals2::signal<void(const chunk_coordinates&, chunk_ptr)>
         on_update_chunk;
 
     /// Signal for updated lightmaps.
-    boost::signal<void(const chunk_coordinates&, lightmap_ptr)>
+    boost::signals2::signal<void(const chunk_coordinates&, lightmap_ptr)>
         on_update_lightmap;
 
     /// 

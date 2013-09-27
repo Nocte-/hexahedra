@@ -28,7 +28,11 @@
 #include <functional>
 #include <boost/noncopyable.hpp>
 #include <boost/filesystem/path.hpp>
-#include <sqlite3.h>
+#ifdef _WIN32
+#  include "../../sqlite/sqlite3.h"
+#else
+#  include <sqlite3.h>
+#endif
 
 namespace hexa {
 namespace sql {

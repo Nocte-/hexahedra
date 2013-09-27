@@ -18,6 +18,7 @@ set(BOOST_THREAD_LIBNAME thread)
 set(RC_OBJ_FILE "")
 if(WIN32)
   set(ADDITIONAL_BOOST_LIBS regex)
+  set(SFML_STATIC_LIBRARIES)
   set(ADDITIONAL_SFML_LIBS main)
   set(RC_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../install/hexahedra-client.rc)
   if(MINGW)
@@ -27,10 +28,12 @@ if(WIN32)
                          COMMAND ${CMAKE_RC_COMPILER} -I{CMAKE_CURRENT_SOURCE_DIR}
                          -i${RC_FILE} -o${RC_OBJ_FILE}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+  else()
+     set(RC_OBJ_FILE ${RC_FILE})   
   endif()
 endif()
 
-add_executable(${EXE} main.cpp ${RC_OBJ_FILE} ${HEADER_FILES})
+add_executable(${EXE} WIN32 main.cpp ${RC_OBJ_FILE} ${HEADER_FILES})
 
 find_package(Boost 1.50 REQUIRED COMPONENTS chrono date_time iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
 find_package(SFML 2 REQUIRED COMPONENTS graphics window system ${ADDITIONAL_SFML_LIBS})
@@ -38,7 +41,12 @@ find_package(SFML 2 REQUIRED COMPONENTS graphics window system ${ADDITIONAL_SFML
 include_directories(${Boost_INCLUDE_DIRS} ${SFML_INCLUDE_DIR})
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES} ${SFML_LIBRARIES})
 
-foreach (LIB GLEW OpenGL CryptoPP ENet Rhea ES)
+set(NEED_GLEW "")
+if(NOT SFML_STATIC_LIBRARIES)
+    set(NEED_GLEW "GLEW")
+endif()
+
+foreach (LIB ${NEED_GLEW} OpenGL CryptoPP ENet ES)
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)
     include_directories(${${ULIB}_INCLUDE_DIR})
@@ -51,7 +59,7 @@ target_link_libraries(${LIBNAME} ${OPENGL_gl_LIBRARY})
 target_link_libraries(${LIBNAME} ${OPENGL_glu_LIBRARY})
 
 if(WIN32)
-  target_link_libraries(${LIBNAME} ws2_32 winmm freetype jpeg png z bz2)
+  target_link_libraries(${LIBNAME} ws2_32 winmm)
 endif()
 
 if(SFML_STATIC_LIBRARIES)

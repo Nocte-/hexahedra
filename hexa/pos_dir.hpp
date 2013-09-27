@@ -76,7 +76,7 @@ public:
     bool operator[] (uint8_t dir) const
     { 
         assert(valid());
-        return dirs & (1 << dir); 
+        return (dirs & (1 << dir)) != 0; 
     }
 
     std::vector<direction_type> directions() const

@@ -33,7 +33,7 @@ class Event;
 
 namespace hexa {
 
-class event;
+struct event;
 
 /** Base class for game states.
  * Games usually have a few high-level states, such as a title screen, a
@@ -44,6 +44,11 @@ class game_state
 public:
     struct transition
     {
+		transition() : state(nullptr), replace_current(false) { }
+		transition(transition&& m) : state(std::move(m.state)), replace_current(m.replace_current) { }
+		transition(std::unique_ptr<game_state>&& s, bool r) : state(std::move(s)), replace_current(r) { }
+		transition(const transition&) = delete;
+
         std::unique_ptr<game_state>     state;
         bool                            replace_current;
     };

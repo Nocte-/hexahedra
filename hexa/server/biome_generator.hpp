@@ -29,7 +29,7 @@ namespace hexa {
 
 class biome_generator : public area_generator_i
 {
-    struct impl;
+    class impl;
     std::unique_ptr<impl> pimpl_;
 
 public:

@@ -49,7 +49,7 @@ void soil_generator::generate(chunk_coordinates pos, chunk& dest)
 
     auto sm  (w_.get_area_data(pos, surfacemap_));
 
-    chunk_coordinates bot ();
+    chunk_coordinates bot;
     auto region (w_.lock_region({pos + world_vector(0, 0, -1), pos}, *this));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
 

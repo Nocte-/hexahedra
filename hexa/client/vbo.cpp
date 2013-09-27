@@ -25,6 +25,7 @@
 #include <stdexcept>
 #include <boost/format.hpp>
 
+#include <hexa/log.hpp>
 #include "opengl.hpp"
 
 using boost::format;

@@ -37,7 +37,7 @@ namespace hexa {
 #ifdef NDEBUG
 #  define trace(...) ((void)0)
 #else
-#  define trace(...) (trace_impl(__func__, __FILE__, __LINE__, __VA_ARGS__))
+#  define trace(...) (trace_impl(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__))
 
 void trace_impl(const char* func, const char* file, unsigned int line,
                 const std::string& msg);

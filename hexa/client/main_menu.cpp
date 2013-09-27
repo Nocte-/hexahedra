@@ -64,8 +64,8 @@ void setup_dl()
     const double cb (0.12), cv (0.026);
 
     cubes = glGenLists(1);
-    glCheck(glNewList(cubes, GL_COMPILE));
-    glCheck(glBegin(GL_TRIANGLES));
+    glNewList(cubes, GL_COMPILE);
+    glBegin(GL_TRIANGLES);
     for (int i (0); i < 2000; ++i)
     {
         double a (random() * 3.14159 * 2.);
@@ -75,7 +75,7 @@ void setup_dl()
               y (2 * std::floor(std::cos(a) * d)),
               z (2 * std::floor(random() * 100. - 50.));
 
-        glCheck(glColor4f(cb - random() * cv, cb - random() * cv, cb - random() * cv, 1));
+        glColor4f(cb - random() * cv, cb - random() * cv, cb - random() * cv, 1);
 
         // front faces
         glNormal3f(0,0,1);
@@ -142,10 +142,9 @@ void setup_dl()
         glVertex3f(-1+x,1+y,-1+z);
         glVertex3f(1+x,1+y,-1+z);
         glVertex3f(1+x,-1+y,-1+z);
-
     }
-    glCheck(glEnd());
-    glCheck(glEndList());
+    glEnd();
+    glEndList();
 }
 
 void cleanup()
@@ -167,7 +166,7 @@ void cleanup()
 main_menu::main_menu(game& the_game)
     : game_state(the_game)
     , servers_(get_server_list("http://hexahedra.net/server_list.json"))
-    , logo_img_(*images("menu_logo"))
+    , logo_img_(images("menu_logo") ? *images("menu_logo") : sf::Texture())
     , logo_(logo_img_)
     , copyright_("Copyright (C) 2013, Nocte", font_, 14)
     , time_(0)
@@ -267,11 +266,11 @@ game_state::transition main_menu::next_state() const
     window().popGLStates();
 
     if (exit_)
-        return { nullptr, false };
+        return game_state::transition();
 
     auto view_dist (global_settings["viewdist"].as<unsigned int>());
 
-    return { make_unique<main_game>(game_, host_, port_, view_dist), false };
+    return game_state::transition(std::make_unique<main_game>(game_, host_, port_, view_dist), false);
 }
 
 void main_menu::render()

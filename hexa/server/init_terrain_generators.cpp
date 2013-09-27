@@ -64,10 +64,10 @@ void init_terrain_gen (world& w, const ptree& config)
         try
         {
             if (module == "standard_heightmap")
-                w.add_area_generator(make_unique<heightmap_generator>(w, info));
+                w.add_area_generator(std::make_unique<heightmap_generator>(w, info));
 
             else if (module == "biome")
-                w.add_area_generator(make_unique<biome_generator>(w, info));
+                w.add_area_generator(std::make_unique<biome_generator>(w, info));
 
             else
                 std::cout << "Warning: unknown area module " << module << std::endl;
@@ -87,31 +87,31 @@ void init_terrain_gen (world& w, const ptree& config)
         try
         {
             if (module == "anvil")
-                w.add_terrain_generator(make_unique<anvil_generator>(w, info));
+				w.add_terrain_generator(std::make_unique<anvil_generator>(w, info));
 
             else if (module == "binvox")
-                w.add_terrain_generator(make_unique<binvox_world_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<binvox_world_generator>(w, info));
 
             else if (module == "flat")
-                w.add_terrain_generator(make_unique<flatworld_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<flatworld_generator>(w, info));
 
             else if (module == "robinton")
-                w.add_terrain_generator(make_unique<robinton_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<robinton_generator>(w, info));
 
             else if (module == "standard")
-                w.add_terrain_generator(make_unique<standard_world_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<standard_world_generator>(w, info));
 
             else if (module == "ocean")
-                w.add_terrain_generator(make_unique<ocean_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<ocean_generator>(w, info));
 
             else if (module == "topsurface")
-                w.add_terrain_generator(make_unique<surface_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<surface_generator>(w, info));
 
             else if (module == "soil")
-                w.add_terrain_generator(make_unique<soil_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<soil_generator>(w, info));
 
             else if (module == "trees")
-                w.add_terrain_generator(make_unique<tree_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<tree_generator>(w, info));
 
             else
                 std::cout << "Warning: unknown terrain module " << module << std::endl;
@@ -131,22 +131,22 @@ void init_terrain_gen (world& w, const ptree& config)
         try
         {
             if (module == "ambient_occlusion")
-                w.add_lightmap_generator(make_unique<ambient_occlusion_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<ambient_occlusion_lightmap>(w, info));
 
             else if (module == "debug")
-                w.add_lightmap_generator(make_unique<test_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<test_lightmap>(w, info));
 
             else if (module == "lamp")
-                w.add_lightmap_generator(make_unique<lamp_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<lamp_lightmap>(w, info));
 
             else if (module == "radiosity")
-                w.add_lightmap_generator(make_unique<radiosity_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<radiosity_lightmap>(w, info));
 
             else if (module == "sun")
-                w.add_lightmap_generator(make_unique<sun_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<sun_lightmap>(w, info));
 
             else if (module == "uniform")
-                w.add_lightmap_generator(make_unique<uniform_lightmap>(w, info));
+                w.add_lightmap_generator(std::make_unique<uniform_lightmap>(w, info));
 
             else
                 std::cout << "Warning: unknown light module " << module << std::endl;

@@ -81,8 +81,10 @@ po::variables_map global_settings;
 
 int main (int argc, char* argv[])
 {
-    setup_minidump();
+    setup_minidump("hexahedra-client");
+#ifndef _WIN32
     std::setlocale(LC_ALL, "C.UTF-8");
+#endif
     trace("Trace on");
 
     auto& vm (global_settings);
@@ -156,7 +158,7 @@ int main (int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    std::ofstream logfile ((temp_dir() / "hexahedra_log.txt").string());
+    std::ofstream logfile((app_user_dir() / "hexahedra_log.txt").string());
     if (logfile)
     {
         set_log_output(logfile);

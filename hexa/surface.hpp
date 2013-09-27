@@ -70,7 +70,10 @@ public:
 public:
     surface_data () { }
     surface_data (surface o, surface t) : opaque(o), transparent(t) { }
-    surface_data (surface_data&&) = default;
+	surface_data(surface_data&& m)
+		: opaque(std::move(m.opaque))
+		, transparent(std::move(m.transparent))
+	{ }
 
     bool empty() const
         { return opaque.empty() && transparent.empty(); }

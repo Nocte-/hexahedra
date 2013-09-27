@@ -90,16 +90,21 @@ void network::run()
     {
         poll(5);
 
-        // Send updated terrain
-        for (chunk_coordinates c : world_.changeset)
-            send_surface(c);
+        {
+            boost::lock_guard<boost::mutex> lock(world_.changeset_lock);
+            for (chunk_coordinates c : world_.changeset)
+                send_surface(c);
 
-        world_.changeset.clear();
+            world_.changeset.clear();
+        }
 
-        for (map_coordinates c : world_.height_changeset)
-            send_coarse_height(c);
+        {
+            boost::lock_guard<boost::mutex> lock(world_.height_changeset_lock);
+            for (map_coordinates c : world_.height_changeset)
+                send_coarse_height(c);
 
-        world_.height_changeset.clear();
+            world_.height_changeset.clear();
+        }
 
         // Send changes in the entity system
         ++count;
@@ -295,7 +300,7 @@ void network::on_receive (ENetPeer* c, const packet& p)
         default:                            unknown     (info);
         }
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         log_msg("Lua error: %1%", lua_.get_error());
     }
@@ -405,7 +410,7 @@ void network::send_coarse_height(const map_coordinates& mpos)
     if (height == undefined_height)
         return;
 
-    log_msg("broadcast heightmap %1%", map_rel_coordinates(mpos - map_chunk_center));
+    trace("broadcast heightmap %1%", map_rel_coordinates(mpos - map_chunk_center));
 
     msg::heightmap_update heights;
     heights.data.emplace_back(mpos, height);
@@ -414,7 +419,7 @@ void network::send_coarse_height(const map_coordinates& mpos)
     {
         send(conn.second, serialize_packet(heights), heights.method());
     }
-    log_msg("broadcast heightmap %1% done", map_rel_coordinates(mpos - map_chunk_center));
+    trace("broadcast heightmap %1% done", map_rel_coordinates(mpos - map_chunk_center));
 }
 
 void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
@@ -491,7 +496,7 @@ void network::login (const packet_info& info)
     es_.set(info.plr, server_entity_system::c_name, msg.username);
     es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
     es_.set(info.plr, server_entity_system::c_velocity, vector(0,0,0));
-    es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4,0.4,1.7));
+    es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.7f));
     es_.set(info.plr, server_entity_system::c_lookat, yaw_pitch(0, 0));
     }
 
@@ -581,7 +586,7 @@ void network::login (const packet_info& info)
     posmsg.updates.push_back(rec);
 
     rec.component_id = entity_system::c_boundingbox;
-    rec.data = serialize_c(vector(0.4,0.4,1.7));
+    rec.data = serialize_c(vector(0.4f,0.4f,1.7f));
     posmsg.updates.push_back(rec);
 
     rec.component_id = entity_system::c_lookat;
@@ -611,7 +616,7 @@ void network::login (const packet_info& info)
         log_msg("inform player %1% of player %2%", info.plr, i->first);
         rec.entity_id = i->first;
         rec.component_id = entity_system::c_boundingbox;
-        rec.data = serialize_c(vector(0.4,0.4,1.7));
+        rec.data = serialize_c(vector(0.4f,0.4f,1.7f));
         posmsg.updates.push_back(rec);
         rec.component_id = entity_system::c_position;
         rec.data = serialize_c(wfpos(p_));
@@ -627,7 +632,7 @@ void network::login (const packet_info& info)
     {
         lua_.player_logged_in(info.plr);
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         log_msg("Lua error while logging in: %1%", lua_.get_error());
     }
@@ -676,7 +681,8 @@ void network::req_heights (const packet_info& info)
                 answer.data.emplace_back(req.position, height);
         }
         catch (std::exception& e)
-        {
+        { 
+            (void) e;
             trace("cannot provide height at %1%, because: %2%",
                   req.position, std::string(e.what()));
         }
@@ -752,7 +758,7 @@ void network::motion (const packet_info& info)
     trace("player %1% moves in direction %2%", info.plr, move);
     es_.set(info.plr, entity_system::c_walk, move * magnitude);
 
-    constexpr float lag (0.05);
+    constexpr float lag (0.05f);
     auto p (es_.get<wfpos>(info.plr, entity_system::c_position));
     auto v (es_.get<vector>(info.plr, entity_system::c_velocity));
     auto l (es_.get<yaw_pitch>(info.plr, entity_system::c_lookat));

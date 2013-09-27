@@ -39,12 +39,13 @@ public:
 
 public:
     model(const hexa::model& init);
-
+	/*
     model(const model&) = delete;
     model& operator= (const model&) = delete;
 
     model(model&&) = default;
     model& operator= (model&&) = default;
+	*/
 
     struct mesh
     {

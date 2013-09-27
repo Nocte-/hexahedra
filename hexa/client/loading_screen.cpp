@@ -83,7 +83,7 @@ void loading_screen::process_event (const event&)
 
 game_state::transition loading_screen::next_state() const
 {
-    return { nullptr, false };
+	return game_state::transition();
 }
 
 

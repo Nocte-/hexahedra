@@ -40,13 +40,13 @@ class model
 {
 public:
     model() {}
-
+	/*
     model(const model&) = delete;
     model& operator= (const model&) = delete;
 
     model(model&&) = default;
     model& operator= (model&&) = default;
-
+	*/
     //typedef ogl::vertex<vtx_xyz<>, vtx_uv<>, vtx_normal<>> vertex;
     typedef vertex_5<vtx_xyz<>, vtx_uv<>, vtx_normal<>,
                      vtx_normalized_array<uint8_t, 4>, // blend weights

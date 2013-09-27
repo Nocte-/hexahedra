@@ -1259,7 +1259,7 @@ struct anvil_generator::impl
 
         int mcx (  int(pos.x) - origin_.x);
         //int mcy (0);
-        int mcz (-(int(pos.y) - origin_.y));
+        int mcz (-(int(pos.y - origin_.y)));
 
         boost::mutex::scoped_lock lock (lock_);
         std::stringstream name;
@@ -1308,7 +1308,7 @@ struct anvil_generator::impl
 
         int mcx (   int(pos.x) - origin_.x);
         int mcy (   int(pos.z) - origin_.z);
-        int mcz (- (int(pos.y) - origin_.y));
+        int mcz (- (int(pos.y - origin_.y)));
 
         world_coordinates mapped (pos.x, pos.y, pos.z);
 
@@ -1373,7 +1373,7 @@ struct anvil_generator::impl
         {
             std::cout << "Bad minecraft region: " << e.what() << std::endl;
         }
-        catch (std::exception& e)
+        catch (std::exception&)
         {
             //std::cout << "Exception " << e.what() << std::endl;
         }

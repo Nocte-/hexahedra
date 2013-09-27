@@ -368,7 +368,7 @@ lua::lua(server_entity_system& entities, world &w)
             .def(constructor<const world_coordinates&, const world_coordinates&>())
             .def_readwrite("first", &aabb<world_coordinates>::first)
             .def_readwrite("second", &aabb<world_coordinates>::second)
-            .def_readonly("is_correct", &aabb<world_coordinates>::is_correct)
+//            .def_readonly("is_correct", &aabb<world_coordinates>::is_correct)
             .def("make_correct", &aabb<world_coordinates>::make_correct)
             ,
             /*
@@ -667,7 +667,7 @@ void lua::on_approach(const world_coordinates& p, unsigned int radius_on,
         call_function<void>(callback, plr);
 
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -683,7 +683,7 @@ void lua::on_login(const object& callback)
     {
         cb_on_login.push_back(callback);
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -703,7 +703,7 @@ void lua::on_component_change(int component_id, const object& callback)
         auto& c (registered_components[component_id]);
         c.on_change.push_back(callback);
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -719,7 +719,7 @@ void lua::on_console(const object& callback)
     {
         cb_console.push_back(callback);
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -737,7 +737,7 @@ void lua::player_logged_in(es::entity plr)
         for (auto& callback : cb_on_login)
             call_function<void>(callback, temp);
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -756,7 +756,7 @@ void lua::on_action(int type, const object& callback)
         else
             std::cerr << "No valid callback for action " << type << std::endl;
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }
@@ -772,7 +772,7 @@ void lua::on_stop_action(int type, const object& callback)
     {
         cb_stop_action[type] = callback;
     }
-    catch (luabind::error& e)
+    catch (luabind::error&)
     {
         std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
     }

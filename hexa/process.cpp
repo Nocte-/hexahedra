@@ -151,7 +151,6 @@ start_process (const boost::filesystem::path &exe,
 
     // Set up a Job, so the child process is ended after the parent
     // exits.
-    /*
     HANDLE job_obj (CreateJobObject(0, 0));
     if (job_obj)
     {
@@ -174,7 +173,6 @@ start_process (const boost::filesystem::path &exe,
     {
         log_msg("Cannot create JobObject, child process might not exit.");
     }
-    */
 
     return proc_info;
 }

@@ -70,9 +70,12 @@ using namespace boost;
 using namespace boost::math::float_constants;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+
 using boost::format;
 
 namespace hexa {
+
+extern po::variables_map global_settings;
 
 main_game::main_game (game& the_game, const std::string& host, uint16_t port,
                       unsigned int vd)
@@ -97,7 +100,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
             log_msg("Launching server...");
             fs::path dir (executable_path().parent_path());
             log_msg("Path is %1%", dir);
-            server_process_ = start_process(dir / "hexahedra-server", { });
+            server_process_ = start_process(dir / "hexahedra-server", std::vector<std::string>());
             log_msg("Done.");
             boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
         }
@@ -107,13 +110,13 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
                     e.what());
         }
     }
-
-    hud_.console_message(u8"Testing UTF-8 text... \u00A9 \u00C6 \u0270 \u03C1");
-    hud_.time_tick(1);
-    hud_.console_message(u8"это русский текст");
-    hud_.time_tick(1);
-    hud_.console_message(u8"Español Straße Türkçe ελληνικά");
-
+	
+    //hud_.console_message(u8"Testing UTF-8 text... \u00A9 \u00C6 \u0270 \u03C1");
+    //hud_.time_tick(1);
+    //hud_.console_message(u8"это русский текст");
+    //hud_.time_tick(1);
+    //hud_.console_message(u8"Español Straße Türkçe ελληνικά");
+	
     game_.relative_mouse(true);
     setup_renderer();
     setup_world(host, port);
@@ -153,8 +156,6 @@ main_game::~main_game()
 
 void main_game::setup_world (const std::string& host, uint16_t port)
 {
-    extern po::variables_map global_settings;
-
     fs::path user_dir (global_settings["userdir"].as<std::string>());
     fs::path data_dir (global_settings["datadir"].as<std::string>());
     fs::path db_setup (data_dir / "dbsetup.sql");
@@ -172,12 +173,12 @@ void main_game::setup_world (const std::string& host, uint16_t port)
     }
 
     if (singleplayer_)
-        aux_ = make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
+        aux_ = std::make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
         //aux_ = make_unique<persistence_null>();
     else
-        aux_ = make_unique<persistence_sqlite>(io_, db, db_setup);
+        aux_ = std::make_unique<persistence_sqlite>(io_, db, db_setup);
 
-    world_ = make_unique<memory_cache>(*aux_);
+    world_ = std::make_unique<memory_cache>(*aux_);
 }
 
 void main_game::setup_renderer()
@@ -198,15 +199,14 @@ void main_game::setup_renderer()
         || global_settings.count("ogl2"))
     {
         // OpenGL 1.5 or 2.x
-        renderer_ = make_unique<sfml_ogl2>(window());
+        renderer_ = std::make_unique<sfml_ogl2>(window());
     }
     else
     {
         // OpenGL 3 or newer
-        renderer_ = make_unique<sfml_ogl3>(window());
+        renderer_ = std::make_unique<sfml_ogl3>(window());
     }
 }
-
 
 void main_game::set_view_distance(unsigned int d)
 {
@@ -398,7 +398,7 @@ void main_game::process_event_captured (const event& ev)
             case key::esc:
                 game_.relative_mouse(false);
 
-            default: /* do nothing */ ;
+            default: ; // do nothing
         }
         break;
 
@@ -448,7 +448,7 @@ void main_game::process_event_captured (const event& ev)
             }
             break;
 
-        default: /* do nothing */ ;
+        default: ; // do nothing
 
         }
         break;
@@ -518,12 +518,11 @@ void main_game::process_event_uncaptured (const event& ev)
                 case key::esc:
                     game_.relative_mouse(true);
 
-                default: /* do nothing */ ;
+                default: ; // do nothing
             }
             break;
 
-        default:
-            ;
+        default: ; // do nothing
     }
 }
 
@@ -544,10 +543,10 @@ game_state::transition main_game::next_state() const
     if (!loading_screen_)
     {
         loading_screen_ = true;
-        return { game_.make_state<loading_screen>(waiting_for_data_), false };
+        return game_state::transition(game_.make_state<loading_screen>(waiting_for_data_), false);
     }
 
-    return { nullptr, false };
+    return game_state::transition();
 }
 
 void main_game::player_motion()
@@ -910,25 +909,6 @@ void main_game::global_config (deserializer<packet>& p)
 {
     msg::global_config msg;
     msg.serialize(p);
-/*
-    if (msg.name == "game icon")
-    {
-        trace("game icon, png size %1%", msg.value.size());
-        try
-        {
-            sf::Image icon;
-            if (icon.loadFromMemory(&msg.value[0], msg.value.size()))
-            {
-                window().setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
-                trace("icon %1%x%2% set succesfully", icon.getSize().x, icon.getSize().y);
-            }
-        }
-        catch (...)
-        {
-            trace("failed to load game icon");
-        }
-    }
-    */
 }
 
 void main_game::bg_thread()
