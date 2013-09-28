@@ -27,6 +27,7 @@
 #include <boost/range/algorithm.hpp>
 
 #include <hexa/geometric.hpp>
+#include <hexa/log.hpp>
 #include <hexa/memory_cache.hpp>
 #include <hexa/surface.hpp>
 #include <hexa/neighborhood.hpp>
@@ -823,56 +824,63 @@ world::worker(int id)
         auto rq (requests.pop());
         trace("new job type %1% for worker %2%", rq.type, id);
 
-        switch (rq.type)
+        try
         {
-        case request::quit:
-            trace("stopped worker %1%", id);
-            return;
-
-        case request::chunk:
-            break;
-
-        case request::surface:
-            if (!is_surface_available(rq.pos))
-                get_surface(rq.pos);
-
-            break;
-
-        case request::lightmap:
-            if (!is_lightmap_available(rq.pos))
-                get_lightmap(rq.pos);
-
-            break;
-
-        case request::surface_and_lightmap:
-            trace("worker %1% checks for surface", id);
-            if (!is_surface_available(rq.pos))
+            switch (rq.type)
             {
-                trace("worker %1% generating surface", id);
-                get_surface(rq.pos);
-                trace("worker %1% done generating surface", id);
+            case request::quit:
+                trace("stopped worker %1%", id);
+                return;
+
+            case request::chunk:
+                break;
+
+            case request::surface:
+                if (!is_surface_available(rq.pos))
+                    get_surface(rq.pos);
+
+                break;
+
+            case request::lightmap:
+                if (!is_lightmap_available(rq.pos))
+                    get_lightmap(rq.pos);
+
+                break;
+
+            case request::surface_and_lightmap:
+                trace("worker %1% checks for surface", id);
+                if (!is_surface_available(rq.pos))
+                {
+                    trace("worker %1% generating surface", id);
+                    get_surface(rq.pos);
+                    trace("worker %1% done generating surface", id);
+                }
+                else
+                {
+                    trace("worker %1% found surface", id);
+                }
+                trace("worker %1% checks for lightmap", id);
+                if (!is_lightmap_available(rq.pos))
+                {
+                    trace("worker %1% generating lightmap", id);
+                    get_lightmap(rq.pos);
+                    trace("worker %1% done generating lightmap", id);
+                }
+                else
+                {
+                    trace("worker %1% found lightmap", id);
+                }
+                break;
             }
-            else
-            {
-                trace("worker %1% found surface", id);
-            }
-            trace("worker %1% checks for lightmap", id);
-            if (!is_lightmap_available(rq.pos))
-            {
-                trace("worker %1% generating lightmap", id);
-                get_lightmap(rq.pos);
-                trace("worker %1% done generating lightmap", id);
-            }
-            else
-            {
-                trace("worker %1% found lightmap", id);
-            }
-            break;
+
+            trace("worker %1% signals answer", id);
+            rq.answer();
+            trace("worker %1% done", id);
         }
-
-        trace("worker %1% signals answer", id);
-        rq.answer();
-        trace("worker %1% done", id);
+        catch (std::exception& e)
+        {
+            log_msg("worker %1% caught exception: %2%", id, e.what());
+        }
     }
 }
 
