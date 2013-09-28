@@ -20,11 +20,14 @@
 //---------------------------------------------------------------------------
 
 #include "log.hpp"
+#include <boost/thread/mutex.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 namespace hexa {
 
 namespace {
     static std::ostream* out_ = nullptr;
+    boost::mutex log_mutex;
 }
 
 void set_log_output (std::ostream& str)
@@ -37,6 +40,7 @@ void log_msg (const std::string& msg)
     if (out_ == nullptr)
         return;
 
+    boost::lock_guard<boost::mutex> lock (log_mutex);
     *out_ << msg << std::endl;
 }
 
