@@ -82,5 +82,99 @@ void check_error(const char* file, unsigned int line)
     log_msg("%1%, %2%: %3%", errorCode, error, description);
 }
 
+void cube_face (float size, direction_type d, float grow)
+{
+    glBegin(GL_QUADS);
+
+    float zero (-grow);
+    size += grow;
+
+    switch (d)
+    {
+    case dir_east:
+        glVertex3f(size, size, zero);
+        glVertex3f(size, size, size);
+        glVertex3f(size, zero, size);
+        glVertex3f(size, zero, zero);
+        break;
+
+    case dir_west:
+        glVertex3f(zero, zero, zero);
+        glVertex3f(zero, zero, size);
+        glVertex3f(zero, size, size);
+        glVertex3f(zero, size, zero);
+        break;
+
+    case dir_north:
+        glVertex3f(size, size, size);
+        glVertex3f(size, size, zero);
+        glVertex3f(zero, size, zero);
+        glVertex3f(zero, size, size);
+        break;
+
+    case dir_south:
+        glVertex3f(zero, zero, size);
+        glVertex3f(zero, zero, zero);
+        glVertex3f(size, zero, zero);
+        glVertex3f(size, zero, size);
+        break;
+    case dir_up:
+        glVertex3f(size, zero, size);
+        glVertex3f(size, size, size);
+        glVertex3f(zero, size, size);
+        glVertex3f(zero, zero, size);
+        break;
+
+    case dir_down:
+        glVertex3f(zero, zero, zero);
+        glVertex3f(zero, size, zero);
+        glVertex3f(size, size, zero);
+        glVertex3f(size, zero, zero);
+        break;
+
+    }
+    glEnd();
+}
+
+void box (const aabb<vector>& box)
+{
+    glBegin(GL_QUADS);
+
+    const vector& a (box.first);
+    const vector& b (box.second);
+
+    glVertex3f(b.x, b.y, a.z);
+    glVertex3f(b.x, b.y, b.z);
+    glVertex3f(b.x, a.y, b.z);
+    glVertex3f(b.x, a.y, a.z);
+
+    glVertex3f(a.x, a.y, a.z);
+    glVertex3f(a.x, a.y, b.z);
+    glVertex3f(a.x, b.y, b.z);
+    glVertex3f(a.x, b.y, a.z);
+
+    glVertex3f(b.x, b.y, b.z);
+    glVertex3f(b.x, b.y, a.z);
+    glVertex3f(a.x, b.y, a.z);
+    glVertex3f(a.x, b.y, b.z);
+
+    glVertex3f(a.x, a.y, b.z);
+    glVertex3f(a.x, a.y, a.z);
+    glVertex3f(b.x, a.y, a.z);
+    glVertex3f(b.x, a.y, b.z);
+
+    glVertex3f(b.x, a.y, b.z);
+    glVertex3f(b.x, b.y, b.z);
+    glVertex3f(a.x, b.y, b.z);
+    glVertex3f(a.x, a.y, b.z);
+
+    glVertex3f(a.x, a.y, a.z);
+    glVertex3f(a.x, b.y, a.z);
+    glVertex3f(b.x, b.y, a.z);
+    glVertex3f(b.x, a.y, a.z);
+
+    glEnd();
+}
+
 }} // namespace hexa::gl
 

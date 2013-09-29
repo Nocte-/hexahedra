@@ -428,7 +428,7 @@ world::raycast(const wfpos& origin, const yaw_pitch& direction,
         ray<float> pr ((origin.frac - vector(*i)) * 16.f, direction);
         for (auto& part : coll_material.model)
         {
-            auto intsct (ray_box_intersection(pr, aabb<vector>(part.box)));
+            auto intsct (ray_box_intersection(pr, part.bounding_box()));
             if (intsct)
                 return tuple_type(origin.pos + *(i-1), origin.pos + *i);
         }

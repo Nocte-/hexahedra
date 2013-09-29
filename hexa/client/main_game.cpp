@@ -42,6 +42,7 @@
 #include <hexa/compression.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/config.hpp>
+#include <hexa/geometric.hpp>
 #include <hexa/log.hpp>
 #include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
@@ -359,6 +360,68 @@ void main_game::render()
     }
     renderer().handle_occlusion_queries();
     renderer().transparent_pass();
+
+    {
+    // The block highlight color blinks smoothly.
+    float alpha (std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.15f);
+    color_alpha hl_color (1,1,1, alpha);
+
+    world_coordinates offset (renderer().offset());
+    vector origin (player_.rel_world_position(offset));
+    origin.z += 1.7f; // Dirty hack to get to the eye level, TODO
+
+    auto line (voxel_raycast(origin, origin + from_spherical(player_.head_angle()) * 20.f));
+    auto lock (world_->acquire_read_lock());
+    for (auto i (std::next(line.begin())); i != line.end(); ++i)
+    {
+        world_coordinates block_pos (*i + offset);
+        auto surf (world_->get_surface(block_pos / chunk_size));
+        if (surf == nullptr)
+            continue;
+
+        // Look for the current block in both the transparent and opaque
+        // surfaces.
+        auto found (boost::range::find(surf->opaque, block_pos % chunk_size));
+        if (found == surf->opaque.end())
+        {
+            found = boost::range::find(surf->transparent, block_pos % chunk_size);
+            if (found == surf->transparent.end())
+                continue;
+        }
+
+        auto coll_block (found->type);
+        assert(coll_block != 0); // No need to check for air blocks.
+
+        // If it's a normal block, we found an intersection.
+        auto& coll_material (material_prop[coll_block]);
+        if (!coll_material.is_custom_block())
+        {
+            renderer().highlight_face({offset + *i, offset + *(i-1)},
+                                      hl_color);
+            break;
+        }
+
+        // It's a custom model; we'll need to do a detailed raycast
+        // against every component.
+        ray<float> pr ((origin - vector(*i)) * 16.f, player_.head_angle());
+        bool intersected (false);
+        for (auto& part : coll_material.model)
+        {
+            intersected = ray_box_intersection(pr, part.bounding_box());
+            if (intersected)
+            {
+                renderer().highlight_custom_block(offset + *i,
+                                                  coll_material.model,
+                                                  hl_color);
+                break;
+            }
+        }
+
+        if (intersected)
+            break;
+    }
+    }
+
     renderer().draw_ui(elapsed_, hud_);
 
     player_.hotbar_needs_update = false;
@@ -447,6 +510,10 @@ void main_game::process_event_captured (const event& ev)
                 hud_.console_message((format("View distance increased to %1%.") % (vd * chunk_size)).str());
             }
             }
+            break;
+
+        case key::f2:
+            hud_.console_message("Screenshot saved.");
             break;
 
         default: ; // do nothing

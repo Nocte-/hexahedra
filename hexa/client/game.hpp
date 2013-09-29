@@ -79,6 +79,8 @@ public:
     /** Check if the mouse is currently in relative mode. */
     bool            mouse_is_relative() const { return rel_mouse_; }
 
+    double          total_time_passed() const { return time_; }
+
 private:
     void            poll_events();
 
@@ -108,6 +110,9 @@ private:
 
     /** Current mouse position. */
     vector2<int>        mouse_pos_;
+
+    /** Total time passed. */
+    double              time_;
 };
 
 } // namespace hexa

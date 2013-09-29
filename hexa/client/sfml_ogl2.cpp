@@ -140,9 +140,9 @@ public:
 
         for (auto& part : model)
         {
-            const auto& a (part.box.first);
-            auto b (part.box.second);
-            b += chunk_index(1,1,1);
+            auto bbox (part.bounding_box());
+            const auto& a (bbox.first);
+            const auto& b (bbox.second);
 
             // Face: +x
             float u0 ((float(part.textures[0] % 16)) / 16.f + 1.f/64.f);

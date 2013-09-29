@@ -36,6 +36,18 @@ public:
 
     pos_dir (const pos_t& p, direction_type d) : pos(p), dir(d) {}
 
+    pos_dir (const pos_t& p, const pos_t& facing)
+        : pos(p)
+    {
+             if (facing.x == p.x + 1) dir = dir_east;
+        else if (facing.x == p.x - 1) dir = dir_west;
+        else if (facing.y == p.y + 1) dir = dir_north;
+        else if (facing.y == p.y - 1) dir = dir_south;
+        else if (facing.z == p.z + 1) dir = dir_up;
+        else if (facing.z == p.z - 1) dir = dir_down;
+        else throw std::runtime_error("cannot determine direction");
+    }
+
     bool operator== (const pos_dir<pos_t>& compare) const
         { return pos == compare.pos && dir == compare.dir; }
 

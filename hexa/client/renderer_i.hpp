@@ -92,10 +92,22 @@ public:
     virtual void set_offset (world_coordinates pos)
         { world_offset_ = pos; }
 
+    world_coordinates offset() const { return world_offset_; }
+
     virtual void waiting_screen() const = 0;
 
     virtual void process (const event& ev) { }
     virtual void process (const sf::Event& ev) { }
+
+    virtual void highlight_face(const pos_dir<world_coordinates>& face,
+                                const color_alpha& hl_color) { }
+
+    virtual void highlight_block(world_coordinates block,
+                                 const color_alpha& hl_color) { }
+
+    virtual void highlight_custom_block(world_coordinates block,
+                                        const custom_block& model,
+                                        const color_alpha& hl_color) { }
 
 protected:
     world_coordinates world_offset_;

@@ -575,6 +575,7 @@ void sfml_ogl3::draw_model(const wfpos& p, uint16_t m) const
 
     mrfixit_->triangles.unbind();
     mrfixit_->vertices.unbind();
+    texture::unbind();
 }
 
 void sfml_ogl3::transparent_pass()

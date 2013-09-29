@@ -50,6 +50,7 @@ game::game (const std::string& title, unsigned int width, unsigned int height)
     , width_(width)
     , height_(height)
     , rel_mouse_(false)
+    , time_(0.0)
 {
     std::string icon_file (PIXMAP_PATH "/hexahedra.png");
     if (fs::exists(icon_file))
@@ -76,6 +77,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
 
     states_.emplace_back(std::move(initial_state));
     auto last_tick (steady_clock::now());
+    auto started (last_tick);
 
     while(!states_.empty())
     {
@@ -89,6 +91,9 @@ void game::run (std::unique_ptr<game_state> initial_state)
         auto delta (current_time - last_tick);
         last_tick = current_time;
         auto delta_seconds (duration_cast<microseconds>(delta).count() * 1.0e-6);
+
+        auto total_passed (current_time - started);
+        time_ = duration_cast<microseconds>(total_passed).count() * 1.0e-6;
 
         try
         {
@@ -179,8 +184,8 @@ void game::poll_events()
                 using namespace boost::posix_time;
 
                 std::string png_file
-                    ((format("%1%/screenshot-%2%.png")
-                        % temp_dir().string()
+                    ((format("%1%/screenshot-%2%.jpg")
+                        % app_user_dir().string()
                         % to_iso_string(second_clock::local_time())).str());
 
                 window().capture().saveToFile(png_file);

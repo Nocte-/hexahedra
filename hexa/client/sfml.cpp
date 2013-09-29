@@ -177,63 +177,11 @@ void restore_opengl_state()
 void opengl_cube_face(float size, vector3<int> pos, direction_type d)
 {
     glTranslatef(pos.x, pos.z, -pos.y);
-    glBegin(GL_QUADS);
-
-    float zero (0.f);
-
-    switch (d)
-    {
-    case dir_north:
-        glVertex3f(zero, zero, -size);
-        glVertex3f(zero, size, -size);
-        glVertex3f(size, size, -size);
-        glVertex3f(size, zero, -size);
-        break;
-
-    case dir_south:
-        glVertex3f(size, zero, -zero);
-        glVertex3f(size, size, -zero);
-        glVertex3f(zero, size, -zero);
-        glVertex3f(zero, zero, -zero);
-        break;
-
-    case dir_east:
-        glVertex3f(size, zero, -size);
-        glVertex3f(size, size, -size);
-        glVertex3f(size, size, -zero);
-        glVertex3f(size, zero, -zero);
-        break;
-
-    case dir_west:
-        glVertex3f(zero, zero, -zero);
-        glVertex3f(zero, size, -zero);
-        glVertex3f(zero, size, -size);
-        glVertex3f(zero, zero, -size);
-        break;
-
-    case dir_up:
-        glVertex3f(zero, size, -size);
-        glVertex3f(zero, size, -zero);
-        glVertex3f(size, size, -zero);
-        glVertex3f(size, size, -size);
-        break;
-
-    case dir_down:
-        glVertex3f(size, zero, -size);
-        glVertex3f(size, zero, -zero);
-        glVertex3f(zero, zero, -zero);
-        glVertex3f(zero, zero, -size);
-        break;
-    }
-    glEnd();
+    gl::cube_face(size, d);
 }
 
-void opengl_cube(float size, vector3<int> pos)
+void opengl_cube(float size)
 {
-    glTranslatef(pos.x, pos.z, -pos.y);
-
-    glColor3f(1.0f, 1.0f, 0.0f);
-
     // Draw a cube
     glBegin(GL_QUADS);
 
@@ -271,6 +219,12 @@ void opengl_cube(float size, vector3<int> pos)
     glVertex3f(size, size, size);
 
     glEnd();
+}
+
+void opengl_cube(float size, vector3<int> pos)
+{
+    glTranslatef(pos.x, pos.z, -pos.y);
+    opengl_cube(size);
 }
 
 } // anonymous namespace
@@ -569,6 +523,37 @@ void sfml::prepare(const player& plr)
 
     glCheck(glEnable(GL_CULL_FACE));
     glCheck(glEnable(GL_DEPTH_TEST));
+    glCheck(glDepthMask(GL_TRUE));
+}
+
+void sfml::highlight_face(const pos_dir<world_coordinates>& face,
+                          const color_alpha& hl_color)
+{
+    glCheck(glDepthMask(GL_FALSE));
+    vector3<float> offset (vector3<int>(face.pos - world_offset_));
+    offset *= 16.f;
+    auto mtx (translate(camera_.model_view_matrix(), offset));
+    glLoadMatrixf(mtx.as_ptr());
+
+    gl::color(hl_color);
+    gl::cube_face(16.0f, face.dir);
+    glCheck(glDepthMask(GL_TRUE));
+}
+
+void sfml::highlight_custom_block(world_coordinates block,
+                                  const custom_block& model,
+                                  const color_alpha &hl_color)
+{
+    glCheck(glDepthMask(GL_FALSE));
+    vector3<float> offset (vector3<int>(block - world_offset_));
+    offset *= 16.f;
+    auto mtx (translate(camera_.model_view_matrix(), offset));
+    glLoadMatrixf(mtx.as_ptr());
+
+    gl::color(hl_color);
+    for (auto& part : model)
+        gl::box(inflate(part.bounding_box(), 0.01f));
+
     glCheck(glDepthMask(GL_TRUE));
 }
 

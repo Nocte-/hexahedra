@@ -28,6 +28,8 @@
 #include <GL/glew.h>
 #include <SFML/OpenGL.hpp>
 
+#include "../aabb.hpp"
+#include "../basic_types.hpp"
 #include "../color.hpp"
 #include "../vector2.hpp"
 #include "../vector3.hpp"
@@ -130,6 +132,11 @@ public:
     guard_matrix() { glPushMatrix(); }
     ~guard_matrix() { glPopMatrix(); }
 };
+
+
+void cube_face (float size, direction_type d, float grow = 0.01);
+
+void box (const aabb<vector>& box);
 
 }} // namespace hexa::opengl
 

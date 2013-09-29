@@ -73,6 +73,13 @@ public:
     void process (const event& ev);
     void process (const sf::Event& ev);
 
+    void highlight_face(const pos_dir<world_coordinates>& face,
+                        const color_alpha& hl_color);
+
+    void highlight_custom_block(world_coordinates block,
+                                const custom_block& model,
+                                const color_alpha& hl_color);
+
 protected:
     void draw_chunk_cube(const chunk_coordinates& pos);
     void draw_chunk_face(const chunk_coordinates& pos, direction_type dir);

@@ -40,6 +40,9 @@ struct custom_block_part
      ** 0 to 16. */
     aabb<chunk_index>       box;
 
+    aabb<vector> bounding_box() const
+        { return aabb<vector>(box.first, box.second + chunk_index(1,1,1)); }
+
     /** Every face of the box can be textured individually. */
     std::array<uint16_t, 6> textures;
 

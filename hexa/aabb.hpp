@@ -284,6 +284,13 @@ aabb<t> cast_to (aabb<s> box)
     return aabb<t>(floor(box.first), ceil(box.second));
 }
 
+template <typename t>
+aabb<t> inflate (const aabb<t>& box, typename t::value_type amount)
+{
+    t nudge (amount, amount, amount);
+    return aabb<t>(box.first - nudge, box.second + nudge);
+}
+
 } // namespace hexa
 
 //---------------------------------------------------------------------------
