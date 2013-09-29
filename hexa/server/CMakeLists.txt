@@ -36,7 +36,7 @@ endif()
 
 add_executable(${EXE} WIN32 main.cpp ${RC_OBJ_FILE} ${HEADER_FILES})
 
-find_package(Boost 1.50 REQUIRED COMPONENTS chrono iostreams program_options filesystem system signals thread${BOOST_THREAD_SUFFIX} ${ADDITIONAL_BOOST_LIBS})
+find_package(Boost ${REQUIRED_BOOST_VERSION} REQUIRED COMPONENTS chrono iostreams program_options filesystem system signals thread${BOOST_THREAD_SUFFIX} ${ADDITIONAL_BOOST_LIBS})
 include_directories(${Boost_INCLUDE_DIRS})
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES} ${SFML_LIBRARIES})
 

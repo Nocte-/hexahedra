@@ -35,7 +35,7 @@ endif()
 
 add_executable(${EXE} WIN32 main.cpp ${RC_OBJ_FILE} ${HEADER_FILES})
 
-find_package(Boost 1.50 REQUIRED COMPONENTS chrono date_time iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
+find_package(Boost ${REQUIRED_BOOST_VERSION} REQUIRED COMPONENTS chrono date_time iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
 find_package(SFML 2 REQUIRED COMPONENTS graphics window system ${ADDITIONAL_SFML_LIBS})
 
 include_directories(${Boost_INCLUDE_DIRS} ${SFML_INCLUDE_DIR})

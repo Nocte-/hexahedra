@@ -19,6 +19,8 @@ EXECUTE_PROCESS(COMMAND "date" "-Iseconds"
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(WEBPAGE "http://hexahedra.net/")
 
+set(REQUIRED_BOOST_VERSION "1.50")
+
 # What to build?
 #
 set(BUILD_SERVER 1 CACHE BOOL "Build the server")
