@@ -25,7 +25,7 @@
 #include <string>
 #include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/thread/lock_guard.hpp>
+#include <boost/thread/locks.hpp>
 
 using boost::format;
 
