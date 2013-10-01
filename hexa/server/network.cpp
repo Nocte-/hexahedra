@@ -130,7 +130,28 @@ void network::run()
                 msg.timestamp = n - clock_offset_[c.second];
                 send(c.second, serialize_packet(msg), msg.method());
             }
+        }
 
+        if (count % 89 == 0)
+        {
+            auto lock (es_.acquire_read_lock());
+            for (auto i (es_.begin()); i != es_.end(); ++i)
+            {
+                if (es_.check_dirty_flag_and_clear(i, entity_system::c_hotbar))
+                {
+                    msg::entity_update upd_msg;
+                    auto hb (es_.get<hotbar>(i, entity_system::c_hotbar));
+                    binary_data blob (serialize(hb));
+                    msg::entity_update::value val (i->first, (uint16_t)entity_system::c_hotbar, std::move(blob));
+                    upd_msg.updates.emplace_back(std::move(val));
+                    auto conn (connections_.find(i->first));
+                    std::cout << "Send hotbar" << std::endl;
+                    if (conn == connections_.end())
+                        std::cout << "FAIL " <<std::endl;
+                    else
+                        send(conn->first, serialize_packet(upd_msg), upd_msg.method());
+                }
+            }
         }
 
         // Flush caches every now and then

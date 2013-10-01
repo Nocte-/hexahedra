@@ -93,6 +93,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     , waiting_for_data_(true)
     , loading_screen_(false)
     , singleplayer_  (host == "localhost")
+    , show_ui_       (true)
 {
     if (singleplayer_)
     {
@@ -361,9 +362,10 @@ void main_game::render()
     renderer().handle_occlusion_queries();
     renderer().transparent_pass();
 
+    if (show_ui_)
     {
     // The block highlight color blinks smoothly.
-    float alpha (std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.15f);
+    float alpha (std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.12f);
     color_alpha hl_color (1,1,1, alpha);
 
     world_coordinates offset (renderer().offset());
@@ -422,10 +424,12 @@ void main_game::render()
     }
     }
 
-    renderer().draw_ui(elapsed_, hud_);
-
-    player_.hotbar_needs_update = false;
-    hud_.hotbar_needs_update = false;
+    if (show_ui_)
+    {
+        renderer().draw_ui(elapsed_, hud_);
+        player_.hotbar_needs_update = false;
+        hud_.hotbar_needs_update = false;
+    }
 }
 
 void main_game::process_event (const event& ev)
@@ -512,8 +516,13 @@ void main_game::process_event_captured (const event& ev)
             }
             break;
 
+        case key::f1:
+            show_ui_ = !show_ui_;
+            break;
+
         case key::f2:
             hud_.console_message("Screenshot saved.");
+            // The screenshot save routine itself is in game.cpp
             break;
 
         default: ; // do nothing
@@ -832,6 +841,16 @@ void main_game::entity_update (deserializer<packet>& p)
             entities_.set(e, upd.component_id,
                           deserialize_as<std::string>(upd.data));
             break;
+
+        case entity_system::c_hotbar:
+            std::cout << "Hotbar set"<<std::endl;
+            entities_.set(e, upd.component_id,
+                          deserialize_as<hotbar>(upd.data));
+
+            hud_.hotbar = deserialize_as<hotbar>(upd.data);
+            hud_.hotbar_needs_update = true;
+
+            break;
         }
     }
 }
@@ -968,10 +987,9 @@ void main_game::configure_hotbar (deserializer<packet>& p)
     msg::player_configure_hotbar msg;
     msg.serialize(p);
 
-    hud_.hotbar = msg.slots;
-    hud_.hotbar_needs_update = true;
+    //hud_.hotbar = msg.slots;
+    //hud_.hotbar_needs_update = true;
 }
-
 
 void main_game::global_config (deserializer<packet>& p)
 {

@@ -218,6 +218,48 @@ public:
             return false;
         }
 
+public:
+    int hotbar_size() const
+    {
+        auto hb (get<hotbar>(entity_system::c_hotbar));
+        if (!hb)
+            return 0;
+
+        return hb->size();
+    }
+
+    void resize_hotbar(size_t newsize)
+    {
+        auto hb (get<hotbar>(entity_system::c_hotbar));
+        if (!hb)
+            hb = hotbar(newsize);
+        else if (hb->size() == newsize)
+            return;
+
+        std::cout << "Resize hotbar to " << newsize << std::endl;
+        hb->resize(newsize);
+        set(entity_system::c_hotbar, *hb);
+    }
+
+    hotbar_slot hotbar_get(int i) const
+    {
+        auto hb (get<hotbar>(entity_system::c_hotbar));
+        if (!hb)
+            throw std::runtime_error("no hotbar available");
+
+        return hb->at(i);
+    }
+
+    void hotbar_set (int i, const hotbar_slot& s)
+    {
+        auto hb (get<hotbar>(entity_system::c_hotbar));
+        if (!hb)
+            throw std::runtime_error("no hotbar available");
+
+        std::cout << "Setting hotbar slot " << i << " to " << s.name << std::endl;
+        hb->at(i) = s;
+        set(entity_system::c_hotbar, *hb);
+    }
 };
 
 class player_wrapper
@@ -420,6 +462,10 @@ lua::lua(server_entity_system& entities, world &w)
             .property("name", &lua_entity::get_name, &lua_entity::set_name)
             .property("look_at", &lua_entity::get_lookat)
             .property("on_ground", &lua_entity::on_ground)
+            .property("hotbar_size", &lua_entity::hotbar_size,
+                                     &lua_entity::resize_hotbar)
+            .def("hotbar_get", &lua_entity::hotbar_get)
+            .def("hotbar_set", &lua_entity::hotbar_set)
             ,
         class_<hotbar_slot>("hotbar_slot")
             .def(constructor<int, std::string>())

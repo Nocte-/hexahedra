@@ -15,10 +15,10 @@ out vec3 ex_Light;
 
 void main()
 {
-    ex_Light = clamp(  amb_color * pow((data[1] / 16  ) / 30.0, 0.7)
-                     + sun_color * pow((data[1] & 0x0f) / 30.0, 0.7)
-                     + art_color * pow((data[0] & 0x0f) / 30.0, 0.7)
-                     + 0.04                                          , 0, 1);
+    ex_Light = clamp(  amb_color * pow((data[1] / 16  ) / 15.0, 0.7)
+                     + sun_color * pow((data[1] & 0x0f) / 15.0, 0.7)
+                     + art_color * pow((data[0] & 0x0f) / 15.0, 0.7)
+                     + 0.03                                          , 0, 1);
 
     ex_TexCoord = vec3(uv.x / 16.f, uv.y / 16.f, texture); 
 

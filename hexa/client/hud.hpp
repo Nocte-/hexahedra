@@ -26,13 +26,14 @@
 #include <string>
 #include <vector>
 #include <hexa/protocol.hpp>
+#include <hexa/hotbar_slot.hpp>
 
 namespace hexa {
 
 class hud
 {
 public:
-    typedef msg::player_configure_hotbar::slot slot;
+    typedef hotbar_slot slot;
     std::vector<slot>       hotbar;
     bool                    hotbar_needs_update;
     unsigned int            active_slot;

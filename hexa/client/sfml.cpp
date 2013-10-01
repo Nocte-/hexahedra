@@ -696,7 +696,7 @@ void sfml::process(const sf::Event &ev)
 
 void sfml::draw_hotbar(const hud& h)
 {
-    static const light prefab[6] = { 7, 7, 11, 11, 15, 15 };
+    static const light prefab[6] = { 5, 5, 9, 9, 15, 15 };
 
     std::cout << "draw hotbar " << h.hotbar.size() << std::endl;
 
@@ -800,7 +800,7 @@ void sfml::draw_hotbar(const hud& h)
             }
             else
             {
-                scale = 1.5f;
+                scale = 1.7f;
                 (*temp).add_custom_block(c, m.model, std::vector<light>(prefab, prefab + 6));
             }
 
@@ -811,8 +811,10 @@ void sfml::draw_hotbar(const hud& h)
 
             glTranslatef(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f);
             glScalef(scale, scale, 0.0f);
+            //glRotatef( 30, 1, 0, 0);
+            glRotatef( 90, 1, 0, 0);
             glRotatef( 30, 1, 0, 0);
-            glRotatef( 30, 0, 1, 0);
+            glRotatef( 30, 0, 0, 1);
             glTranslatef(-8.0f, -8.0f, -8.0f);
             draw(mesh);
             glPopMatrix();

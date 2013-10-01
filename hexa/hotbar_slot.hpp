@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
@@ -54,6 +54,13 @@ struct hotbar_slot
         , cooldown (0)
     { }
 
+    template<class archive>
+    archive& serialize(archive& ar)
+    {
+        return ar(type)(name)(tooltip)(badge)(counter)(progress_bar)
+                 (wield)(can_drag)(cooldown);
+    }
+
     /** The slot type. */
     char         type;
     /** The name of the resource (material, item, icon) */
@@ -74,7 +81,48 @@ struct hotbar_slot
     uint8_t      cooldown;
 };
 
-typedef std::vector<hotbar_slot> hotbar;
+using hotbar = std::vector<hotbar_slot>;
+
+// No support for type aliases in Visual Studio :.(
+/*
+class hotbar : private std::vector<hotbar_slot>
+{
+    typedef std::vector<hotbar_slot> base;
+
+public:
+    typedef base::iterator          iterator;
+    typedef base::const_iterator    const_iterator;
+    typedef base::value_type        value_type;
+    typedef base::size_type         size_type;
+
+    using base::operator[];
+    using base::at;
+    using base::begin;
+    using base::end;
+    using base::cbegin;
+    using base::cend;
+    using base::size;
+    using base::empty;
+    using base::resize;
+    using base::clear;
+
+public:
+    hotbar() { }
+    hotbar(size_type i) : base(i) { }
+    hotbar(const hotbar& copy) : base(copy) { }
+    hotbar(hotbar&& m) : base(std::move(m)) { }
+
+    hotbar& operator= (hotbar&& m) { base::operator=(std::move(m)); return *this; }
+    hotbar& operator= (const hotbar& c) { base::operator=(c); return *this; }
+
+    template<class archive>
+    archive& serialize(archive& ar)
+    {
+        std::vector<hotbar_slot>* p (this);
+        return ar(*p);
+    }
+};
+*/
 
 } // namespace hexa
 

@@ -71,10 +71,10 @@ static interpolated_map<float, color> sky_grad
 
 static interpolated_map<float, color> amb_grad
     { { 0.0f , { 0.15f, 0.15f, 0.15f } },
-      { 0.15f , { 0.35f, 0.15f, 0.15f } },
-      { 0.28f , { 0.56f, 0.67f, 1.0f } },
+      { 0.15f, { 0.35f, 0.15f, 0.15f } },
+      { 0.28f, { 0.56f, 0.67f, 1.0f } },
       { 0.7f , { 0.56f, 0.67f, 1.0f } },
-      { 0.8f , { 0.2f, 0.2f, 0.2f } },
+      { 0.8f , { 0.20f, 0.20f, 0.20f } },
       { 1.0f , { 0.15f, 0.15f, 0.15f } } };
 
 static interpolated_map<float, color> sun_grad
@@ -472,8 +472,8 @@ void sfml_ogl3::prepare(const player& plr)
     count = 0.5;
 
     sky_color(sky_grad(count));
-    ambient_color(amb_grad(count));
-    sun_color(sun_grad(count));
+    ambient_color(0.6f * color(0.4, 0.5, 1.0));//amb_grad(count));
+    sun_color(0.6f * sun_grad(count));
     terrain_shader_.use();
     artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);
     fog_density_ = 2.2f / (float)(view_dist_ * chunk_size * 6);

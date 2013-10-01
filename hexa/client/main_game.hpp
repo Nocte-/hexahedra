@@ -151,6 +151,7 @@ private:
     mutable bool        loading_screen_;
     bool                singleplayer_;
     pid_type            server_process_;
+    bool                show_ui_;
 };
 
 } // namespace hexa

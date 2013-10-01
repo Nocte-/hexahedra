@@ -50,8 +50,8 @@ struct light
 
     light() : sunlight(0), ambient(0), artificial(0), padding(0) { }
 
-    light(uint8_t art)
-        : sunlight(0), ambient(0), artificial(art), padding(0) { }
+    light(uint8_t overall)
+        : sunlight(overall), ambient(overall), artificial(overall), padding(0) { }
 
     light(uint8_t sun, uint8_t amb, uint8_t art)
         : sunlight(sun), ambient(amb), artificial(art), padding(0) { }
