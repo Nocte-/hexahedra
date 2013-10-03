@@ -774,12 +774,6 @@ void sfml::draw_hotbar(const hud& h)
         pen_x += size_right;
     }
 
-    if (h.active_slot >= 0 && h.active_slot < h.hotbar.size())
-    {
-        slot_actv->setPosition(edge_l + size_left + h.active_slot * (size_slot + size_sep) + size_slot * 0.5 - size_actv * 0.5, 0);
-        hotbar_.draw(*slot_actv);
-    }
-
     pen_x = edge_l + size_left;
     for (auto& curr_slot : h.hotbar)
     {
@@ -835,6 +829,12 @@ void sfml::draw_hotbar(const hud& h)
             }
         }
         pen_x += size_slot + size_sep;
+    }
+
+    if (h.active_slot >= 0 && h.active_slot < h.hotbar.size())
+    {
+        slot_actv->setPosition(edge_l + size_left + h.active_slot * (size_slot + size_sep) + size_slot * 0.5 - size_actv * 0.5, 0);
+        hotbar_.draw(*slot_actv);
     }
 
     hotbar_.display();
