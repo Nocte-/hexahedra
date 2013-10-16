@@ -220,9 +220,9 @@ int main (int argc, char* argv[])
 
     po::options_description config("Configuration");
     config.add_options()
-        ("mode", po::value<std::string>()->default_value("singleplayer"),
+        ("mode", po::value<std::string>()->default_value("multiplayer"),
             "server game mode")
-        ("max-players", po::value<unsigned int>()->default_value(1),
+        ("max-players", po::value<unsigned int>()->default_value(10),
             "maximum number of players")
         ("port", po::value<unsigned int>()->default_value(15556),
             "default port")
@@ -230,7 +230,7 @@ int main (int argc, char* argv[])
             "server name")
         ("uid", po::value<std::string>()->default_value("nobody"),
             "drop to this user id after initialising the server")
-        ("chroot", po::value<std::string>()->default_value("/tmp"),
+        ("chroot", po::value<std::string>()->default_value(""),
             "chroot to this path after initialising the server")
         ("datadir", po::value<std::string>()->default_value(GAME_DATA_PATH),
             "the data directory")

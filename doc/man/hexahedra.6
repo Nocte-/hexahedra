@@ -25,18 +25,33 @@ Connect to a server.  The default is 'localhost'.
 .BR \-\-port=number
 Connect to the given port number.
 .TP
-.BR \-\-ogl2
-Override the OpenGL version autodetection, and force the use of OpenGL 2.0.
-.TP
 .BR \-\-viewdist=n
 Set the view radius to n chunks (or n*16 blocks).  The default is 20.  If you
 experience low frame rates or stuttering, try setting this to a lower value.
+.TP
+.BR \-\-vsync=0|1
+Turn VSync off or on.  It is on by default.
+.TP
+.BR \-\-ogl2
+Override the OpenGL version autodetection, and force the use of OpenGL 2.0.
+.TP
+.BR \-\-db=file
+Use a different database file.  The default is 'world.db'.
+.TP
+.BR \-\-uid=username
+Run the client under the given user after initialisation.  The default is
+'nobody'.
+.TP
+.BR \-\-datadir=path
+Use a different path to load the game's assets from.  The default path is
+/usr/share/hexahedra
+.TP
+.BR \-\-userdir=path
+Save the user data (preferences and world saves) to a different location.  The
+default is ~/.hexahedra
 
 .SH SEE ALSO
 hexahedra-server(6)
-
-.SH BUGS
-No known bugs.
 
 .SH AUTHOR
 Nocte (hexahedra-maintainer@gmail.com)

@@ -92,33 +92,31 @@ int main (int argc, char* argv[])
     generic.add_options()
         ("version,v",   "print version string")
         ("help",        "show help message")
-        ("newsingle",   "Immediately start a new single-player game")
-        ("continue",    "Continue the last game")
-        ("quickjoin",   "Join your favorite server")
+        //("newsingle",   "Immediately start a new single-player game")
+        //("continue",    "Continue the last game")
+        //("quickjoin",   "Join your favorite server")
         ;
 
     po::options_description config("Configuration");
     config.add_options()
-        ("port", po::value<uint16_t>()->default_value(15556),
-            "default port")
         ("hostname", po::value<std::string>()->default_value("localhost"),
             "server name")
+        ("port", po::value<uint16_t>()->default_value(15556),
+            "default port")
+        ("viewdist", po::value<unsigned int>()->default_value(20),
+            "view distance in chunks")
+        ("vsync", po::value<bool>()->default_value(true),
+            "use v-sync")
+        ("ogl2",
+            "Force the use of the OpenGL 2.0 backend")
         ("db", po::value<std::string>()->default_value("world.db"),
             "local database file name")
         ("uid", po::value<std::string>()->default_value("nobody"),
             "drop to this user id after initialising the client")
-        ("chroot", po::value<std::string>()->default_value("/tmp"),
-            "chroot to this path after initialising the client")
-        ("ogl2",
-            "Force the use of the OpenGL 2.0 backend")
-        ("viewdist", po::value<unsigned int>()->default_value(20),
-            "view distance in chunks")
         ("datadir", po::value<std::string>()->default_value(GAME_DATA_PATH),
             "where to find the game's assets")
         ("userdir", po::value<std::string>()->default_value(app_user_dir().string()),
             "user's game directory")
-        ("vsync", po::value<bool>()->default_value(true),
-            "use v-sync")
         ;
 
 

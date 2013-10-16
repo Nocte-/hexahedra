@@ -11,13 +11,47 @@ hexahedra-server \- Hexahedra game server
 The Hexahedra server hosts a multiplayer game.
 
 .SH OPTIONS
-None
+.TP
+.BR \-\-help
+Print the command line options.
+.TP
+.BR \-\-version
+Show version information and exit.
+.TP
+.BR \-\-mode=singleplayer|multiplayer
+A server that runs in single-player mode will only allow one connection from
+localhost.  The game client will start a new server process with this option.
+The default is 'multiplayer'.
+.TP
+.BR \-\-max\-players=n
+Limit the maximum number of players that can be connected simultaneously.
+This is 10 by default.
+.TP
+.BR \-\-port=number
+Listen on the given port number.  The default is 15556.
+.TP
+.BR \-\-server\-name=x
+Clients will see this name when they connect.
+.TP
+.BR \-\-uid=username
+The process will run under this user's privileges after initialisation.  The
+default is 'nobody'.
+.TP
+.BR \-\-chroot=path
+Run the server in a chroot jail.
+.TP
+.BR \-\-datadir=path
+The path to the game assets.  The default is /usr/share/hexahedra
+.TP
+.BR \-\-dbdir=path
+The path to the game databases.  The default is ~/.hexahedra/server_db
+.TP
+.BR \-\-log=0|1
+Write information to a log file.  Turned on by default.  The log file can be
+found in ~/.hexahedra/hexahedra-server_log.txt
 
 .SH SEE ALSO
 hexahedra(6)
-
-.SH BUGS
-No known bugs.
 
 .SH AUTHOR
 Nocte (hexahedra-maintainer@gmail.com)
