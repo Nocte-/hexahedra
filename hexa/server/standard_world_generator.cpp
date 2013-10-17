@@ -24,6 +24,7 @@
 #include <stdexcept>
 #include <mutex>
 #include <unordered_map>
+#include <boost/range/algorithm.hpp>
 #include <noisepp/NoisePerlin.h>
 #include <noisepp/NoisePipeline.h>
 
@@ -33,6 +34,7 @@
 #include "world.hpp"
 
 using namespace boost::property_tree;
+using namespace boost::range;
 
 namespace hexa {
 
@@ -40,9 +42,9 @@ struct standard_world_generator::impl
 {
     world& map;
 
-    uint16_t    height_idx;
-    uint16_t    rough_idx;
-    uint16_t    temp_idx;
+    int    height_idx;
+    int    rough_idx;
+    int    surf_idx;
 
     noisepp::PerlinModule       noise;
     noisepp::Pipeline3D         pipeline;
@@ -56,16 +58,17 @@ struct standard_world_generator::impl
     uint16_t rock_id;
 
     impl(world& w)
-        : map         (w)
-        , noise_cache (nullptr)
+        : map           (w)
+        , height_idx    (w.find_area_generator("heightmap"))
+        , rough_idx     (w.find_area_generator("rough_terrain"))
+        , surf_idx      (w.find_area_generator("surface"))
+        , noise_cache   (nullptr)
     {
-        int i (w.find_area_generator("heightmap"));
-        if (i < 0)
+        if (height_idx < 0)
             throw std::runtime_error("standard_terrain_generator requires a height map");
 
-        height_idx = static_cast<uint16_t>(i);
-        rough_idx  = static_cast<uint16_t>(w.find_area_generator("rough_terrain"));
-        temp_idx   = static_cast<uint16_t>(w.find_area_generator("temperature"));
+        if (surf_idx < 0)
+            throw std::runtime_error("standard_terrain_generator requires a surface map");
 
         noise.setOctaveCount(3);
         noise_id = noise.addToPipe(pipeline);
@@ -85,7 +88,7 @@ struct standard_world_generator::impl
 
     void generate(chunk_coordinates pos, chunk& dest)
     {
-        trace((boost::format("Generate new chunk at %1%") % world_vector(pos - world_chunk_center)).str());
+        trace("start standard terrain generation for %1%", world_vector(pos - world_chunk_center));
 
         if (   pos.x >= chunk_world_limit.x
             || pos.y >= chunk_world_limit.y
@@ -96,16 +99,17 @@ struct standard_world_generator::impl
 
         world_coordinates offset (pos * chunk_size);
         area_ptr hm      (map.get_area_data(pos, height_idx));
-        area_ptr tempmap (map.get_area_data(pos, temp_idx));
         area_ptr rm      (nullptr);
+        area_ptr sm      (nullptr);
 
-        if (rough_idx < 999)
+        if (surf_idx >= 0)
+            sm = map.get_area_data(pos, surf_idx);
+
+        if (rough_idx >= 0)
             rm = map.get_area_data(pos, rough_idx);
 
         if (hm == nullptr)
             throw std::runtime_error("no height map was generated");
-
-        boost::lock_guard<boost::mutex> lock (dest.lock());
 
         for (int x (0); x < chunk_size; ++x)
         {
@@ -140,10 +144,17 @@ struct standard_world_generator::impl
                     }
 
                     if (rh <= h)
+                    {
                         dest(x,y,z) = rock_id;
+                        auto h16 (convert_height_16bit(offset.z + z));
+                        if (sm && (*sm)(x,y) < h16)
+                            (*sm)(x,y) = h16;
+
+                    }
                 }
             }
         }
+        trace("end standard terrain generation for %1%", world_vector(pos - world_chunk_center));
     }
 
     chunk_height estimate_height (map_coordinates xy) const
@@ -152,7 +163,77 @@ struct standard_world_generator::impl
         if (hm == nullptr)
             return undefined_height;
 
-        return (water_level + rough_size + *std::max_element(hm->begin(), hm->end())) / chunk_size;
+        area_ptr rm      (nullptr);
+        if (rough_idx >= 0)
+            rm = map.get_area_data(xy, rough_idx);
+
+        area_ptr sm      (nullptr);
+        if (surf_idx >= 0)
+        {
+            sm = map.get_area_data(xy, surf_idx);
+            if (sm == nullptr)
+            {
+                sm = std::make_shared<area_data>();
+                constexpr int16_t undefined (std::numeric_limits<uint16_t>::max());
+                fill(*sm, undefined);
+            }
+        }
+        else
+        {
+            trace("no surface data");
+        }
+
+        uint32_t highest (0);
+        for (int x (0); x < chunk_size; ++x)
+        {
+            for (int y (0); y < chunk_size; ++y)
+            {
+                // Relative height: -32K to +32K around sea level
+                int16_t&  rel_h ((*hm)(x, y));
+                // Roughness factor
+                int16_t   r     (rm ? (*rm)(x, y) : 0);
+                // Multiplication factor based on terrain roughness
+                double    mul_b (clamp((r - 5000.) / 10000., 0.0, 2.0));
+                if (rel_h < 50)
+                    mul_b *= std::max((rel_h - 20.) / 30., 0.0);
+
+                if (sm != nullptr)
+                {
+                    uint32_t h (world_center.z + rel_h);
+                    if (mul_b == 0.0)
+                    {
+                        (*sm)(x,y) = rel_h;
+                        highest = std::max(highest, h);
+                    }
+                    else
+                    {
+                        for (int z (rough_size); z > -rough_size; --z)
+                        {
+                            vector3<double> pn (xy.x * chunk_size + x , xy.y * chunk_size + y, h + z);
+                            pn /= granularity;
+                            double p (perlin->getValue(pn.x, pn.y, pn.z, noise_cache) * rough_size);
+
+                            if (z + int(mul_b * p) <= 0)
+                            {
+                                (*sm)(x,y) = rel_h + z;
+                                highest = std::max(highest, h + z);
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    uint32_t h (world_center.z + rel_h + rough_size * mul_b);
+                    highest = std::max(highest, h);
+                }
+            }
+        }
+
+        if (surf_idx >= 0)
+            map.store(xy, surf_idx, sm);
+
+        return (highest / chunk_size) + 1;
     }
 };
 
@@ -171,7 +252,7 @@ void standard_world_generator::generate(chunk_coordinates pos, chunk& dest)
 }
 
 chunk_height
-standard_world_generator::estimate_height (map_coordinates xy) const
+standard_world_generator::estimate_height (map_coordinates xy, chunk_height prev) const
 {
     return pimpl_->estimate_height(xy);
 }

@@ -200,7 +200,7 @@ void binvox_world_generator::generate(chunk_coordinates pos, chunk& dest)
 }
 
 chunk_height
-binvox_world_generator::estimate_height (map_coordinates xy) const
+binvox_world_generator::estimate_height (map_coordinates xy, chunk_height prev) const
 {
     return pimpl_->estimate_height(xy);
 }

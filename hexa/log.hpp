@@ -35,20 +35,41 @@ void log_msg (const std::string& msg);
 template <typename par1>
 void log_msg (const std::string& msg, const par1& p1)
 {
-    log_msg((boost::format(msg) % p1).str());
+    try
+    {
+        log_msg((boost::format(msg) % p1).str());
+    }
+    catch (std::exception& e)
+    {
+        log_msg((boost::format("cannot log '%1%', %2%: %3%") % msg % p1 % e.what()).str());
+    }
 }
 
 template <typename par1, typename par2>
 void log_msg (const std::string& msg, const par1& p1, const par2& p2)
 {
-    log_msg((boost::format(msg) % p1 % p2).str());
+    try
+    {
+        log_msg((boost::format(msg) % p1 % p2).str());
+    }
+    catch (std::exception& e)
+    {
+        log_msg((boost::format("cannot log '%1%', %2%, %3%: %4%") % msg % p1 % p2 % e.what()).str());
+    }
 }
 
 template <typename par1, typename par2, typename par3>
 void log_msg (const std::string& msg, const par1& p1, const par2& p2,
               const par3& p3)
 {
-    log_msg((boost::format(msg) % p1 % p2 % p3).str());
+    try
+    {
+        log_msg((boost::format(msg) % p1 % p2 % p3).str());
+    }
+    catch (std::exception& e)
+    {
+        log_msg((boost::format("cannot log '%1%', %2%, %3%, %4%: %5%") % msg % p1 % p2 % p3 % e.what()).str());
+    }
 }
 
 } // namespace hexa

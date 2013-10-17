@@ -41,6 +41,7 @@
 #include "gridworld_generator.hpp"
 #include "heightmap_generator.hpp"
 #include "lua_heightmap_generator.hpp"
+#include "null_area_generator.hpp"
 #include "ocean_generator.hpp"
 #include "robinton_generator.hpp"
 #include "standard_world_generator.hpp"
@@ -68,6 +69,9 @@ void init_terrain_gen (world& w, const ptree& config)
 
             else if (module == "biome")
                 w.add_area_generator(std::make_unique<biome_generator>(w, info));
+
+            else if (module == "null")
+                w.add_area_generator(std::make_unique<null_area_generator>(w, info));
 
             else
                 std::cout << "Warning: unknown area module " << module << std::endl;

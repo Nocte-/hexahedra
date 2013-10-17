@@ -21,6 +21,8 @@
 
 #include "surface_generator.hpp"
 
+#include <hexa/log.hpp>
+#include <hexa/trace.hpp>
 #include "world.hpp"
 
 using namespace boost::property_tree;
@@ -41,25 +43,33 @@ surface_generator::surface_generator(world& w, const ptree& conf)
 
 void surface_generator::generate(chunk_coordinates pos, chunk& dest)
 {
+    return;
+
+    /*
     constexpr int search_limit (32);
 
     if (w_.is_area_data_available(pos, surfacemap_))
         return;
 
+    trace("start surface generator for %1%", world_vector(pos - world_chunk_center));
+
     area_ptr sa (std::make_shared<area_data>());
     constexpr int16_t undefined (std::numeric_limits<uint16_t>::max());
     std::fill(sa->begin(), sa->end(), undefined);
 
-    auto top (w_.get_coarse_height(pos));
+    // Store the blank area straight away, so other chunks won't try
+    // generating one for the same column.
+    //
+    w_.store(map_coordinates(pos), surfacemap_, sa);
+
+    auto top (w_.get_coarse_height(pos) - 1);
     unsigned int count (0);
     for (chunk_height chunk_z (top); chunk_z > top - search_limit; --chunk_z)
     {
         chunk_coordinates cc (pos.x, pos.y, chunk_z);
         auto locked_region (w_.lock_region({cc}, *this));
-        auto chunk (w_.get_raw_chunk(cc));
-
-        if (chunk == nullptr)
-            continue;
+        w_.mark_done(locked_region, *this);
+        auto& chunk (locked_region.get_chunk(cc));
 
         for (uint16_t x (0); x < chunk_size ; ++x)
         {
@@ -70,7 +80,7 @@ void surface_generator::generate(chunk_coordinates pos, chunk& dest)
 
                 for (int z (chunk_size - 1); z >= 0; --z)
                 {
-                    if ((*chunk)(x,y,z) != type::air)
+                    if (chunk(x,y,z) != type::air)
                     {
                         (*sa)(x,y) = convert_height_16bit(chunk_z * chunk_size + z);
                         ++count;
@@ -86,16 +96,19 @@ void surface_generator::generate(chunk_coordinates pos, chunk& dest)
     done:
     if (count == 0)
     {
-        std::cout << "No surface found for " << pos << std::endl;
+        log_msg("Error: No surface found for %1%", pos);
     }
     else if (count == sa->size())
     {
+        trace("end surface generator for %1%", world_vector(pos - world_chunk_center));
         w_.store(map_coordinates(pos), surfacemap_, sa);
+        trace("map coordinates %1% stored", pos);
     }
     else
     {
-        std::cout << "Incomplete " << pos << " :" << count << std::endl;
+        log_msg("Error: Incomplete surface for %1%, %2% elements", pos, count);
     }
+    */
 }
 
 } // namespace hexa

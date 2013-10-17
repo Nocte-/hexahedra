@@ -16,11 +16,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "memory_cache.hpp"
 
+#include <set>
 #include <boost/format.hpp>
 #include "log.hpp"
 #include "trace.hpp"
@@ -65,9 +66,13 @@ memory_cache::cleanup ()
     }
     {
     boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
-    for (auto& p : chunks_dirty_)
+    std::set<chunk_coordinates> helgrind;
+    std::copy(chunks_dirty_.begin(), chunks_dirty_.end(), std::inserter(helgrind, helgrind.begin()));
+    for (auto& p : helgrind) //chunks_dirty_)
+    {
+        boost::lock_guard<boost::mutex> lock (chunks_.get(p)->lock());
         next_.store(persistent_storage_i::chunk, p, compress(serialize(*chunks_.get(p))));
-
+    }
     chunks_dirty_.clear();
     //chunks_.prune_if(size_limit_, is_not_in_use<chunk_ptr>);
     chunks_.prune(size_limit_);
@@ -169,6 +174,17 @@ memory_cache::store (map_coordinates xy, chunk_height data)
     heights_[xy] = data;
 }
 
+void
+memory_cache::store (const locked_subsection& region)
+{
+    for (auto& p : region)
+    {
+        chunks_dirty_.insert(p.first);
+        chunks_[p.first] = p.second;
+    }
+}
+
+
 bool
 memory_cache::is_area_data_available (map_coordinates xy, uint16_t index)
 {
@@ -235,10 +251,6 @@ memory_cache::get_area_data (map_coordinates xy, uint16_t index)
 chunk_ptr
 memory_cache::get_chunk (chunk_coordinates xyz)
 {
-    auto height (get_coarse_height(xyz));
-    if (height != undefined_height && xyz.z >= height)
-        return nullptr;
-
     boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
     auto found (chunks_.try_get(xyz));
     if (found)
@@ -279,9 +291,6 @@ memory_cache::get_lightmap (chunk_coordinates xyz)
 surface_ptr
 memory_cache::get_surface (chunk_coordinates xyz)
 {
-    if (is_air_chunk(xyz, get_coarse_height(xyz)))
-        return empty_surface;
-
     boost::lock_guard<boost::mutex> surfaces_lock (surfaces_mutex_);
 
     auto found (surfaces_.try_get(xyz));

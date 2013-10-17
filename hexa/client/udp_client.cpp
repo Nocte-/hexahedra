@@ -103,7 +103,7 @@ void udp_client::poll(unsigned int milliseconds)
     ENetEvent ev;
     int result;
     {
-    //boost::lock_guard<boost::mutex> lock (host_mutex_);
+    boost::lock_guard<boost::mutex> lock (host_mutex_);
     result = enet_host_service(host_, &ev, milliseconds);
     }
 

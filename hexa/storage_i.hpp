@@ -26,6 +26,7 @@
 #include "chunk.hpp"
 #include "compression.hpp"
 #include "lightmap.hpp"
+#include "locked_subsection.hpp"
 #include "read_write_lockable.hpp"
 #include "surface.hpp"
 
@@ -43,6 +44,7 @@ public:
     virtual void store (chunk_coordinates xyz, lightmap_ptr data) = 0;
     virtual void store (chunk_coordinates xyz, surface_ptr data) = 0;
     virtual void store (map_coordinates   xy,  chunk_height height) = 0;
+    virtual void store (const locked_subsection& region) = 0;
 
     virtual bool is_area_data_available       (map_coordinates   xy, uint16_t index) = 0;
     virtual bool is_chunk_available           (chunk_coordinates xyz) = 0;

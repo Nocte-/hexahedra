@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <list>
 #include <string>
 #include <vector>
@@ -78,7 +79,7 @@ public:
 
 private:
     std::list<sf::Image> textures_;
-    bool                 textures_ready_;
+    std::atomic<bool>    textures_ready_;
 
     texture_array texarr_;
 

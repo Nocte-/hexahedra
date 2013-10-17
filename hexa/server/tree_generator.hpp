@@ -34,6 +34,12 @@ public:
 
     void generate (chunk_coordinates pos, chunk& dest);
 
+    void generate (chunk_coordinates pos, world_subsection<chunk_ptr>& dest);
+
+    chunk_height estimate_height (map_coordinates xy, chunk_height prev) const;
+
+    std::set<world_vector> span() const;
+
 private:
     uint16_t    surfacemap_;
     uint16_t    wood_;

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <string>
 
@@ -71,14 +72,15 @@ public:
     virtual void add_occlusion_query(chunk_coordinates pos) = 0;
     virtual void cancel_occlusion_query(chunk_coordinates pos) = 0;
 
-    virtual std::deque<chunk_coordinates>
+    virtual std::list<chunk_coordinates>
                  get_visible_queries() = 0;
 
     virtual void sky_color(const color&) = 0;
     virtual void ambient_color(const color&) = 0;
     virtual void sun_color(const color&) = 0;
 
-    virtual void on_update_height(map_coordinates pos, chunk_height z) = 0;
+    virtual void on_update_height(map_coordinates pos, chunk_height z,
+                                  chunk_height old_z) = 0;
 
     virtual terrain_mesher_ptr make_terrain_mesher() { return nullptr; }
 

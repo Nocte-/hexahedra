@@ -24,7 +24,6 @@
 #include <stdexcept>
 #include <string>
 #include <boost/format.hpp>
-#include <boost/thread/mutex.hpp>
 #include <boost/thread/locks.hpp>
 
 using boost::format;
@@ -50,7 +49,11 @@ udp_server::~udp_server()
 void udp_server::poll (uint16_t milliseconds)
 {
     ENetEvent ev;
-    auto result (enet_host_service(sv_, &ev, milliseconds));
+    int result = 0;
+    {
+    boost::lock_guard<boost::mutex> lock (enet_mutex_);
+    result = enet_host_service(sv_, &ev, milliseconds);
+    }
 
     if (result < 0)
         throw std::runtime_error((format("network error %1%") % -result).str());
@@ -79,7 +82,6 @@ void udp_server::send (ENetPeer* peer, const std::vector<uint8_t>& msg,
                        msg::reliability method) const
 {
     uint32_t flags (0);
-    static boost::mutex send_mutex;
 
     switch (method)
     {
@@ -90,7 +92,7 @@ void udp_server::send (ENetPeer* peer, const std::vector<uint8_t>& msg,
 
     auto pkt (enet_packet_create(&msg[0], msg.size(), flags));
     {
-    boost::lock_guard<boost::mutex> lock (send_mutex);
+    boost::lock_guard<boost::mutex> lock (enet_mutex_);
     enet_peer_send(peer, 0, pkt);
     }
 }

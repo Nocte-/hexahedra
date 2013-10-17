@@ -72,24 +72,55 @@ void trace_impl(const char* func, const char* file, unsigned int line,
 void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a)
 {
-    boost::lock_guard<boost::mutex> g (debug_trace_mutex);
-    std::cout << file << ':' << line << " (" << func << ") : "
-        << (format(msg) % a).str() << std::endl;
+    try
+    {
+        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func << ") : "
+            << (format(msg) % a).str() << std::endl;
 
-    log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
+        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
+    }
+    catch(...)
+    {
+        trace_impl(func, file, line, "bad trace message");
+    }
 }
 
 void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a,
                   const std::string& b)
 {
-    boost::lock_guard<boost::mutex> g (debug_trace_mutex);
-    std::cout << file << ':' << line << " (" << func << ") : "
-        << (format(msg) % a % b).str() << std::endl;
+    try
+    {
+        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func << ") : "
+            << (format(msg) % a % b).str() << std::endl;
 
-    log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
+        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
+    }
+    catch(...)
+    {
+        trace_impl(func, file, line, "bad trace message");
+    }
 }
 
+void trace_impl_s(const char* func, const char* file, unsigned int line,
+                  const std::string& msg, const std::string& a,
+                  const std::string& b, const std::string& c)
+{
+    try
+    {
+        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func << ") : "
+            << (format(msg) % a % b %c).str() << std::endl;
+
+        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b % c).str());
+    }
+    catch(...)
+    {
+        trace_impl(func, file, line, "bad trace message");
+    }
+}
 
 } // namespace hexa
 

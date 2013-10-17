@@ -573,6 +573,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
 {
     static int step (0);
     static sf::Text info;
+    static sf::Text debug_info;
     static double acc_elapsed (0);
 
     acc_elapsed += elapsed;
@@ -631,6 +632,10 @@ void sfml::draw_ui(double elapsed, const hud& h)
         info.setPosition(10, 10);
         info.setCharacterSize(14);
 
+        debug_info.setFont(*ui_font_);
+        debug_info.setPosition(10, 30);
+        debug_info.setCharacterSize(14);
+
         auto p (camera_wpos_.pos);
         //world_coordinates r (p - world_center);
 
@@ -653,11 +658,22 @@ void sfml::draw_ui(double elapsed, const hud& h)
             % p.x % p.y % p.z
             ).str());
 
+        debug_info.setString((boost::format("chunk %1% , %2% , %3%   ( %4% , %5% , %6% )  [ %7% , %8%, %9%]\nheight %10%")
+            % (p.x / chunk_size) % (p.y / chunk_size) % (p.z / chunk_size)
+            % int((p.x / chunk_size) - world_chunk_center.x)
+            % int((p.y / chunk_size) - world_chunk_center.y)
+            % int((p.z / chunk_size) - world_chunk_center.z)
+            % (p.x % chunk_size) % (p.y % chunk_size) % (p.z % chunk_size)
+            % h.local_height).str());
+
         step = 0;
         acc_elapsed = 0;
     }
 
     app_.draw(info);
+    if (h.show_debug_info)
+        app_.draw(debug_info);
+
     app_.popGLStates();
 }
 

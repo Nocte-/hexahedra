@@ -94,6 +94,30 @@ public:
     }
 
 public:
+    wfvec& operator+= (const wfvec& add)
+    {
+        pos += add.pos; frac += add.frac;
+        return *this;
+    }
+
+    wfvec& operator+= (const vector& add)
+    {
+        frac += add;
+        return *this;
+    }
+
+    wfvec& operator-= (const wfvec& sub)
+    {
+        pos -= sub.pos; frac -= sub.frac;
+        return *this;
+    }
+
+    wfvec& operator-= (const vector& sub)
+    {
+        frac -= sub;
+        return *this;
+    }
+
     wfvec& operator*= (float v)
     {
         pos *= v; frac *= v;
@@ -262,6 +286,22 @@ operator- (const wfpos& lhs, const wfpos& rhs)
 {
     return wfvec(lhs.pos - rhs.pos, lhs.frac - rhs.frac);
 }
+
+inline wfvec
+operator+ (wfvec lhs, const wfvec& rhs)
+    { return lhs += rhs; }
+
+inline wfvec
+operator+ (wfvec lhs, const vector& rhs)
+    { return lhs += rhs; }
+
+inline wfvec
+operator- (wfvec lhs, const wfvec& rhs)
+    { return lhs -= rhs; }
+
+inline wfvec
+operator- (wfvec lhs, const vector& rhs)
+    { return lhs -= rhs; }
 
 //---------------------------------------------------------------------------
 

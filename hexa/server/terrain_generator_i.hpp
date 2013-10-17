@@ -22,10 +22,12 @@
 
 #pragma once
 
+#include <set>
 #include <boost/property_tree/ptree.hpp>
 #include <hexa/basic_types.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/height_chunk.hpp>
+#include <hexa/world_subsection.hpp>
 
 namespace hexa {
 
@@ -50,16 +52,35 @@ public:
      * \param dest  The container to be filled */
     virtual void generate (chunk_coordinates xyz, chunk& dest) = 0;
 
+    /** Generate multiple chunks of world data.
+     * \param xyz   The active chunk's position
+     * \param dest  The container to be filled */
+    virtual void generate (chunk_coordinates xyz,
+                           world_subsection<chunk_ptr>& dest) { }
+
     /** Estimate the height of the terrain at a given map position.
      * \param xy  The chunk column
+     * \param prev The height as determined by the previous terrain
+     *             generators.  This will be \a undefined_height for the
+     *             first generator.
      * \return All chunks with a z ordinate of this value or more are
      *          guarateed to be only air. */
-    virtual chunk_height estimate_height (map_coordinates xy) const
-        { return undefined_height; }
+    virtual chunk_height estimate_height (map_coordinates xy, chunk_height prev) const
+        { return prev; }
+
+    /** Return a list of relative chunk positions that this generator will
+     ** use to place features.
+     * Some generators need to write outside the current chunk (the one
+     * passed to generate() ) -- for example the leaves of a tree might
+     * spill into three neighboring chunks if the trunk is placed in one
+     * of the corners.  Such generators should overload this function to
+     * return a list of all the chunks it needs relative to the current one.
+     * */
+    virtual std::set<world_vector> span() const
+        { return { world_vector(0,0,0) }; }
 
 protected:
     world&  w_;
 };
 
 } // namespace hexa
-

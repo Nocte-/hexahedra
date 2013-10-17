@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   server/standard_world_generator.hpp
-/// \brief  Basic world generator based on Perlin noise.
+/// \file   server/null_area_generator.hpp
+/// \brief  Create empty areas.
 //
 // This file is part of Hexahedra.
 //
@@ -17,33 +17,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
 
 #include <memory>
-#include "terrain_generator_i.hpp"
+#include "area_generator_i.hpp"
 
 namespace hexa {
 
-/** Basic world generator.
- *  This generator is useful as a first step in the chain.  It uses
- *  several octaves of Perlin noise to generate a height map. */
-class standard_world_generator : public terrain_generator_i
+class null_area_generator : public area_generator_i
 {
-    struct impl;
-    std::unique_ptr<impl> pimpl_;
-
 public:
-    standard_world_generator(world& w,
-                             const boost::property_tree::ptree& conf);
+    null_area_generator(world& w, const boost::property_tree::ptree& conf)
+        : area_generator_i(w, conf)
+    { }
 
-    virtual ~standard_world_generator();
+    ~null_area_generator() { }
 
-    void generate (chunk_coordinates pos, chunk& dest);
-
-    chunk_height estimate_height (map_coordinates xy, chunk_height prev) const;
+    area_data& generate (map_coordinates, area_data& dest)
+    {
+        return dest;
+    }
 };
 
 } // namespace hexa
+

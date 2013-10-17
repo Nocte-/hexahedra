@@ -69,7 +69,8 @@ public:
 
     void    on_update_chunk(chunk_coordinates pos);
 
-    void    on_update_height(map_coordinates pos, chunk_height z);
+    void    on_update_height(map_coordinates pos, chunk_height z,
+                             chunk_height old_z);
 
     void    send_visibility_requests (chunk_coordinates pos);
 

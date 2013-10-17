@@ -294,5 +294,17 @@ double angle(const t& a, const t& b)
     return std::acos(clamp(dot_prod(a, b) / length_prod), -1.0, 1.0);
 }
 
+/** Minkowski sum of two sets. */
+template <typename t>
+t minkowski_sum (const t& a, const t& b)
+{
+    t result;
+    for (auto& i : a)
+        for (auto& j : b)
+            result.insert(i + j); // no emplace in gcc 4.7
+
+    return result;
+}
+
 } // namespace hexa
 

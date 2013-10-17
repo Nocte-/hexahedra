@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <unordered_set>
 #include <boost/asio.hpp>
 #include <boost/signals2.hpp>
@@ -127,7 +128,7 @@ private:
     world_coordinates   old_position_;
     vector              old_fraction_;
     scene               scene_;
-    bool                stop_;
+    std::atomic<bool>   stop_;
 
     bool                in_action_;
     uint16_t            last_action_;
@@ -144,7 +145,6 @@ private:
     bool                was_standing_;
 
     entity_system       entities_;
-    boost::mutex        entities_mutex_;
     uint32_t            player_entity_;
 
     bool                waiting_for_data_;

@@ -22,6 +22,7 @@
 
 #pragma once
 
+#include <string>
 #include <vector>
 #include "basic_types.hpp"
 
@@ -126,3 +127,22 @@ public:
 
 } // namespace hexa
 
+namespace std
+{
+
+inline ostream& operator<< (ostream& in, const hexa::hotbar_slot& x)
+{
+    return in << "hotbar slot";
+}
+
+inline string to_string (const hexa::hotbar_slot& x)
+{
+    return "hotbar slot";
+}
+
+inline string to_string (const hexa::hotbar& x)
+{
+    return "hotbar";
+}
+
+}

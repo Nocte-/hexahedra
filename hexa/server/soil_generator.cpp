@@ -21,6 +21,8 @@
 
 #include "soil_generator.hpp"
 
+#include <hexa/log.hpp>
+#include <hexa/trace.hpp>
 #include "world.hpp"
 
 using namespace boost::property_tree;
@@ -39,48 +41,61 @@ soil_generator::soil_generator(world& w, const ptree& conf)
         throw std::runtime_error("soil_generator requires a surface map");
 }
 
+void replace (int x, int y, int z, chunk& dest, uint16_t check, uint16_t type)
+{
+    if (z >= 0 && z < chunk_size)
+    {
+        if (dest(x,y,z) == check)
+            dest(x,y,z) = type;
+    }
+}
+
 void soil_generator::generate(chunk_coordinates pos, chunk& dest)
 {
     if (!w_.is_area_data_available(pos, surfacemap_))
     {
-        std::cout << "No area data available for soil" << std::endl;
+        log_msg("ERROR: No area data available for soil");
         return;
     }
 
-    auto sm  (w_.get_area_data(pos, surfacemap_));
+    trace("start soil generation for %1%", world_vector(pos - world_chunk_center));
 
-    chunk_coordinates bot;
-    auto region (w_.lock_region({pos + world_vector(0, 0, -1), pos}, *this));
+    const uint16_t old (16); // stone
+
+    auto sm (w_.get_area_data(pos, surfacemap_));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
 
-    for (uint32_t ax (0); ax < chunk_size; ++ax)
+    for (int x (0); x < chunk_size; ++x)
     {
-        for (uint32_t ay (0); ay < chunk_size; ++ay)
+        for (int y (0); y < chunk_size; ++y)
         {
-            int16_t lz ((*sm)(ax, ay));
-            if (lz < z_offset || lz >= z_offset + chunk_size)
+            int16_t lz ((*sm)(x, y));
+            if (lz == std::numeric_limits<uint16_t>::max())
+            {
+                trace("ERROR: found undefined height at %1%", pos);
+                continue;
+            }
+
+            if (lz < z_offset || lz >= z_offset + chunk_size + 3)
                 continue;
 
-            uint32_t x (ax + pos.x * chunk_size);
-            uint32_t y (ay + pos.y * chunk_size);
-            uint32_t z (water_level + lz);
-            if (region(x,y,z) == (uint16_t)16)
+            int z ((int)lz - z_offset);
+            if (lz >= 5)
             {
-                if (lz >= 5)
-                {
-                    region(x,y,z  ) = grass_;
-                    region(x,y,z-1) = dirt_;
-                    region(x,y,z-2) = rock_;
-                }
-                else
-                {
-                    region(x,y,z  ) = sand_;
-                    region(x,y,z-1) = sand_;
-                    region(x,y,z-2) = rock_;
-                }
+                replace(x,y,z  , dest, old, grass_);
+                replace(x,y,z-1, dest, old, dirt_);
+                replace(x,y,z-2, dest, old, rock_);
+            }
+            else
+            {
+                replace(x,y,z  , dest, old, sand_);
+                replace(x,y,z-1, dest, old, sand_);
+                replace(x,y,z-2, dest, old, rock_);
             }
         }
     }
+
+    trace("end soil generation for %1%", world_vector(pos - world_chunk_center));
 }
 
 } // namespace hexa

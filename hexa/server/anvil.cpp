@@ -1391,7 +1391,7 @@ anvil_generator::~anvil_generator()
 { }
 
 chunk_height
-anvil_generator::estimate_height (map_coordinates xy) const
+anvil_generator::estimate_height (map_coordinates xy, chunk_height prev) const
 {
     return pimpl_->estimate_height(xy);
 }

@@ -21,6 +21,8 @@
 
 #include "tree_generator.hpp"
 
+#include <hexa/log.hpp>
+#include <hexa/trace.hpp>
 #include "world.hpp"
 
 using namespace boost::property_tree;
@@ -40,31 +42,55 @@ tree_generator::tree_generator(world& w, const ptree& conf)
 
 void tree_generator::generate(chunk_coordinates pos, chunk& dest)
 {
+}
+
+void tree_generator::generate(chunk_coordinates pos,
+                              world_subsection<chunk_ptr>& region)
+{
     if (!w_.is_area_data_available(pos, surfacemap_))
+    {
+        trace("ERROR: can't plant trees at %1%, no surface data", world_vector(pos - world_chunk_center));
         return;
+    }
+
+    trace("start tree generation for %1%", world_vector(pos - world_chunk_center));
 
     auto sm  (w_.get_area_data(pos, surfacemap_));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
 
-    range<chunk_coordinates> rng (pos - chunk_coordinates(1, 1, 0),
-                                  pos + chunk_coordinates(2, 2, 2));
-    auto region (w_.lock_range(rng, *this));
+    //range<chunk_coordinates> rng (pos - chunk_coordinates(1, 1, 0),
+    //                              pos + chunk_coordinates(2, 2, 2));
+    //auto region (w_.lock_range(rng, *this));
 
     for (int count (0) ; count < 1; ++count)
     {
         uint8_t ox (rand() % chunk_size);
         uint8_t oy (rand() % chunk_size);
 
+        //uint8_t ox ((8 * (count % 2)) % chunk_size);
+        //uint8_t oy ((8 * (count / 2)) % chunk_size);
+
         int16_t zpos ((*sm)(ox, oy));
+
+        trace("About to plant at %1% %2% (%3%)", (int)ox, (int)oy, world_vector(pos - world_chunk_center));
+
         if (zpos < z_offset || zpos > z_offset + chunk_size - 1)
-            return;
+        {
+            trace("not in range %1% %2%", zpos, z_offset);
+            continue;
+        }
 
         uint32_t x (pos.x * chunk_size + ox);
         uint32_t y (pos.y * chunk_size + oy);
         uint32_t z (water_level + zpos);
-        if (region(x, y, z) != dirt_)
-            continue;
 
+        if (region(x, y, z) != dirt_)
+        {
+            trace("region %1% is not dirt", world_coordinates(x,y,z));
+            continue;
+        }
+
+        trace("planting a tree");
         for (int c (0); c < 9; ++c)
         {
             if (c > 3)
@@ -81,6 +107,22 @@ void tree_generator::generate(chunk_coordinates pos, chunk& dest)
            for (int sy (-1); sy <= 1; ++sy)
                region(x+sx, y+sy, z) = leaves_;
     }
+    trace("end tree generation for %1%", world_vector(pos - world_chunk_center));
+}
+
+chunk_height
+tree_generator::estimate_height (map_coordinates xy, chunk_height prev) const
+{
+    if (prev != undefined_height)
+        return prev + 1;
+
+    return prev;
+}
+
+std::set<world_vector> tree_generator::span() const
+{
+    auto r (make_range<world_vector>( {-1, -1, 0 }, { 2, 2, 2 }));
+    return { r.begin(), r.end() };
 }
 
 } // namespace hexa

@@ -168,6 +168,16 @@ public:
     {
         return index_to_pos(size_type(std::distance(begin(), i)));
     }
+
+    bool is_air() const
+    {
+        for (auto& blk : *this)
+        {
+            if (blk.type != 0)
+                return false;
+        }
+        return true;
+    }
 };
 
 } // namespace hexa

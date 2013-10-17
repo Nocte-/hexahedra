@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   server/udp_server.hpp
-/// \brief  Base class for UDP-based servers
+/// \file   hexa/locked_subsection.hpp
+/// \brief  A subsection of the world that is locked by mutexes.
 //
 // This file is part of Hexahedra.
 //
@@ -17,41 +17,50 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright (C) 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
 
+#include <unordered_map>
 #include <vector>
+#include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
-#include <enet/enet.h>
-#include <hexa/protocol.hpp>
+
+#include "chunk.hpp"
+#include "world_subsection.hpp"
 
 namespace hexa {
 
-class udp_server
+class world;
+
+/** This lock can be acquired through world::lock_region(). */
+class locked_subsection : public world_subsection<chunk_ptr>
 {
+    friend class world;
+    typedef world_subsection<chunk_ptr> base;
+
 public:
-    udp_server(uint16_t port, uint16_t max_users = 32);
-    virtual ~udp_server();
+    locked_subsection(const locked_subsection&) = delete;
 
-    void poll (uint16_t milliseconds);
+    locked_subsection(locked_subsection&& m)
+        : base(std::move(m))
+        , locked_(std::move(m.locked_))
+    { }
 
-    void send (ENetPeer* dest, const std::vector<uint8_t>& msg,
-               msg::reliability method) const;
+    ~locked_subsection();
 
-    void broadcast (const std::vector<uint8_t>& msg,
-                    msg::reliability method) const;
+protected:
+    locked_subsection() { }
 
-    virtual void on_connect (ENetPeer* peer) = 0;
-    virtual void on_receive (ENetPeer* peer, const packet& pkt) = 0;
-    virtual void on_disconnect (ENetPeer* peer) = 0;
+    locked_subsection(std::vector<boost::unique_lock<boost::mutex>>&& locks,
+                      std::unordered_map<chunk_coordinates, chunk_ptr>&& chunks);
+
+    void add (chunk_coordinates pos, chunk_ptr p);
+
 
 private:
-    ENetAddress             addr_;
-    ENetHost*               sv_;
-    mutable boost::mutex    enet_mutex_;
+    std::vector<boost::unique_lock<boost::mutex>> locked_;
 };
 
 } // namespace hexa
-

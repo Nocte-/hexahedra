@@ -1414,6 +1414,7 @@ struct robinton_generator::impl
 
         // Fix fences and other special blocks
         //
+        /*
         typedef world_vector wv;
         auto region (w_.lock_region({ pos, pos + wv(0,1,0), pos + wv(0,-1,0), pos + wv(1,0,0), pos + wv(-1,0,0) }, p_));
         auto wp (pos * chunk_size);
@@ -1432,9 +1433,8 @@ struct robinton_generator::impl
 
             blk = (fence_id * 0x10) + add;
         }
-
+        */
         cache_.prune(40);
-
         }
         catch (bad_region& e)
         {
@@ -1460,7 +1460,7 @@ robinton_generator::~robinton_generator()
 { }
 
 chunk_height
-robinton_generator::estimate_height (map_coordinates xy) const
+robinton_generator::estimate_height (map_coordinates xy, chunk_height prev) const
 {
     return pimpl_->estimate_height(xy);
 }

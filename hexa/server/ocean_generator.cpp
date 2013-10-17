@@ -70,8 +70,6 @@ void ocean_generator::generate(chunk_coordinates pos, chunk& dest)
     if (z_lim <= 0)
         return;
 
-    boost::lock_guard<boost::mutex> lock (dest.lock());
-
     for (int x (0); x < chunk_size; ++x)
     {
         for (int y (0); y < chunk_size; ++y)

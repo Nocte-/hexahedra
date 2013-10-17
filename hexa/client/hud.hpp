@@ -37,6 +37,8 @@ public:
     std::vector<slot>       hotbar;
     bool                    hotbar_needs_update;
     unsigned int            active_slot;
+    bool                    show_debug_info;
+    chunk_height            local_height;
 
     struct timeout_msg
     {

@@ -23,6 +23,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -37,6 +38,7 @@
 #include <hexa/chunk.hpp>
 #include <hexa/concurrent_queue.hpp>
 #include <hexa/height_chunk.hpp>
+#include <hexa/locked_subsection.hpp>
 #include <hexa/lightmap.hpp>
 #include <hexa/storage_i.hpp>
 #include <hexa/world_subsection.hpp>
@@ -71,24 +73,8 @@ public:
 
     concurrent_queue<request> requests;
 
-public:
-    /** This lock can be acquired through lock_region(). */
-    class exclusive_section : public subsection<chunk_ptr>
-    {
-        friend class world;
+protected:
 
-    public:
-        exclusive_section(const exclusive_section&) = delete;
-		exclusive_section(exclusive_section&& m) : subsection<chunk_ptr>(std::move(m)), locked_(std::move(m.locked_)) { }
-
-        ~exclusive_section();
-
-    protected:
-        exclusive_section(std::vector<boost::unique_lock<boost::mutex>>&& locks);
-
-    private:
-        std::vector<boost::unique_lock<boost::mutex>> locked_;
-    };
 
 public:
     world(storage_i& storage);
@@ -119,6 +105,8 @@ public:
     bool            is_coarse_height_available(map_coordinates pos);
     void            store(map_coordinates pos, chunk_height data);
 
+    void            store(const locked_subsection& region) { }
+
     compressed_data
     get_compressed_lightmap (chunk_coordinates xyz);
 
@@ -129,7 +117,7 @@ public:
 
     int         find_area_generator(const std::string& name) const;
 
-
+    bool        is_air (chunk_coordinates xyz);
 
     std::tuple<world_coordinates, world_coordinates>
                 raycast(const wfpos& origin, const yaw_pitch& direction,
@@ -141,21 +129,6 @@ public:
 
     void        cleanup();
 
-    /** Terrain generators can temporarily lock a region of the world.
-     *  This is usually done to place features that can cross into other
-     *  chunks, such as trees, rivers, or dungeons.  Every chunk that is
-     *  locked this way is guarateed to be initialized by at least the
-     *  terrain generator that precede the one that is requesting the
-     *  lock. */
-    //exclusive_section  lock_region(const range<chunk_coordinates>& r,
-    //                               const terrain_generator_i& requester);
-
-    exclusive_section  lock_region(const std::set<chunk_coordinates>& r,
-                                   const terrain_generator_i& requester);
-
-    exclusive_section  lock_range(const range<chunk_coordinates>& r,
-                                  const terrain_generator_i& requester);
-
     chunk_ptr   get_raw_chunk(chunk_coordinates pos);
 
 
@@ -166,6 +139,8 @@ public:
     boost::mutex                          height_changeset_lock;
 
 protected:
+    locked_subsection  lock_chunks (const std::set<chunk_coordinates>& r);
+
     block get_block_nolocking(world_coordinates pos);
     void  refine_lightmap (chunk_coordinates pos, int phase);
 
@@ -181,7 +156,7 @@ protected:
      *  created in such a way that the terrain generators up to \a phase
      *  have been invoked.  If phase is zero, this is equivalent to
      *  get_or_create_chunk. */
-    chunk_ptr       get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_height = true);
+    //chunk_ptr       get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_height = true);
 
     /** Regenerate surface and lightmap data. */
     void  update (chunk_coordinates pos);
@@ -190,9 +165,14 @@ protected:
 
     void set_coarse_height(chunk_coordinates pos, chunk_height h);
 
+    void generate_terrain (chunk_coordinates pos, const chunk_ptr& chunk);
+    void generate_terrain (chunk_coordinates pos, const chunk_ptr& chunk, int phase);
+
+    unsigned int find_generator(const terrain_generator_i& requester) const;
+
 protected:
-    es::storage  entities_;
-    boost::mutex entities_mutex_;
+    //es::storage  entities_;
+    //boost::mutex entities_mutex_;
 
 private:
     std::vector<std::unique_ptr<area_generator_i>>      areagen_;
@@ -202,8 +182,13 @@ private:
     storage_i& storage_;
 
     int heightmap_;
+    std::map<world_vector, unsigned int> phases_;
 
-    std::vector<boost::thread>    workers_;
+    std::vector<boost::thread>  workers_;
+    boost::mutex                generator_lock_;
+
+    boost::mutex check_lock_;
+    std::unordered_set<chunk_coordinates> check_;
 };
 
 } // namespace hexa

@@ -39,7 +39,7 @@ public:
     void
     generate (chunk_coordinates pos, chunk& dest);
 
-    chunk_height estimate_height (map_coordinates) const
+    chunk_height estimate_height (map_coordinates, chunk_height) const
         { return level_; }
 
 private:

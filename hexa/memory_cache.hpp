@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
@@ -77,6 +77,7 @@ public:
     void store (chunk_coordinates xyz, lightmap_ptr data);
     void store (chunk_coordinates xyz, surface_ptr data);
     void store (map_coordinates   xy,  chunk_height height);
+    void store (const locked_subsection& region);
 
     bool is_area_data_available       (map_coordinates   xy, uint16_t index);
     bool is_chunk_available           (chunk_coordinates xyz);

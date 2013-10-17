@@ -32,6 +32,7 @@
 #include <hexa/aabb.hpp>
 #include <hexa/area_data.hpp>
 #include <hexa/block_types.hpp>
+#include <hexa/log.hpp>
 #include <hexa/ray.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/vector3.hpp>
@@ -177,6 +178,12 @@ public:
     boost::optional<yaw_pitch> get_lookat() const
         { return get<yaw_pitch>(entity_system::c_lookat); }
 
+    boost::optional<aabb<vector>> get_bounding_box() const
+        { return get<aabb<vector>>(entity_system::c_boundingbox); }
+
+    void set_bounding_box (const aabb<vector>& v)
+        { set(entity_system::c_boundingbox, v); }
+
 
     boost::optional<luabind::object> get (int component_id) const
         { return false; }
@@ -236,7 +243,7 @@ public:
         else if (hb->size() == newsize)
             return;
 
-        std::cout << "Resize hotbar to " << newsize << std::endl;
+        trace("Resize hotbar to %1%", newsize);
         hb->resize(newsize);
         set(entity_system::c_hotbar, *hb);
     }
@@ -256,7 +263,7 @@ public:
         if (!hb)
             throw std::runtime_error("no hotbar available");
 
-        std::cout << "Setting hotbar slot " << i << " to " << s.name << std::endl;
+        trace("Setting hotbar slot %1% to %2%", i, s.name);
         hb->at(i) = s;
         set(entity_system::c_hotbar, *hb);
     }
@@ -271,7 +278,7 @@ public:
 
     void change_speed (double dx, double dy, double dz)
     {
-        std::cout << "player change speed by " << dz << std::endl;
+        trace("player change speed by %1%", dz);
     }
 
     wfpos get_position() const { return {p_.position, p_.position_fraction}; }
@@ -307,20 +314,16 @@ public:
         if (newsize == p_.hotbar.size())
             return;
 
-        std::cout << "resize hotbar to " << newsize << std::endl;
         p_.hotbar.resize(newsize);
         send_hotbar();
-        std::cout << "Sent" << std::endl;
     }
 
     hotbar_slot& hotbar_get(int i) const { return p_.hotbar.at(i); }
 
     void hotbar_set (int i, const hotbar_slot& s)
     {
-        std::cout << "Setting hotbar slot " << i << " to " << s.name << std::endl;
         p_.hotbar.at(i) = s;
         send_hotbar();
-        std::cout << "Sent" << std::endl;
     }
 
 private:
@@ -369,7 +372,9 @@ lua::lua(server_entity_system& entities, world &w)
         def("server_log", server_log),
         def("raycast", raycast),
         def("are_overlapping", are_overlapping<world_coordinates>),
+        def("are_overlapping", are_overlapping<vector>),
         def("is_inside", is_inside<world_coordinates>),
+        def("is_inside", is_inside<vector>),
 
         class_<world_coordinates>("pos")
             .def(constructor<uint32_t, uint32_t, uint32_t>())
@@ -385,6 +390,7 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("y", &world_vector::y)
             .def_readwrite("z", &world_vector::z)
             .def(self + other<world_vector>())
+            .def(self - other<world_vector>())
             .def(self == other<world_vector>())
             ,
         class_<vector>("vecf")
@@ -393,12 +399,26 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("y", &vector::y)
             .def_readwrite("z", &vector::z)
             .def(self + other<vector>())
+            .def(self - other<vector>())
             .def(self == other<vector>())
             ,
+        class_<wfvec>("wfvec")
+            .def_readwrite("intpart", &wfvec::pos)
+            .def_readwrite("frac", &wfvec::frac)
+            .def(self + other<vector>())
+            .def(self + other<wfvec>())
+            .def(self - other<vector>())
+            .def(self - other<wfvec>())
+            .def(self == other<wfvec>())
+            ,
         class_<wfpos>("wfpos")
-            .def_readwrite("pos", &wfpos::pos)
+            .def_readwrite("intpart", &wfpos::pos)
             .def_readwrite("frac", &wfpos::frac)
             .def(self + other<vector>())
+            .def(self + other<wfvec>())
+            .def(self - other<vector>())
+            .def(self - other<wfvec>())
+            .def(self - other<wfpos>())
             .def(self == other<wfpos>())
             ,
         class_<yaw_pitch>("direction")
@@ -407,30 +427,21 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("pitch", &yaw_pitch::y)
             ,
         class_<aabb<world_coordinates>>("box")
+            .def(constructor<const world_coordinates&>())
             .def(constructor<const world_coordinates&, const world_coordinates&>())
             .def_readwrite("first", &aabb<world_coordinates>::first)
             .def_readwrite("second", &aabb<world_coordinates>::second)
-//            .def_readonly("is_correct", &aabb<world_coordinates>::is_correct)
             .def("make_correct", &aabb<world_coordinates>::make_correct)
+            .def(self + other<world_coordinates>())
             ,
-            /*
-        class_<player_wrapper>("player")
-            .def("change_speed",        &player_wrapper::change_speed)
-            .property("position",       &player_wrapper::get_position,
-                                        &player_wrapper::set_position)
-            .property("position_frac",  &player_wrapper::get_fposition,
-                                        &player_wrapper::set_fposition)
-            .property("chunk",          &player_wrapper::get_chunk)
-            .property("head_angle",     &player_wrapper::head_angle)
-            .property("aiming_at",      &player_wrapper::aiming_at)
-            .property("ip_address",     &player_wrapper::get_ip)
-            .property("name",           &player_wrapper::get_name)
-            .property("hotbar_size",    &player_wrapper::hotbar_size,
-                                        &player_wrapper::resize_hotbar)
-            .def("hotbar_get",          &player_wrapper::hotbar_get)
-            .def("hotbar_set",          &player_wrapper::hotbar_set)
+        class_<aabb<vector>>("bounding_box")
+            .def(constructor<const vector&>())
+            .def(constructor<const vector&, const vector&>())
+            .def_readwrite("first", &aabb<vector>::first)
+            .def_readwrite("second", &aabb<vector>::second)
+            .def("make_correct", &aabb<vector>::make_correct)
+            .def(self + other<vector>())
             ,
-                    */
         class_<lua_component>("component")
             .enum_("core_id")
                 [
@@ -460,6 +471,7 @@ lua::lua(server_entity_system& entities, world &w)
             .property("impact", &lua_entity::get_impact)
             .property("model", &lua_entity::get_model, &lua_entity::set_model)
             .property("name", &lua_entity::get_name, &lua_entity::set_name)
+            .property("bounding_box", &lua_entity::get_bounding_box, &lua_entity::set_bounding_box)
             .property("look_at", &lua_entity::get_lookat)
             .property("on_ground", &lua_entity::on_ground)
             .property("hotbar_size", &lua_entity::hotbar_size,
@@ -839,12 +851,12 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
     }
     if (!found->second.is_valid())
     {
-        std::cout << "No valid action bound" << std::endl;
+        log_msg("No valid action bound to button %1%", (int)button);
         return;
     }
     if (found->second == luabind::object())
     {
-        std::cout << "Nil action bound" << std::endl;
+        log_msg("Nil action bound to button %1%", (int)button);
         return;
     }
 
@@ -919,7 +931,7 @@ void lua::send_console_message(es::entity plr,
 
 void lua::server_log(const std::string& msg)
 {
-    std::cout << "Lua log: " << msg << std::endl;
+    log_msg(msg);
 }
 
 } // namespace hexa

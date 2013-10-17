@@ -30,16 +30,34 @@
 
 namespace hexa {
 
-template <class chunk_ptr_type>
-class subsection
+template <typename chunk_ptr_type>
+class world_subsection
 {
+    typedef std::unordered_map<chunk_coordinates, chunk_ptr_type>
+                                                    storage_t;
+
 public:
     typedef chunk_ptr_type                          chunk_pointer_type;
     typedef typename chunk_ptr_type::element_type   chunk_type;
     typedef typename chunk_type::value_type         value_type;
+    typedef typename chunk_type::size_type          size_type;
+
+    typedef typename storage_t::iterator            iterator;
+    typedef typename storage_t::const_iterator      const_iterator;
 
 public:
-    bool have_chunk (chunk_coordinates pos) const
+    world_subsection() { }
+
+    world_subsection(std::unordered_map<chunk_coordinates, chunk_ptr_type>&& init)
+        : cache_(std::move(init))
+    { }
+
+    world_subsection(world_subsection&& m)
+        : cache_(std::move(m.cache_))
+    { }
+
+public:
+    bool has_chunk (chunk_coordinates pos) const
     {
         return cache_.count(pos) > 0;
     }
@@ -54,10 +72,17 @@ public:
         return *lookup(cache_, pos);
     }
 
+    chunk_pointer_type& get_ptr (chunk_coordinates pos)
+    {
+        return lookup(cache_, pos);
+    }
+
     void set_chunk (chunk_coordinates pos, const chunk_pointer_type& ptr)
     {
         if (ptr != nullptr)
             cache_[pos] = ptr;
+        else
+            cache_.erase(pos);
     }
 
     value_type& operator[] (world_coordinates o)
@@ -80,8 +105,20 @@ public:
         return operator[](world_coordinates(x, y, z));
     }
 
+public:
+    size_type size() const { return cache_.size(); }
+
+    bool empty() const { return cache_.empty(); }
+
+    iterator        begin()         { return cache_.begin(); }
+    const_iterator  begin() const   { return cache_.begin(); }
+    const_iterator  cbegin() const  { return cache_.begin(); }
+    iterator        end()           { return cache_.end(); }
+    const_iterator  end() const     { return cache_.end(); }
+    const_iterator  cend() const    { return cache_.end(); }
+
 protected:
-    std::unordered_map<chunk_coordinates, chunk_ptr_type> cache_;
+    storage_t cache_;
 };
 
 

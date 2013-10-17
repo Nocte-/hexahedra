@@ -26,6 +26,8 @@ namespace hexa {
 hud::hud()
     : hotbar_needs_update (false)
     , active_slot (0)
+    , show_debug_info (false)
+    , local_height (undefined_height)
     , console_timeout_(12.0f)
     , input_cursor_ (0)
 {}

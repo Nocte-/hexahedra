@@ -248,9 +248,11 @@ void scene::on_update_chunk(chunk_coordinates pos)
     }
 }
 
-void scene::on_update_height(map_coordinates pos, chunk_height z)
+void scene::on_update_height(map_coordinates pos, chunk_height z,
+                             chunk_height old_z)
 {
-    //send_visibility_request(chunk_coordinates(pos, z+1));
+    if (old_z != undefined_height && z > old_z)
+        send_visibility_request(chunk_coordinates(pos, old_z));
 }
 
 void scene::build_mesh(chunk_coordinates pos)

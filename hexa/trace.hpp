@@ -49,6 +49,9 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a,
                   const std::string& b);
 
+void trace_impl_s(const char* func, const char* file, unsigned int line,
+                  const std::string& msg, const std::string& a,
+                  const std::string& b, const std::string& c);
 
 template <typename ta> inline
 void trace_impl(const char* func, const char* file, unsigned int line,
@@ -90,6 +93,14 @@ void trace_impl(const char* func, const char* file, unsigned int line,
                 const std::string& msg, const ta& a, const std::string& b)
 {
     trace_impl_s(func, file, line, msg, std::to_string(a), b);
+}
+
+template <typename ta, typename tb, typename tc> inline
+void trace_impl(const char* func, const char* file, unsigned int line,
+                const std::string& msg, const ta& a, const tb& b, const tc& c)
+{
+    trace_impl_s(func, file, line, msg, std::to_string(a), std::to_string(b),
+                 std::to_string(c));
 }
 
 

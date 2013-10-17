@@ -25,6 +25,8 @@
 #include "neighborhood.hpp"
 #include "voxel_range.hpp"
 
+#include "trace.hpp"
+
 using namespace boost::range;
 
 namespace hexa {
@@ -69,9 +71,14 @@ extract_opaque_surface (const neighborhood<chunk_ptr>& terrain)
     // Cache the center chunk
     const chunk& center_chunk (*terrain.center());
 
+    if (terrain.center_pos() == chunk_coordinates(134217728, 134217729, 134217740))
+    {
+        trace("FIETS %1% %2% %3%", center_chunk(0,0,0).type, center_chunk(0,0,1).type, center_chunk.generation_phase);
+    }
+
     for (chunk_index i : every_block_in_chunk)
     {
-        uint16_t type (center_chunk[i].type);
+        uint16_t type (center_chunk[i].type);            
         if (type == type::air)
             continue;
 
@@ -93,6 +100,11 @@ extract_opaque_surface (const neighborhood<chunk_ptr>& terrain)
             if (dirs != 0)
                 result.emplace_back(i, dirs, type);
 		}
+    }
+
+    if (terrain.center_pos() == chunk_coordinates(134217728, 134217729, 134217740))
+    {
+        trace("FIET2 %1% %2% %3%", center_chunk(0,0,0).type, center_chunk(0,0,1).type, center_chunk.generation_phase);
     }
 
     return result;

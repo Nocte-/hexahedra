@@ -1,6 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   server/standard_world_generator.hpp
-/// \brief  Basic world generator based on Perlin noise.
+// hexa/locked_subsection.cpp
 //
 // This file is part of Hexahedra.
 //
@@ -17,33 +16,30 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
-#pragma once
-
-#include <memory>
-#include "terrain_generator_i.hpp"
+#include "locked_subsection.hpp"
 
 namespace hexa {
 
-/** Basic world generator.
- *  This generator is useful as a first step in the chain.  It uses
- *  several octaves of Perlin noise to generate a height map. */
-class standard_world_generator : public terrain_generator_i
+locked_subsection::locked_subsection(std::vector<boost::unique_lock<boost::mutex>>&& locks,
+                                     std::unordered_map<chunk_coordinates, chunk_ptr>&& chunks)
+    : base(std::move(chunks))
+    , locked_(std::move(locks))
 {
-    struct impl;
-    std::unique_ptr<impl> pimpl_;
+}
 
-public:
-    standard_world_generator(world& w,
-                             const boost::property_tree::ptree& conf);
+locked_subsection::~locked_subsection()
+{
+    for (auto& l : locked_)
+        l.unlock();
+}
 
-    virtual ~standard_world_generator();
+void locked_subsection::add (chunk_coordinates pos, chunk_ptr p)
+{
+    set_chunk(pos, p);
+    locked_.emplace_back(p->lock());
+}
 
-    void generate (chunk_coordinates pos, chunk& dest);
-
-    chunk_height estimate_height (map_coordinates xy, chunk_height prev) const;
-};
-
-} // namespace hexa
+}

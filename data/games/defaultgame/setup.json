@@ -8,6 +8,10 @@
         "scale": 10000
     },
     {
+        "module": "null",
+        "name": "surface"
+    },
+    {
         "module": "biome",
         "name": "rough_terrain",
         "octaves": 2,
@@ -60,8 +64,7 @@
 
 "light": [
     { "module": "ambient_occlusion" },
-    { "module": "sun" },
-    { "module": "lamp" }
+    { "module": "sun" }
 ]
 
 }

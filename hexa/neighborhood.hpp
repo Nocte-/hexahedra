@@ -66,6 +66,12 @@ public:
         , len_      (radius * 2 + 1)
         , cache_    (len_ * len_ * len_)
     {
+        assert(empty_->is_air());
+    }
+
+    ~neighborhood()
+    {
+        assert(empty_->is_air());
     }
 
     world_vector offset() const { return world_vector(radius(), radius(), radius()); }
@@ -214,15 +220,17 @@ protected:
         {
             world_vector b (idx % len_, (idx / len_) % len_, idx / (len_*len_));
             auto c (center_ + b - offset());
-            auto height (src_.get_coarse_height(c));
+            //auto height (src_.get_coarse_height(c));
 
             // Check for all-air blocks, or for undefined blocks
-            if (   (height != undefined_height && c.z >= height)
-                || (cache_[idx] = src_.get_chunk(c)).get() == nullptr)
-            {
+            //if (   (height != undefined_height && c.z >= height)
+            //    || (cache_[idx] = src_.get_chunk(c)).get() == nullptr)
+            //{
+            //    cache_[idx] = empty_;
+            //}
+            cache_[idx] = src_.get_chunk(c);
+            if (cache_[idx] == nullptr)
                 cache_[idx] = empty_;
-            }
-            assert(cache_[idx] != nullptr);
         }
 
         return cache_[idx];

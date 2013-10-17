@@ -223,6 +223,9 @@ void main_game::resize (unsigned int w, unsigned int h)
 
 void main_game::player_controls()
 {
+    if (key_pressed(key::space))
+        action(0);
+
     static msg::motion last;
     static msg::look_at last_look;
 
@@ -263,7 +266,10 @@ void main_game::player_controls()
         last_look = look;
 
         if (player_entity_ != 0xffffffff)
+        {
+            auto lock (entities_.acquire_write_lock());
             entities_.set(player_entity_, entity_system::c_lookat, look.look);
+        }
     }
 }
 
@@ -277,7 +283,7 @@ void main_game::update(double time_delta)
 
     if (!waiting_for_data_)
     {
-        //boost::mutex::scoped_lock lock (entities_mutex_);
+        auto lock (entities_.acquire_write_lock());
         double delta (time_delta);
         system_lag_compensate(entities_, time_delta, player_entity_);
 
@@ -329,17 +335,17 @@ void main_game::update(double time_delta)
 
 void main_game::render()
 {
-    boost::mutex::scoped_lock lock (entities_mutex_);
-
     if (player_entity_ != 0xffffffff)
     {
         try
         {
+            auto lock (entities_.acquire_read_lock());
             wfpos pp (entities_.get<wfpos>(player_entity_, entity_system::c_position));
             pp.normalize();
             player_.move_to(pp);
             player_.velocity = entities_.get<vector>(player_entity_, entity_system::c_velocity);
             player_.is_airborne = (entities_.get<vector>(player_entity_, entity_system::c_impact).z == 0);
+            hud_.local_height = world().get_coarse_height(pp.int_pos() / chunk_size);
         }
         catch(...)
         {
@@ -350,6 +356,8 @@ void main_game::render()
     renderer().prepare(player_);
     renderer().opaque_pass();
     {
+    auto lock (entities_.acquire_read_lock());
+
     entities_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
             es::storage::var_ref<wfpos> pos)
@@ -487,8 +495,8 @@ void main_game::process_event_captured (const event& ev)
         case key::num8: hud_.active_slot = 8; break;
         case key::num9: hud_.active_slot = 9; break;
 
-        case key::space:
-            action(0); break;
+        //case key::space:
+        //    action(0); break;
 
         case key::l_bracket:
             {
@@ -523,6 +531,10 @@ void main_game::process_event_captured (const event& ev)
         case key::f2:
             hud_.console_message("Screenshot saved.");
             // The screenshot save routine itself is in game.cpp
+            break;
+
+        case key::f3:
+            hud_.show_debug_info = !hud_.show_debug_info;
             break;
 
         default: ; // do nothing
@@ -674,6 +686,7 @@ void main_game::walk(float dir, float speed)
 
     const float walk_force (40.0f);
     float magnitude (walk_force * speed);
+    auto lock (entities_.acquire_write_lock());
     entities_.set(player_entity_, entity_system::c_walk, move * magnitude);
 }
 
@@ -684,6 +697,7 @@ void main_game::action(uint8_t code)
 
     if (code == 0 && player_entity_ != 0xffffffff)
     {
+        auto lock (entities_.acquire_write_lock());
         if (entities_.get<vector>(player_entity_, entity_system::c_impact).z > 0)
         {
             auto v (entities_.get<vector>(player_entity_, entity_system::c_velocity));
@@ -809,7 +823,7 @@ void main_game::entity_update (deserializer<packet>& p)
     msg::entity_update msg;
     msg.serialize(p);
 
-    boost::mutex::scoped_lock lock (entities_mutex_);
+    auto lock (entities_.acquire_write_lock());
 
     for (auto& upd : msg.updates)
     {
@@ -869,7 +883,7 @@ void main_game::entity_update_physics (deserializer<packet>& p)
     int32_t lag_msec (clock::time() - msg.timestamp);
     float   lag (lag_msec * 0.001f);
 
-    boost::mutex::scoped_lock lock (entities_mutex_);
+    auto lock (entities_.acquire_write_lock());
 
     for (auto& upd : msg.updates)
     {
@@ -899,7 +913,7 @@ void main_game::entity_delete (deserializer<packet>& p)
     msg.serialize(p);
 
     log_msg("Delete entity %1%", msg.entity_id);
-    boost::mutex::scoped_lock lock (entities_mutex_);
+    auto lock (entities_.acquire_write_lock());
     entities_.delete_entity(msg.entity_id);
 }
 
@@ -975,9 +989,10 @@ void main_game::heightmap_update (deserializer<packet>& p)
     for (auto& r : msg.data)
     {
         trace("height at %1%: %2%", r.pos, r.height);
+        auto old_height (world().get_coarse_height(r.pos));
         world().store(r.pos, r.height);
-        scene_.on_update_height(r.pos, r.height);
-        renderer().on_update_height(r.pos, r.height);
+        scene_.on_update_height(r.pos, r.height, old_height);
+        renderer().on_update_height(r.pos, r.height, old_height);
         trace("height at %1% done", r.pos);
     }
 }
@@ -1002,12 +1017,12 @@ void main_game::bg_thread()
     static size_t count (0);
     while(!stop_)
     {
-        //boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-        poll(100);
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        poll(0);
         ++count;
 
         // Every 2 seconds, see if we can get flush some chunks from memory.
-        if (count % 20 == 0)
+        if (count % 2000 == 0)
         {
             world().cleanup();
         }
@@ -1019,10 +1034,10 @@ void main_game::bg_thread()
 
             msg::request_chunks req;
             //for (auto& pos : requests_)
-            size_t count (0);
+            size_t count2 (0);
             for (auto i (requests_.begin()); i != requests_.end(); )
             {
-                if (++count > 20000)
+                if (++count2 > 20000)
                 {
                     log_msg("Warning: request queue full");
                     break;

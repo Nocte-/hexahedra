@@ -50,6 +50,7 @@
 
 using boost::format;
 using namespace boost::math::constants;
+using namespace boost::chrono;
 namespace po = boost::program_options;
 
 namespace hexa {
@@ -85,11 +86,21 @@ void network::run()
 {
     running_.store(true);
     int count (0);
+    auto last_tick (steady_clock::now());
+    auto started (last_tick);
 
     while (true)
     {
-        poll(5);
+        poll(1);
+/*
+        auto current_time (steady_clock::now());
+        auto delta (current_time - last_tick);
+        last_tick = current_time;
+        auto delta_seconds (duration_cast<microseconds>(delta).count() * 1.0e-6);
 
+        auto total_passed (current_time - started);
+        auto total_seconds (duration_cast<microseconds>(total_passed).count() * 1.0e-6);
+*/
         {
             boost::lock_guard<boost::mutex> lock(world_.changeset_lock);
             for (chunk_coordinates c : world_.changeset)
@@ -108,7 +119,8 @@ void network::run()
 
         // Send changes in the entity system
         ++count;
-        if (count % 20 == 0)
+        //count = total_seconds * 20;
+        if (count % 200 == 0)
         {
             //trace("network tick");
 
@@ -132,7 +144,7 @@ void network::run()
             }
         }
 
-        if (count % 89 == 0)
+        if (count % 899 == 0)
         {
             auto lock (es_.acquire_read_lock());
             for (auto i (es_.begin()); i != es_.end(); ++i)
@@ -145,17 +157,14 @@ void network::run()
                     msg::entity_update::value val (i->first, (uint16_t)entity_system::c_hotbar, std::move(blob));
                     upd_msg.updates.emplace_back(std::move(val));
                     auto conn (connections_.find(i->first));
-                    std::cout << "Send hotbar" << std::endl;
-                    if (conn == connections_.end())
-                        std::cout << "FAIL " <<std::endl;
-                    else
+                    if (conn != connections_.end())
                         send(conn->first, serialize_packet(upd_msg), upd_msg.method());
                 }
             }
         }
 
         // Flush caches every now and then
-        if (count % 207 == 0)
+        if (count % 2077 == 0)
         {
             world_.cleanup();
         }
@@ -215,6 +224,7 @@ void network::on_connect (ENetPeer* c)
         return;
     }
 
+    trace("on_connect()");
     {
     auto write_lock (es_.acquire_write_lock());
 
@@ -490,11 +500,14 @@ void network::login (const packet_info& info)
             start_pos.z = water_level + 400;
     }
 
+    trace("Going to spawn player near %1%", world_rel_coordinates(start_pos - world_center));
+
     // Move the spawn point to the surface.
     if (world_.get_block(start_pos + dir_vector[dir_down]) == type::air)
     {
         do
         {
+            trace("Moving down...");
             start_pos.z -=2;
         }
         while (world_.get_block(start_pos + dir_vector[dir_down]) == type::air);
@@ -503,12 +516,13 @@ void network::login (const packet_info& info)
     {
         do
         {
+            trace("Moving up...");
             start_pos.z += 2;
         }
         while (world_.get_block(start_pos) != type::air) ;
     }
 
-    start_pos.z += 12;
+    start_pos.z += 6;
     log_msg("Spawning new player at %1%", start_pos);
     wfpos start_pos_sub (start_pos, vector(0.5, 0.5, 0.5));
     {
@@ -565,6 +579,7 @@ void network::login (const packet_info& info)
     if (is_air_chunk(pcp, ch))
         pcp.z = ch - 1;
 
+    trace("Request terrain %1% for player", pcp);
     world_.requests.push({ world::request::surface_and_lightmap, pcp,
                            [=]{ send_surface(pcp, info.plr); }
                            });
@@ -627,6 +642,9 @@ void network::login (const packet_info& info)
         send(conn.second, serialize_packet(posmsg), msg::reliable);
     }
 
+    {
+    auto read_lock (es_.acquire_read_lock());
+
     es_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
             es::storage::var_ref<wfpos> p_)
@@ -646,11 +664,13 @@ void network::login (const packet_info& info)
         rec.data = serialize_c(vector(0, 0, 0));
         posmsg.updates.push_back(rec);
     });
+    }
 
     send(info.conn, serialize_packet(posmsg), msg::reliable);
 
     try
     {
+        auto lock (es_.acquire_write_lock());
         lua_.player_logged_in(info.plr);
     }
     catch (luabind::error&)
@@ -767,7 +787,6 @@ void network::req_chunks (const packet_info& info)
 
 void network::motion (const packet_info& info)
 {
-    auto write_lock (es_.acquire_write_lock());
     auto msg (make<msg::motion>(info.p));
 
     float angle ((float)msg.move_dir / 256.f * two_pi<float>());
@@ -777,6 +796,7 @@ void network::motion (const packet_info& info)
     float magnitude (walk_force * (float)msg.move_speed / 255.f);
 
     trace("player %1% moves in direction %2%", info.plr, move);
+    auto write_lock (es_.acquire_write_lock());
     es_.set(info.plr, entity_system::c_walk, move * magnitude);
 
     constexpr float lag (0.05f);
@@ -805,18 +825,21 @@ void network::button_press (const packet_info& info)
     auto msg (make<msg::button_press>(info.p));
     //es_.set(info.plr, entity_system::c_position, msg.pos);
     //es_.set(info.plr, entity_system::c_lookat, msg.look);
+    auto write_lock (es_.acquire_write_lock());
     lua_.start_action(info.plr, msg.button, msg.slot, msg.look, msg.pos);
 }
 
 void network::button_release (const packet_info& info)
 {
     auto msg (make<msg::button_release>(info.p));
+    auto write_lock (es_.acquire_write_lock());
     lua_.stop_action(info.plr, msg.button);
 }
 
 void network::console (const packet_info& info)
 {
     auto msg (make<msg::console>(info.p));
+    auto write_lock (es_.acquire_write_lock());
     lua_.console(info.plr, msg.text);
 }
 

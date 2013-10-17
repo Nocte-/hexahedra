@@ -25,6 +25,8 @@
 
 #include <boost/format.hpp>
 #include <boost/range/algorithm.hpp>
+#include <boost/range/adaptor/map.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 #include <hexa/geometric.hpp>
 #include <hexa/log.hpp>
@@ -36,6 +38,7 @@
 
 #include <iostream>
 
+using namespace boost::adaptors;
 using namespace boost::range;
 using boost::format;
 
@@ -61,29 +64,25 @@ world::~world()
         wt.join();
 }
 
-//---------------------------------------------------------------------------
-
-world::exclusive_section::exclusive_section(std::vector<boost::unique_lock<boost::mutex>>&& locks)
-    : locked_(std::move(locks))
-{
-}
-
-world::exclusive_section::~exclusive_section()
-{
-    for (auto& l : locked_)
-        l.unlock();
-}
-
-//---------------------------------------------------------------------------
-
 void world::add_area_generator(std::unique_ptr<area_generator_i>&& gen)
 {
-    areagen_.emplace_back(std::move(gen));
+    areagen_.emplace_back(std::move(gen)); // move needed for gcc 4.7
 }
 
 void world::add_terrain_generator(std::unique_ptr<terrain_generator_i>&& gen)
-{
+{ 
     terraingen_.emplace_back(std::move(gen));
+
+    std::set<world_vector> sum { world_vector::zero() };
+    phases_.clear();
+
+    for (auto& t : terraingen_ | reversed)
+    {
+        auto span_sq (minkowski_sum(t->span(), t->span()));
+        sum = minkowski_sum(sum, span_sq);
+        for (auto s : sum)
+            ++phases_[s];
+    }
 }
 
 void world::add_lightmap_generator (std::unique_ptr<lightmap_generator_i>&& gen)
@@ -130,11 +129,93 @@ world::is_area_data_available (map_coordinates pos, uint16_t index)
 chunk_ptr
 world::get_chunk (chunk_coordinates pos)
 {
-    // Return nothing if it's an all-air chunk.
-    if (is_air_chunk(pos, get_coarse_height(pos)))
-        return nullptr;
+    chunk_ptr result;
 
-    return get_or_generate_chunk(pos, terraingen_.size());
+    // Return nothing if it's an all-air chunk.
+    //if (is_air(pos))
+    //{
+    //    trace("chunk %1% is air", world_vector(pos - world_chunk_center));
+    //    return nullptr;
+    //}
+
+    {
+    auto rl (storage_.acquire_read_lock());
+    result = storage_.get_chunk(pos);
+    }
+    if (result != nullptr && result->generation_phase == terraingen_.size())
+    {
+        trace("return chunk %1% from storage", world_vector(pos - world_chunk_center));
+        return result;
+    }
+
+    trace("generating chunk %1%", world_vector(pos - world_chunk_center));
+
+    std::set<chunk_coordinates> lock_area;
+    for (auto offset : phases_ | map_keys)
+    {
+        trace("locking %1%", offset);
+        lock_area.insert(pos + offset);
+    }
+
+    auto locked (lock_chunks(lock_area));
+    unsigned int phase (0);
+    for (auto& generator : terraingen_)
+    {
+        trace("phase %1%", phase);
+        for (auto& abspos : locked | map_keys)
+        {
+            auto& cnk (locked.get_chunk(abspos));
+            if (   cnk.generation_phase == phase
+                && lookup(phases_, world_vector(abspos - pos)) > phase)
+            {
+                trace("- generating chunk %1%", world_vector(abspos - pos));
+
+                auto s (generator->span());
+                world_subsection<chunk_ptr> ss;
+                for (auto p : s)
+                {
+                    auto ap (abspos + p);
+                    if (locked.has_chunk(ap))
+                        ss.set_chunk(ap, locked.get_ptr(ap));
+                }
+
+                if (s.size() == 1)
+                {
+                    generator->generate(abspos, cnk);
+                    cnk.generation_phase = phase + 1;
+                }
+                else if (ss.size() == s.size())
+                {
+                    generator->generate(abspos, ss);
+                    cnk.generation_phase = phase + 1;
+                }
+            }
+            else
+            {
+                trace("skipping chunk %1%", world_vector(abspos - pos));
+            }
+        }
+        ++phase;
+    }
+
+    {
+    auto wl (storage_.acquire_write_lock());
+    storage_.store(locked);
+    }
+
+    trace("done, adjusting heights");
+    for (auto& l : locked)
+    {
+        auto coarse_h (get_coarse_height(l.first));
+        if (l.first.z >= coarse_h && !l.second->is_air())
+        {
+            trace("  adjust height at %1% to %2%", l.first, coarse_h);
+            set_coarse_height(l.first, coarse_h);
+        }
+    }
+
+    trace("done, return chunk %1%",  world_vector(pos - world_chunk_center));
+    return result;
 }
 
 chunk_ptr
@@ -146,47 +227,73 @@ world::get_raw_chunk (chunk_coordinates pos)
 void
 world::store (chunk_coordinates pos, chunk_ptr data)
 {
+    trace("store chunk %1%", pos);
+
     // Adjust the coarse height map if needed
     map_coordinates mc (pos);
     auto h (get_coarse_height(mc));
     if (needs_chunk_height_adjustment(pos, h))
         set_coarse_height(pos, h);
 
-    //boost::lock_guard<std::recursive_mutex> chunk_lock (data->lock);
-
+    {
+    trace("store chunk %1% write lock", pos);
+    auto lock (storage_.acquire_write_lock());
+    trace("store chunk %1% write lock acquired", pos);
     storage_.store(pos, data);
-
-    // Regenerate surface data
-    surface_ptr updated_surface (get_or_create_surface(pos));
-    neighborhood<chunk_ptr> nbh (*this, pos);
-
-    updated_surface->opaque      = extract_opaque_surface(nbh);
-    updated_surface->transparent = extract_transparent_surface(nbh);
-
-    if (updated_surface->empty())
-        trace("STORED EMPTY SURFACE");
-
-    // Update the light maps
-    lightmap_ptr lm (get_or_create_lightmap(pos));
-
-    lm->opaque.resize(count_faces(updated_surface->opaque));
-    fill(lm->opaque, light());
-    if (!updated_surface->opaque.empty())
-    {
-        for (auto& g : lightgen_)
-            g->generate(pos, updated_surface->opaque, lm->opaque, 1);
     }
 
-    lm->transparent.resize(count_faces(updated_surface->transparent));
-    fill(lm->transparent, light());
-    if (!updated_surface->transparent.empty())
+    if (   data->generation_phase == terraingen_.size()
+        && is_surface_available(pos))
     {
-        for (auto& g : lightgen_)
-            g->generate(pos, updated_surface->transparent, lm->transparent, 1);
+        // If this is a fully generated chunk, regenerate the surface data
+        surface_ptr updated_surface (get_or_create_surface(pos));
+        neighborhood<chunk_ptr> nbh (*this, pos);
+
+        updated_surface->opaque      = extract_opaque_surface(nbh);
+        updated_surface->transparent = extract_transparent_surface(nbh);
+
+        // Update the light maps
+        lightmap_ptr lm (get_or_create_lightmap(pos));
+
+        lm->opaque.resize(count_faces(updated_surface->opaque));
+        fill(lm->opaque, light());
+        if (!updated_surface->opaque.empty())
+        {
+            for (auto& g : lightgen_)
+                g->generate(pos, updated_surface->opaque, lm->opaque, 1);
+        }
+
+        lm->transparent.resize(count_faces(updated_surface->transparent));
+        fill(lm->transparent, light());
+        if (!updated_surface->transparent.empty())
+        {
+            for (auto& g : lightgen_)
+                g->generate(pos, updated_surface->transparent, lm->transparent, 1);
+        }
+
+        {
+        trace("store chunk surface/lightmap %1% write lock", pos);
+        auto lock (storage_.acquire_write_lock());
+        trace("store chunk surface/lightmap %1% write lock acquired", pos);
+        storage_.store(pos, updated_surface);
+        storage_.store(pos, lm);
+
+        if (updated_surface->empty())
+        {
+            trace("STORED EMPTY SURFACE");
+            if (h == pos.z + 1)
+                set_coarse_height(pos, h - 1);
+        }
+
+        {
+        boost::lock_guard<boost::mutex> cs_lock (changeset_lock);
+        changeset.insert(pos);
+        }
+
+        }
     }
 
-    store(pos, updated_surface);
-    store(pos, lm);
+    trace("store chunk %1% done", pos);
 }
 
 bool
@@ -199,10 +306,22 @@ world::is_chunk_available (chunk_coordinates pos)
 lightmap_ptr
 world::get_lightmap (chunk_coordinates pos)
 {
+    trace("get lightmap %1%", pos);
+
     // Do we have the lightmap in storage?
-    lightmap_ptr result (storage_.get_lightmap(pos));
+    lightmap_ptr result;
+    {
+    trace("get lightmap %1%, read lock", pos);
+    auto lock (storage_.acquire_read_lock());
+    trace("get lightmap %1%, read lock acquired", pos);
+
+    result = storage_.get_lightmap(pos);
     if (result)
+    {
+        trace("return lightmap %1% from storage", pos);
         return result;
+    }
+    }
 
     // Make sure there's a surface available so we can make one
     auto s (get_surface(pos));
@@ -210,8 +329,9 @@ world::get_lightmap (chunk_coordinates pos)
         return nullptr;
 
     // Create a new lightmap and run it through the generators.
-    result.reset(new light_data);
+    trace("generate lightmap %1%", pos);
 
+    result.reset(new light_data);
     result->opaque.resize(count_faces(s->opaque));
     if (!s->opaque.empty())
     {
@@ -226,6 +346,7 @@ world::get_lightmap (chunk_coordinates pos)
             g->generate(pos, s->transparent, result->transparent, 1);
     }
 
+    trace("store new lightmap %1%", pos);
     store(pos, result);
 
     return result;
@@ -248,6 +369,8 @@ world::store (chunk_coordinates pos, lightmap_ptr data)
 compressed_data
 world::get_compressed_lightmap (chunk_coordinates xyz)
 {
+    trace("get compressed lightmap %1%", xyz);
+
     // Make sure the lightmap was generated first
     if (!is_lightmap_available(xyz))
     {
@@ -266,43 +389,74 @@ world::get_compressed_lightmap (chunk_coordinates xyz)
 surface_ptr
 world::get_surface (chunk_coordinates pos)
 {
+    //trace("get_surface %1%", world_vector(pos - world_chunk_center));
+
     surface_ptr result;
 
     // Return nothing if it's an all-air chunk.
     auto ch (get_coarse_height(pos));
-    if (is_air_chunk(pos, ch))
+    if (hexa::is_air_chunk(pos, ch))
+    {
+        //trace("%1% is an air chunk, returning nothing", world_vector(pos - world_chunk_center));
         return result;
+    }
 
     // Do we have the surface in storage?
     result = storage_.get_surface(pos);
     if (result)
+    {
+        //trace("returning surface %1% from storage", world_vector(pos - world_chunk_center));
         return result;
+    }
+
+
+    trace("acquiring locks around %1% for surface", world_vector(pos - world_chunk_center));
 
     {
-    // Lock ordering is important here!  If it's not the same as the
-    // order used in voxel_range(), there's a chance of deadlocks.
-    /*
-    auto locks (lock_region({
-                              pos + world_vector( 0, 0,-1),
-                              pos + world_vector( 0,-1, 0),
-                              pos + world_vector(-1, 0, 0),
-                              pos,
-                              pos + world_vector( 1, 0, 0),
-                              pos + world_vector( 0, 1, 0),
-                              pos + world_vector( 0, 0, 1)
-                            }));
-    */
+
+    std::set<chunk_coordinates> neumann;
+    neumann.insert(pos);
+    for (auto v : dir_vector)
+        neumann.insert(pos + world_vector(v));
+
+    for (auto p : neumann)
+        get_chunk(p);
+
+    //auto locks (lock_chunks(neumann));
+
+    for (auto p : neumann)
+    {
+        auto cnk (get_chunk(p));
+        if (cnk == nullptr)
+            trace("ERROR: chunk %1% is null", p);
+
+        else if (cnk->generation_phase != this->terraingen_.size())
+            trace("ERROR: chunk %1% is not fully generated", p);
+
+        else if (cnk->is_air())
+            trace("WARNING: chunk %1% is an air chunk", p);
+    }
 
     neighborhood<chunk_ptr> nbh (*this, pos);
+
+    trace("got terrain, generating surface at %1%", world_vector(pos - world_chunk_center));
     result.reset(new surface_data(extract_opaque_surface(nbh),
                                   extract_transparent_surface(nbh)));
+    }
 
     if (result->empty())
+    {
         trace("GENERATED EMPTY SURFACE %1%", world_rel_coordinates(pos - world_chunk_center));
-
+        if (ch == pos.z + 1)
+        {
+            trace("lowering ceiling");
+            set_coarse_height(pos, pos.z);
+            return nullptr;
+        }
     }
-    assert(result);
+
     store(pos, result);
+    trace("surface %1% is done, returning", world_vector(pos - world_chunk_center));
 
     return result;
 }
@@ -317,19 +471,26 @@ world::is_surface_available (chunk_coordinates pos)
 void
 world::store (chunk_coordinates pos, surface_ptr data)
 {
+    trace("store surface %1%", world_vector(pos - world_chunk_center));
     auto lock (storage_.acquire_write_lock());
     storage_.store(pos, data);
+    trace("store surface %1% done", world_vector(pos - world_chunk_center));
 }
 
 compressed_data
 world::get_compressed_surface (chunk_coordinates xyz)
 {
+    trace("get compressed surface %1%", xyz);
+
     // If no surface is available yet, generate a new one from the raw
     // map data.
     if (!is_surface_available(xyz))
     {
         if (!get_surface(xyz))
+        {
+            trace("get compressed surface failed");
             return compressed_data();
+        }
     }
     return storage_.get_compressed_surface(xyz);
 }
@@ -346,11 +507,12 @@ world::get_coarse_height (map_coordinates pos)
     // Figure out the coarse height.  Every terrain generator knows how
     // to estimate this best.  We'll pick the highest answer.
     bool found (false);
-    chunk_height highest (0);
+    chunk_height highest (undefined_height);
     for (auto& g : terraingen_)
     {
-        chunk_height this_height (g->estimate_height(pos));
-        if (this_height != undefined_height && this_height > highest)
+        chunk_height this_height (g->estimate_height(pos, highest));
+        if (   this_height != undefined_height
+            && (highest == undefined_height || this_height > highest))
         {
             highest = this_height;
             found = true;
@@ -359,7 +521,9 @@ world::get_coarse_height (map_coordinates pos)
 
     if (found)
     {
-        trace("Height at %1% estimated to be %2%", pos, int32_t(highest - water_level / chunk_size));
+        trace("Height at %1% estimated to be %2%",
+              map_rel_coordinates(pos - map_chunk_center),
+              int32_t(highest - water_level / chunk_size));
         store(pos, highest);
         return highest;
     }
@@ -383,6 +547,12 @@ world::store (map_coordinates pos, chunk_height data)
 {
     auto lock (storage_.acquire_write_lock());
     storage_.store(pos, data);
+}
+
+bool
+world::is_air (chunk_coordinates xyz)
+{
+    return is_air_chunk(xyz, get_coarse_height(xyz));
 }
 
 int
@@ -446,13 +616,13 @@ block world::get_block (world_coordinates pos)
 block world::get_block_nolocking (world_coordinates pos)
 {
     chunk_coordinates cp (pos / chunk_size);
-    chunk_ptr cnk (get_chunk(cp));
+    if (is_air_chunk(cp, get_coarse_height(cp)))
+        return type::air;
 
+    chunk_ptr cnk (get_chunk(cp));
     if (cnk == nullptr)
     {
         trace("block at %1% is air", pos);
-        // Just making sure we were really poking around in an air chunk.
-        assert(is_air_chunk(cp, get_coarse_height(cp)));
         return type::air;
     }
 
@@ -481,11 +651,11 @@ world::change_block (world_coordinates pos, uint16_t material)
     }
     else
     {
-        trace("coarse height map %1% is still OK (is %2%)", cp, coarse_h);
+        trace("coarse height map %1% is still OK (is %2%)",
+              map_rel_coordinates(cp - map_chunk_center),
+              coarse_h);
         cnk = get_chunk(cp);
     }
-
-    {
 
     if ((*cnk)[ci].type == material)
         return; // Nothing has changed, don't bother.
@@ -494,7 +664,6 @@ world::change_block (world_coordinates pos, uint16_t material)
     cnk->is_dirty = true;
     storage_.store(cp, cnk);
     update(cp);
-    }
 
     // If this block was changed to air, and it's at the edge of the
     // chunk, we need to update the surface of the neighboring chunk(s)
@@ -522,8 +691,11 @@ void
 world::update (chunk_coordinates cp)
 {
     trace("update chunk %1%", world_rel_coordinates(cp - world_chunk_center));
-    // Regenerate surface
     neighborhood<chunk_ptr> nbh (storage_, cp);
+    if (nbh.center() == nullptr || nbh.center()->generation_phase != terraingen_.size())
+        return;
+
+    // Regenerate surface
     surface_ptr srfc (new surface_data(extract_opaque_surface(nbh),
                                        extract_transparent_surface(nbh)));
 
@@ -596,11 +768,19 @@ world::refine_lightmap (chunk_coordinates pos, int phase)
 chunk_ptr
 world::get_or_create_chunk(chunk_coordinates pos)
 {
+    auto storage_lock (storage_.acquire_write_lock());
+
     auto result (storage_.get_chunk(pos));
 
     if (result == nullptr)
     {
+        trace("check+add %1% (a)", pos);
+        boost::lock_guard<boost::mutex> locked (check_lock_);
+        assert(check_.count(pos) == 0);
+        check_.insert(pos);
+
         result = std::make_shared<chunk>();
+        storage_.store(pos, result);
 
         auto coarse_h (get_coarse_height(pos));
         if (needs_chunk_height_adjustment(pos, coarse_h))
@@ -615,8 +795,10 @@ world::get_or_create_lightmap(chunk_coordinates pos)
 {
     auto result (storage_.get_lightmap(pos));
     if (result == nullptr)
-        return std::make_shared<light_data>();
-
+    {
+        result = std::make_shared<light_data>();
+        storage_.store(pos, result);
+    }
     return result;
 }
 
@@ -625,18 +807,27 @@ world::get_or_create_surface(chunk_coordinates pos)
 {
     auto result (storage_.get_surface(pos));
     if (result == nullptr)
-        return std::make_shared<surface_data>();
-
+    {
+        result = std::make_shared<surface_data>();
+        storage_.store(pos, result);
+    }
     return result;
 }
 
+/*
 chunk_ptr
 world::get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_height)
 {
+    trace("get or generate chunk %1%, phase %2%", world_vector(pos - world_chunk_center), phase);
     auto result (storage_.get_chunk(pos));
 
     if (result == nullptr)
     {
+        boost::lock_guard<boost::mutex> locked (check_lock_);
+        assert(check_.count(pos) == 0);
+        check_.insert(pos);
+
+        result = std::make_shared<chunk>();
         auto coarse_h (get_coarse_height(pos));
         if (needs_chunk_height_adjustment(pos, coarse_h))
         {
@@ -644,147 +835,104 @@ world::get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_heigh
                 return nullptr;
 
             trace("new air chunk at %1%", world_vector(pos - world_chunk_center));
-            result = std::make_shared<chunk>();
-
-            // If this is an air chunk, don't run it through the generators.
-            result->generation_phase = phase;
             set_coarse_height(pos, coarse_h);
         }
         else
         {
             trace("new blank chunk at %1%", world_vector(pos - world_chunk_center));
-            result = std::make_shared<chunk>();
         }
         storage_.store(pos, result);
     }
-
-    if (result->generation_phase < phase)
-    {
-        trace("running chunk at %1% through terrain generators %2%...",
-              world_vector(pos - world_chunk_center), (int)result->generation_phase);
-
-        for (int i (result->generation_phase);
-             i < std::min<int>(phase, terraingen_.size()); ++i)
-        {
-            terraingen_[i]->generate(pos, *result);
-        }
-        result->generation_phase = phase;
-        storage_.store(pos, result);
-    }
+    trace("get or generate chunk %1%, phase %2%, generate terrain", world_vector(pos - world_chunk_center), phase);
+    generate_terrain(pos, result, phase);
+    trace("get or generate chunk %1%, phase %2%, done", world_vector(pos - world_chunk_center), phase);
 
     return result;
-}
-
-world::exclusive_section
-world::lock_region(const std::set<chunk_coordinates>& region,
-                   const terrain_generator_i& requester)
-{
-    std::vector<boost::unique_lock<boost::mutex>> locks;
-
-    unsigned int phase(0);
-    for (; phase < terraingen_.size(); ++phase)
-    {
-        if (terraingen_[phase].get() == &requester)
-            break;
-    }
-
-    if (phase == terraingen_.size())
-        throw std::runtime_error("lock was requested by an unregistered terrain generation module");
-
-    // First make sure we have all the locks we need, without actually
-    // locking the mutexes yet.  This step might trigger more terrain
-    // generation, so this could take a while.
-    for (auto cnk_pos : region)
-    {
-        auto cnk (get_or_generate_chunk(cnk_pos, phase));
-        if (cnk)
-            locks.emplace_back(cnk->lock(), boost::defer_lock);
-    }
-
-    // Now try to lock them.  Because we always lock them in the same order,
-    // there are no deadlocks if two or more generators contest overlapping
-    // parts of the world.
-    for (auto& l : locks)
-        l.lock();
-
-    exclusive_section result (std::move(locks));
-    for (auto cnk : region)
-        result.set_chunk(cnk, get_raw_chunk(cnk));
-
-    return result;
-}
-
-world::exclusive_section
-world::lock_range(const range<chunk_coordinates>& region,
-                   const terrain_generator_i& requester)
-{
-    std::vector<boost::unique_lock<boost::mutex>> locks;
-
-    unsigned int phase(0);
-    for (; phase < terraingen_.size(); ++phase)
-    {
-        if (terraingen_[phase].get() == &requester)
-            break;
-    }
-
-    if (phase == terraingen_.size())
-        throw std::runtime_error("lock was requested by an unregistered terrain generation module");
-
-    // First make sure we have all the locks we need, without actually
-    // locking the mutexes yet.  This step might trigger more terrain
-    // generation, so this could take a while.
-    for (auto cnk_pos : region)
-    {
-        auto cnk (get_or_generate_chunk(cnk_pos, phase));
-        if (cnk)
-            locks.emplace_back(cnk->lock(), boost::defer_lock);
-    }
-
-    // Now try to lock them.  Because we always lock them in the same order,
-    // there are no deadlocks if two or more generators contest overlapping
-    // parts of the world.
-    for (auto& l : locks)
-        l.lock();
-
-    exclusive_section result (std::move(locks));
-    for (auto cnk : region)
-        result.set_chunk(cnk, get_raw_chunk(cnk));
-
-    return result;
-}
-
-/*
-world::exclusive_section
-world::lock_region(std::initializer_list<chunk_coordinates> cnks)
-{
-    unsigned int phase (terraingen_.size());
-    std::vector<boost::unique_lock<std::recursive_mutex>> locks;
-bool first(true);
-chunk_coordinates prev;
-
-    trace("obtaining locks for individual positions %1%", *cnks.begin());
-
-    for (auto cnk : cnks)
-    {
-        if (!first)
-            assert(cnk > prev);
-        first=false;
-        prev=cnk;
-        auto gc (get_or_generate_chunk(cnk, phase, false));
-//        if (gc != nullptr)
-//            locks.emplace_back(gc->lock, std::defer_lock);
-    }
-
-   // trace((format("mutexing locks for individual positions %1%") % *cnks.begin()).str());
-
-//    for (auto& l : locks)
-//        l.lock();
-
-   // trace((format("done, holding locks for individual positions %1%") % *cnks.begin()).str());
-
-    return multi_lock(std::move(locks));
 }
 */
+
+void
+world::generate_terrain(chunk_coordinates pos, const chunk_ptr& chunk)
+{
+    generate_terrain(pos, chunk, terraingen_.size());
+}
+
+void
+world::generate_terrain(chunk_coordinates pos, const chunk_ptr& chunk, int phase)
+{
+    phase = std::min<int>(phase, terraingen_.size());
+    if (chunk->generation_phase >= phase)
+    {
+        trace("not generating chunk at %1%, is at phase %2%, requested %3%",
+              world_vector(pos - world_chunk_center), (int)chunk->generation_phase, phase);
+
+        return;
+    }
+
+    trace("running chunk at %1% through terrain generators %2%..%3%",
+          world_vector(pos - world_chunk_center), (int)chunk->generation_phase, phase - 1);
+
+    for (int i (chunk->generation_phase); i < phase; ++i)
+    {
+        trace("running chunk at %1% through terrain generator %2%",
+              world_vector(pos - world_chunk_center), i);
+
+        terraingen_[i]->generate(pos, *chunk);
+        chunk->generation_phase = i + 1;
+    }
+
+    trace("running chunk at %1% through terrain generators %2%, %3% done, storing",
+          world_vector(pos - world_chunk_center), (int)chunk->generation_phase, phase);
+
+    chunk->generation_phase = phase;
+    store(pos, chunk);
+    trace("running chunk at %1% through terrain generators %2%, %3% returning",
+          world_vector(pos - world_chunk_center), (int)chunk->generation_phase, phase);
+}
+
+unsigned int
+world::find_generator (const terrain_generator_i& requester) const
+{
+    unsigned int phase(0);
+    for (; phase < terraingen_.size(); ++phase)
+    {
+        if (terraingen_[phase].get() == &requester)
+            break;
+    }
+
+    if (phase == terraingen_.size())
+        throw std::runtime_error("lock was requested by an unregistered terrain generation module");
+
+    return phase;
+}
+
+
+locked_subsection
+world::lock_chunks (const std::set<chunk_coordinates>& region)
+{
+    locked_subsection result;
+
+    auto storage_lock (storage_.acquire_write_lock());
+
+    for (auto cnk_pos : region)
+    {
+        auto cnk_ptr (storage_.get_chunk(cnk_pos));
+        if (!cnk_ptr) // && !is_air(cnk_pos))
+        {
+            trace("check+add %1% (b)", cnk_pos);
+
+            boost::lock_guard<boost::mutex> locked (check_lock_);
+            assert(check_.count(cnk_pos) == 0);
+            check_.insert(cnk_pos);
+
+            cnk_ptr.reset(new chunk);
+            storage_.store(cnk_pos, cnk_ptr);
+        }
+        result.add(cnk_pos, cnk_ptr);
+    }
+
+    return result;
+}
 
 world::chunk_type
 world::get_type(chunk_coordinates xyz) const
@@ -805,9 +953,12 @@ world::get_type(chunk_coordinates xyz) const
 void
 world::set_coarse_height(chunk_coordinates cp, chunk_height coarse_h)
 {
-    auto new_h (adjust_chunk_height(cp, coarse_h));
-    trace("setting coarse height map %1% (was %2%)", new_h, coarse_h);
-    storage_.store(map_coordinates(cp), new_h);
+    auto old_h (get_coarse_height(cp));
+    if (old_h == coarse_h)
+        return;
+
+    trace("setting coarse height map %1%", coarse_h);
+    storage_.store(map_coordinates(cp), coarse_h);
     {
         boost::lock_guard<boost::mutex> lock (height_changeset_lock);
         height_changeset.insert(cp);
@@ -842,33 +993,38 @@ world::worker(int id)
                 break;
 
             case request::lightmap:
+                trace("worker %1% checks for lightmap at %2%", id, world_vector(rq.pos - world_chunk_center));
                 if (!is_lightmap_available(rq.pos))
+                {
+                    trace("worker %1% generates lightmap at %2%", id, world_vector(rq.pos - world_chunk_center));
                     get_lightmap(rq.pos);
+                    trace("worker %1% generates lightmap at %2% done", id, world_vector(rq.pos - world_chunk_center));
+                }
 
                 break;
 
             case request::surface_and_lightmap:
-                trace("worker %1% checks for surface", id);
+                trace("worker %1% checks for surface %2%", id, world_vector(rq.pos - world_chunk_center));
                 if (!is_surface_available(rq.pos))
                 {
-                    trace("worker %1% generating surface", id);
+                    trace("worker %1% generating surface %2%", id, world_vector(rq.pos - world_chunk_center));
                     get_surface(rq.pos);
-                    trace("worker %1% done generating surface", id);
+                    trace("worker %1% done generating surface %2%", id, world_vector(rq.pos - world_chunk_center));
                 }
                 else
                 {
-                    trace("worker %1% found surface", id);
+                    trace("worker %1% found surface %2%", id, world_vector(rq.pos - world_chunk_center));
                 }
-                trace("worker %1% checks for lightmap", id);
+                trace("worker %1% checks for lightmap %2%", id, world_vector(rq.pos - world_chunk_center));
                 if (!is_lightmap_available(rq.pos))
                 {
-                    trace("worker %1% generating lightmap", id);
+                    trace("worker %1% generating lightmap %2%", id, world_vector(rq.pos - world_chunk_center));
                     get_lightmap(rq.pos);
-                    trace("worker %1% done generating lightmap", id);
+                    trace("worker %1% done generating lightmap %2%", id, world_vector(rq.pos - world_chunk_center));
                 }
                 else
                 {
-                    trace("worker %1% found lightmap", id);
+                    trace("worker %1% found lightmap %2%", id, world_vector(rq.pos - world_chunk_center));
                 }
                 break;
             }

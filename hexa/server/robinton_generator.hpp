@@ -48,7 +48,7 @@ public:
     virtual ~robinton_generator();
 
     chunk_height
-    estimate_height (map_coordinates xy) const;
+    estimate_height (map_coordinates xy, chunk_height prev) const;
 
     void
     generate (chunk_coordinates pos, chunk& dest);

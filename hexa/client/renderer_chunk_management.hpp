@@ -135,8 +135,11 @@ public:
         occlusion_queries[dist].erase(pos);
     }
 
-    void on_update_height(map_coordinates pos, chunk_height z)
+    void on_update_height(map_coordinates pos, chunk_height z, chunk_height old_z)
     {
+        if (old_z != undefined_height && z > old_z)
+            return;
+
         // The coarse height map has been changed.  Cancel all occlusion
         // queries above this limit.
         boost::mutex::scoped_lock l (lock);
@@ -155,10 +158,10 @@ public:
         }
     }
 
-    std::deque<chunk_coordinates> get_visible_queries()
+    std::list<chunk_coordinates> get_visible_queries()
     {
         boost::mutex::scoped_lock l (lock);
-        std::deque<chunk_coordinates> result;
+        std::list<chunk_coordinates> result;
         for (auto& l : occlusion_queries)
         {
             for (auto& p : l)
