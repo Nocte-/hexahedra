@@ -684,7 +684,7 @@ void main_game::walk(float dir, float speed)
 
     vector2<float> move (std::sin(dir), std::cos(dir));
 
-    const float walk_force (40.0f);
+    const float walk_force (1.0f);
     float magnitude (walk_force * speed);
     auto lock (entities_.acquire_write_lock());
     entities_.set(player_entity_, entity_system::c_walk, move * magnitude);

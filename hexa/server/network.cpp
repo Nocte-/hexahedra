@@ -792,7 +792,7 @@ void network::motion (const packet_info& info)
     float angle ((float)msg.move_dir / 256.f * two_pi<float>());
     vector2<float> move (from_polar(angle));
 
-    const float walk_force (40.0f);
+    const float walk_force (1.0f);
     float magnitude (walk_force * (float)msg.move_speed / 255.f);
 
     trace("player %1% moves in direction %2%", info.plr, move);
@@ -804,8 +804,8 @@ void network::motion (const packet_info& info)
     auto v (es_.get<vector>(info.plr, entity_system::c_velocity));
     auto l (es_.get<yaw_pitch>(info.plr, entity_system::c_lookat));
 
-    v += rotate(move, -l.x) * lag;
-    p += v * lag;
+    p += vector(rotate(move, -l.x), 0.0f) * 5.0f * lag;
+
     // hack
     p = msg.position;
 

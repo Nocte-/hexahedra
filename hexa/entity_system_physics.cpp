@@ -42,7 +42,26 @@ void system_walk (es::storage& s, float timestep)
             es::storage::var_ref<yaw_pitch> l_)
     {
         constexpr float max_walk_speed (5.0f);
+
+        vector v (v_);
+        vector2<float> f (f_);
+        yaw_pitch l (l_);
+
+        vector2<float> old (v);
+        vector2<float> result (rotate(f, -l.x) * max_walk_speed);
+
+        constexpr float max_force (12.0f);
+        if (distance(old, result) > max_force * timestep)
+            result = old + (result - old) * max_force * timestep;
+
+        v.x = result.x;
+        v.y = result.y;
+
+        v_ = v;
+
+/*
         constexpr float max_walk_speed_sq (max_walk_speed * max_walk_speed);
+        constexpr float force (40.f);
 
         vector v (v_);
         if (squared_length(v) >= max_walk_speed_sq)
@@ -51,13 +70,14 @@ void system_walk (es::storage& s, float timestep)
         vector2<float> f (f_);
         yaw_pitch l (l_);
 
-        vector result (v + rotate(f, -l.x) * timestep);
+        vector result (v + rotate(f, -l.x) * force * timestep);
         float sq_l (squared_length(result));
 
         if (sq_l <= max_walk_speed_sq)
             v_ = result;
         else
             v_ = (result / std::sqrt(sq_l)) * max_walk_speed;
+*/
     });
 }
 
@@ -226,6 +246,8 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
 
 void system_terrain_friction (es::storage& s, float timestep)
 {
+    return; // Turned off for now!
+
     s.for_each<vector, vector>(entity_system::c_velocity,
                                entity_system::c_impact,
         [&](es::storage::iterator i,
