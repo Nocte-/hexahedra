@@ -22,13 +22,16 @@
 
 #pragma once
 
-#if (defined(__clang__))
+#if (defined(_MSC_VER))
 
-#elif (defined(_MSC_VER))
 #  define constexpr const
 #  define noexcept 
 
-#elif (defined(__GNUC__))
+#endif
+
+//---------------------------------------------------------------------------
+
+#if (defined(__GNUC__) || defined(__clang__))
 
 #include <memory>
 

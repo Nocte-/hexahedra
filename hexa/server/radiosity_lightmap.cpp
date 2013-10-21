@@ -41,25 +41,6 @@ using namespace boost::range;
 
 namespace hexa {
 
-namespace {
-
-float opacity (uint16_t t)
-{
-    return 1.0f - (material_prop[t].transparency / 255.f);
-}
-
-bool f (uint16_t t)
-{
-    return t == 0 || material_prop[t].transparency > 0;
-}
-
-
-} // anonymous namespace
-
-
-////////////////////////////////////////////////////////////////////////////
-
-
 radiosity_lightmap::radiosity_lightmap
                 (storage_i& c, const property_tree::ptree& conf)
     : lightmap_generator_i (c, conf)

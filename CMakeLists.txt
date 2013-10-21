@@ -12,10 +12,18 @@ set(CPACK_PACKAGE_NAME "Hexahedra")
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
 set(CPACK_PACKAGE_VERSION_MINOR "1")
 set(CPACK_PACKAGE_VERSION_PATCH "2")
-set(VERSION "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
 set(COPYRIGHT "Copyright (c) 2013, Nocte <nocte@hippie.nu>")
-EXECUTE_PROCESS(COMMAND "date" "-Iseconds" 
+
+EXECUTE_PROCESS(COMMAND date -Iseconds
                 OUTPUT_VARIABLE BUILDTIME 
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+EXECUTE_PROCESS(COMMAND git describe --tags --always --abbrev=0
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                OUTPUT_VARIABLE VERSION 
+                OUTPUT_STRIP_TRAILING_WHITESPACE)
+EXECUTE_PROCESS(COMMAND git describe --tags --always --dirty
+                WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+                OUTPUT_VARIABLE CMAKE_GITVERSION 
                 OUTPUT_STRIP_TRAILING_WHITESPACE)
 set(WEBPAGE "http://hexahedra.net/")
 
@@ -99,8 +107,8 @@ endif()
 
 # Build the individual components
 #
-set(Boost_USE_STATIC_LIBS    ON) 
-set(Boost_USE_STATIC_RUNTIME ON) 
+set(Boost_USE_STATIC_LIBS    ON)
+set(Boost_USE_STATIC_RUNTIME ON)
 add_definitions(-DBOOST_FILESYSTEM_NO_DEPRECATED)
 
 # Packaging

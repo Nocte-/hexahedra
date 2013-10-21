@@ -151,29 +151,6 @@ void init_opengl()
     glCheck(glClearColor(fogColor[0], fogColor[1], fogColor[2], fogColor[3]));
 }
 
-void save_opengl_state()
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glPushAttrib(GL_ALL_ATTRIB_BITS);
-    /*
-    glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT |
-                 GL_ENABLE_BIT | GL_TEXTURE_BIT  | GL_TRANSFORM_BIT |
-                 GL_VIEWPORT_BIT);
-    */
-}
-
-void restore_opengl_state()
-{
-    glPopAttrib();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-    glPopMatrix();
-}
-
 void opengl_cube_face(float size, vector3<int> pos, direction_type d)
 {
     glTranslatef(pos.x, pos.z, -pos.y);
@@ -257,7 +234,6 @@ sfml::sfml(sf::RenderWindow& win)
     tf->Focus();
 */
     world_offset_ = world_center;
-    auto settings (app_.getSettings());
 
     app_.setVerticalSyncEnabled(global_settings["vsync"].as<bool>());
     init_opengl();
@@ -361,8 +337,6 @@ void sfml::prepare(const player& plr)
 
     camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
                      1.22173048f, (float)width_ / (float)height_, 0.2f, 800.f);
-
-    vector target (from_spherical(plr.head_angle()) * 1000.f);
 
     glCheck(glDisable(GL_CULL_FACE));
     glCheck(glDisable(GL_LIGHTING));
@@ -847,7 +821,7 @@ void sfml::draw_hotbar(const hud& h)
         pen_x += size_slot + size_sep;
     }
 
-    if (h.active_slot >= 0 && h.active_slot < h.hotbar.size())
+    if (h.active_slot < h.hotbar.size())
     {
         slot_actv->setPosition(edge_l + size_left + h.active_slot * (size_slot + size_sep) + size_slot * 0.5 - size_actv * 0.5, 0);
         hotbar_.draw(*slot_actv);

@@ -181,7 +181,6 @@ private:
 
     storage_i& storage_;
 
-    int heightmap_;
     std::map<world_vector, unsigned int> phases_;
 
     std::vector<boost::thread>  workers_;

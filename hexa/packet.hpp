@@ -41,7 +41,7 @@ public:
 
 public:
     packet(uint8_t* buf, size_type len)
-        : buf_(buf), size_(len), extern_(true)
+        : buf_(buf), size_(len)
     { }
 
     packet(std::vector<char>&& buffer)
@@ -80,7 +80,6 @@ public:
 private:
     value_type* buf_;
     size_type   size_;
-    bool        extern_;
 };
 
 } // namespace hexa

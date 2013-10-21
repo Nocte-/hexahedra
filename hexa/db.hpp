@@ -141,7 +141,6 @@ class transaction : boost::noncopyable
 {
     sqlite3* pdb_;
     bool     commit_;
-    bool     rollback_;
 
     friend class db;
 

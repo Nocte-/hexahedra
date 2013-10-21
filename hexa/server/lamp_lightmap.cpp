@@ -50,12 +50,6 @@ float opacity (uint16_t t)
     return 1.0f - (material_prop[t].transparency / 255.f);
 }
 
-bool f (uint16_t t)
-{
-    return t == 0 || material_prop[t].transparency > 0;
-}
-
-
 } // anonymous namespace
 
 
@@ -91,9 +85,6 @@ lamp_lightmap::generate (const chunk_coordinates& pos,
     if (s.empty())
         return lightchunk;
 
-    //unsigned int lamp_limit[] = { 3, 8, 100 };
-
-    world_coordinates origin (pos * chunk_size);
     const vector half (0.5f, 0.5f, 0.5f);
     block_vector no (chunk_size * 2, chunk_size * 2, chunk_size * 2);
 

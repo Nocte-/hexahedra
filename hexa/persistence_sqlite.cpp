@@ -43,8 +43,7 @@ std::string err_str_(int rc)
 persistence_sqlite::persistence_sqlite(asio::io_service& io,
                                        const fs::path& db_file,
                                        const fs::path& setup)
-    : io_ (io)
-    , timeout_ (io)
+    : timeout_ (io)
     , db_ (db_file, setup)
 {
     read_.emplace_back  (db_.prepare_statement("SELECT data FROM area WHERE x=? AND y=? AND idx=?"));

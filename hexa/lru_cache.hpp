@@ -230,7 +230,7 @@ public:
     {
         auto found (map_.find(k));
         if (found == map_.end())
-            return false;
+            return boost::optional<mapped_type&>();
 
         list_.splice(list_.begin(), list_, found->second);
         return found->second->second;

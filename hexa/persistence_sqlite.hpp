@@ -71,7 +71,6 @@ private:
     void  timeout(const boost::system::error_code& err);
 
 private:
-    boost::asio::io_service&    io_;
     boost::asio::deadline_timer timeout_;
 
     sql::db db_;

@@ -186,7 +186,7 @@ public:
 
 
     boost::optional<luabind::object> get (int component_id) const
-        { return false; }
+        { return boost::optional<luabind::object>(); }
 
     void set (int component_id, const luabind::object& v)
         {

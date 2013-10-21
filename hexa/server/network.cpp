@@ -86,8 +86,8 @@ void network::run()
 {
     running_.store(true);
     int count (0);
-    auto last_tick (steady_clock::now());
-    auto started (last_tick);
+    //auto last_tick (steady_clock::now());
+    //auto started (last_tick);
 
     while (true)
     {

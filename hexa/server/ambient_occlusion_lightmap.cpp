@@ -49,11 +49,6 @@ float opacity (uint16_t t)
     return 1.0f - (material_prop[t].transparency / 255.f);
 }
 
-bool f (uint16_t t)
-{
-    return t == 0 || material_prop[t].transparency > 0;
-}
-
 std::vector<vector> golden_spiral (int count)
 {
     // Based on an implementation by Patrick Boucher.

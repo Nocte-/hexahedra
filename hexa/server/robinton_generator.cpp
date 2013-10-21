@@ -105,21 +105,6 @@ inline uint64 ntohll(uint64 v)
   return (uint64)ntohl(v & 0x00000000ffffffff) << 32 | (uint64)ntohl( (v >> 32) & 0x00000000ffffffff);
 }
 
-void my_itoa(int value, std::string &buf, int base)
-{
-  std::string hexarray("0123456789abcdefghijklmnopqrstuvwxyz");
-  int i = 30;
-  buf = "";
-
-  if(!value)
-    buf = "0";
-
-  for(; value && i; --i, value /= base)
-  {
-    buf.insert(buf.begin(), (char)hexarray[value % base]);
-  }
-}
-
 void putSint64(uint8 *buf, sint64 value)
 {
   uint64 nval = ntohll(value);
@@ -192,16 +177,6 @@ sint32 getSint16(uint8 *buf)
   return val;
 }
 
-std::string base36_encode(int value)
-{
-  std::string output;
-  my_itoa((int)abs(value), output, 36);
-  if(value < 0)
-    output.insert (output.begin(), '-');
-
-  return output;
-}
-
 enum
 {
   TAG_END        = 0,
@@ -268,10 +243,6 @@ int TAG_Byte_Array(std::uint8_t *input, NBT_byte_array *output);
 int TAG_List(std::uint8_t *input, NBT_list *output);
 int TAG_Compound(std::uint8_t *input, NBT_struct *output, bool start = false);
 
-//Get data from struct
-std::uint8_t *get_NBT_pointer(NBT_struct *input, std::string TAG);
-//template <typename customType>
-//inline bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value);
 template <typename customType>
 bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value)
 {
@@ -290,8 +261,6 @@ bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value)
   }
   return false;
 }
-
-NBT_list *get_NBT_list(NBT_struct *input, std::string TAG);
 
 int dumpNBT_string(std::uint8_t *buffer, std::string name);
 int dumpNBT_value(NBT_value *input, std::uint8_t *buffer);
@@ -574,67 +543,6 @@ int TAG_Compound(std::uint8_t *input, NBT_struct *output, bool start)
 
   return curpos;
 }
-/*
-   template <typename customType>
-   bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value)
-   {
-   for(unsigned i=0;i<input->values.size();i++)
-   {
-    if(input->values[i].name==TAG)
-    {
-   *value=*(customType*)input->values[i].value;
-      return true;
-    }
-   }
-
-   for(unsigned j=0;j<input->compounds.size();j++)
-   {
-    return get_NBT_value(&input->compounds[j], TAG, value);
-   }
-   return false;
-   }
- */
-
-std::uint8_t *get_NBT_pointer(NBT_struct *input, std::string TAG)
-{
-  std::uint8_t *pointer;
-
-  for(unsigned i = 0; i < input->byte_arrays.size(); i++)
-  {
-    if(input->byte_arrays[i].name == TAG)
-      return input->byte_arrays[i].data;
-  }
-
-  for(unsigned j = 0; j < input->compounds.size(); j++)
-  {
-    pointer = get_NBT_pointer(&input->compounds[j], TAG);
-    if(pointer != 0)
-      return pointer;
-  }
-
-  return 0;
-}
-
-NBT_list *get_NBT_list(NBT_struct *input, std::string TAG)
-{
-  NBT_list *pointer;
-
-  for(unsigned i = 0; i < input->lists.size(); i++)
-  {
-    if(input->lists[i].name == TAG)
-      return &input->lists[i];
-  }
-
-  for(unsigned j = 0; j < input->compounds.size(); j++)
-  {
-    pointer = get_NBT_list(&input->compounds[j], TAG);
-    if(pointer != 0)
-      return pointer;
-  }
-
-  return 0;
-}
-
 
 int dumpNBT_string(std::uint8_t *buffer, std::string name)
 {
@@ -980,77 +888,12 @@ bool freeNBT_struct(NBT_struct *input)
 
 //===========================================================================
 
-std::string base36 (int i)
-{
-    static char x[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-
-    std::string result;
-    if (i < 0)
-    {
-        result = "-";
-        i = -i;
-    }
-
-    if (i >= 36)
-    {
-        result += x[(i / 36) % 36];
-        i -= ((i / 36) % 36) * 36;
-    }
-
-    result += x[i];
-
-    return result;
-}
-
 struct nbt_chunk
 {
     nbt_chunk() : block (16*16*16), data (16*16*16/2) {}
     std::vector<uint8_t> block;
     std::vector<uint8_t> data;
 };
-
-nbt_chunk read_nbt_chunk (const std::string& filename, int, int)
-{
-    nbt_chunk in;
-    gzFile file (gzopen(filename.c_str(), "rb"));
-    if (!file)
-    {
-        std::fill(in.block.begin(), in.block.end(), 0);
-        std::fill(in.data.begin(), in.data.end(), 0);
-        return in;
-    }
-
-    std::vector<std::uint8_t> buf;
-    buf.resize(132000);
-
-
-    NBT_struct nbt;
-    TAG_Compound(&*buf.begin(), &nbt, true);
-
-    const std::uint8_t* p = get_NBT_pointer(&nbt, "Blocks");
-    std::copy(p, p + 16*16*16, in.block.begin());
-
-    const std::uint8_t* p2 = get_NBT_pointer(&nbt, "Data");
-    std::copy(p2, p2 + 16*16*16 / 2, in.data.begin());
-
-    return in;
-}
-
-nbt_chunk get_nbt_chunk (const std::string& path, int x, int z)
-{
-    std::string filename(path);
-    filename += base36((-x + 6400) % 64);
-    filename += "/";
-    filename += base36((z + 6400) % 64);
-    filename += "/c.";
-    filename += base36(-x);
-    filename += ".";
-    filename += base36(z);
-    filename += ".dat";
-
-    return read_nbt_chunk (filename, x, z);
-}
-
 
 // c10t mcregion class
 

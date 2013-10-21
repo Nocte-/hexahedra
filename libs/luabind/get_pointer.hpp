@@ -33,6 +33,22 @@ namespace luabind {
 
 using boost::get_pointer;
 
+#if defined(__clang__) && defined(BOOST_NO_CXX11_SMART_PTR)
+
+template <typename T>
+T* get_pointer(std::shared_ptr<T> const& ptr)
+{
+    return ptr.get();
+}
+
+template <typename T, typename Deleter>
+T* get_pointer(std::unique_ptr<T, Deleter> const& ptr)
+{
+    return ptr.get();
+}
+
+#endif // BOOST_VERSION
+
 } // namespace luabind
 
 #endif // LUABIND_GET_POINTER_051023_HPP

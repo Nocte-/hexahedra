@@ -256,7 +256,7 @@ int main (int argc, char* argv[])
     }
     if (vm.count("version"))
     {
-        std::cout << "hexahedra " << PROJECT_VERSION << std::endl;
+        std::cout << "hexahedra " << GIT_VERSION << std::endl;
         return EXIT_SUCCESS;
     }
 

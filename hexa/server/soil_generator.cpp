@@ -70,11 +70,6 @@ void soil_generator::generate(chunk_coordinates pos, chunk& dest)
         for (int y (0); y < chunk_size; ++y)
         {
             int16_t lz ((*sm)(x, y));
-            if (lz == std::numeric_limits<uint16_t>::max())
-            {
-                trace("ERROR: found undefined height at %1%", pos);
-                continue;
-            }
 
             if (lz < z_offset || lz >= z_offset + chunk_size + 3)
                 continue;

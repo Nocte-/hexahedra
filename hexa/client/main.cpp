@@ -82,9 +82,6 @@ po::variables_map global_settings;
 int main (int argc, char* argv[])
 {
     setup_minidump("hexahedra-client");
-#ifndef _WIN32
-    std::setlocale(LC_ALL, "C.UTF-8");
-#endif
     trace("Trace on");
 
     auto& vm (global_settings);
@@ -152,7 +149,7 @@ int main (int argc, char* argv[])
     }
     if (vm.count("version"))
     {
-        std::cout << "hexahedra " << PROJECT_VERSION << std::endl;
+        std::cout << "hexahedra " << GIT_VERSION << std::endl;
         return EXIT_SUCCESS;
     }
 

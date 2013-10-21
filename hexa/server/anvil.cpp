@@ -93,21 +93,6 @@ inline uint64 ntohll(uint64 v)
   return (uint64)ntohl(v & 0x00000000ffffffff) << 32 | (uint64)ntohl( (v >> 32) & 0x00000000ffffffff);
 }
 
-void my_itoa(int value, std::string &buf, int base)
-{
-  std::string hexarray("0123456789abcdefghijklmnopqrstuvwxyz");
-  int i = 30;
-  buf = "";
-
-  if(!value)
-    buf = "0";
-
-  for(; value && i; --i, value /= base)
-  {
-    buf.insert(buf.begin(), (char)hexarray[value % base]);
-  }
-}
-
 void putSint64(uint8 *buf, sint64 value)
 {
   uint64 nval = ntohll(value);
@@ -180,6 +165,7 @@ sint32 getSint16(uint8 *buf)
   return val;
 }
 
+/*
 std::string base36_encode(int value)
 {
   std::string output;
@@ -189,6 +175,7 @@ std::string base36_encode(int value)
 
   return output;
 }
+*/
 
 enum
 {
@@ -256,8 +243,6 @@ int TAG_Byte_Array(std::uint8_t *input, NBT_byte_array *output);
 int TAG_List(std::uint8_t *input, NBT_list *output);
 int TAG_Compound(std::uint8_t *input, NBT_struct *output, bool start = false);
 
-//Get data from struct
-std::uint8_t *get_NBT_pointer(NBT_struct *input, std::string TAG);
 //template <typename customType>
 //inline bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value);
 template <typename customType>
@@ -278,8 +263,6 @@ bool get_NBT_value(NBT_struct *input, std::string TAG, customType *value)
   }
   return false;
 }
-
-NBT_list *get_NBT_list(NBT_struct *input, std::string TAG);
 
 int dumpNBT_string(std::uint8_t *buffer, std::string name);
 int dumpNBT_value(NBT_value *input, std::uint8_t *buffer);
@@ -582,47 +565,6 @@ int TAG_Compound(std::uint8_t *input, NBT_struct *output, bool start)
    return false;
    }
  */
-
-std::uint8_t *get_NBT_pointer(NBT_struct *input, std::string TAG)
-{
-  std::uint8_t *pointer;
-
-  for(unsigned i = 0; i < input->byte_arrays.size(); i++)
-  {
-    if(input->byte_arrays[i].name == TAG)
-      return input->byte_arrays[i].data;
-  }
-
-  for(unsigned j = 0; j < input->compounds.size(); j++)
-  {
-    pointer = get_NBT_pointer(&input->compounds[j], TAG);
-    if(pointer != 0)
-      return pointer;
-  }
-
-  return 0;
-}
-
-NBT_list *get_NBT_list(NBT_struct *input, std::string TAG)
-{
-  NBT_list *pointer;
-
-  for(unsigned i = 0; i < input->lists.size(); i++)
-  {
-    if(input->lists[i].name == TAG)
-      return &input->lists[i];
-  }
-
-  for(unsigned j = 0; j < input->compounds.size(); j++)
-  {
-    pointer = get_NBT_list(&input->compounds[j], TAG);
-    if(pointer != 0)
-      return pointer;
-  }
-
-  return 0;
-}
-
 
 int dumpNBT_string(std::uint8_t *buffer, std::string name)
 {
@@ -968,6 +910,7 @@ bool freeNBT_struct(NBT_struct *input)
 
 //===========================================================================
 
+/*
 std::string base36 (int i)
 {
     static char x[] = "0123456789abcdefghijklmnopqrstuvwxyz";
@@ -989,6 +932,7 @@ std::string base36 (int i)
 
     return result;
 }
+*/
 
 struct nbt_chunk
 {

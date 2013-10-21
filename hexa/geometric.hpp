@@ -93,7 +93,7 @@ ray_box_intersection (const ray<t>& r, const aabb<vector3<t>>& b)
 
     // Check if the final candidate is actually in the aabb.
     if (max_t[which_plane] < 0)
-        return false;
+        return boost::optional<vector3<t>>();
 
     vector result;
     for (int i (0); i < dim; ++i)
@@ -103,7 +103,7 @@ ray_box_intersection (const ray<t>& r, const aabb<vector3<t>>& b)
             result[i] = r.origin[i] + max_t[which_plane] * r.dir[i];
 
             if (result[i] < b.first[i] || result[i] > b.second[i])
-                return false;
+                return boost::optional<vector3<t>>();
         }
         else
         {

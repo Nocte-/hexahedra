@@ -30,6 +30,7 @@
 
 #include <hexa/algorithm.hpp>
 #include <hexa/block_types.hpp>
+#include <hexa/compiler_fix.hpp>
 
 using namespace boost::property_tree;
 
