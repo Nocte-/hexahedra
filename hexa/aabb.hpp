@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
@@ -27,11 +27,6 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-
-#ifdef _MSC_VER
-# undef min
-# undef max
-#endif
 
 namespace hexa {
 
@@ -62,10 +57,16 @@ public:
         : first (other.first), second (other.second)
     { }
 
+    /** Create an \f$1\times 1\times 1\f$ sized bounding box.
+     * \param voxel  Position of the first corner. */
+    aabb (value_type voxel)
+        : first (voxel), second (voxel + value_type(1, 1, 1))
+    { }
+
     /** Create an \f$n\times n\times n\f$ sized bounding box.
      * \param voxel  Position of the first corner.
      * \param size   Size of the bounding box. */
-    aabb (value_type voxel, coordinate_type size = 1)
+    aabb (value_type voxel, coordinate_type size)
         : first (voxel), second (voxel + value_type(size, size, size))
     { }
 
