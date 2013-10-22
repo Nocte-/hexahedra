@@ -62,6 +62,25 @@ void lua::uglyhack(network* n) { net_ = n; }
 
 static material& get_material(uint16_t i) { return material_prop[i]; }
 
+int add_file_and_line(lua_State* L)
+{
+   lua_Debug d;
+   lua_getstack(L, 1, &d);
+   lua_getinfo(L, "Sln", &d);
+   std::string err = lua_tostring(L, -1);
+   lua_pop(L, 1);
+   std::stringstream msg;
+   msg << d.short_src << ":" << d.currentline;
+
+   if (d.name != 0)
+   {
+      msg << "(" << d.namewhat << " " << d.name << ")";
+   }
+   msg << " " << err;
+   lua_pushstring(L, msg.str().c_str());
+   return 1;
+}
+
 class lua_component
 {
 public:
@@ -352,6 +371,7 @@ lua::lua(server_entity_system& entities, world &w)
     luaopen_math(state_);
 
     luabind::open(state_);
+    luabind::set_pcall_callback(add_file_and_line);
 
     module(state_)
     [
@@ -382,6 +402,8 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("y", &world_coordinates::y)
             .def_readwrite("z", &world_coordinates::z)
             .def(self + other<world_vector>())
+            .def(self - other<world_vector>())
+            .def(self - other<wfpos>())
             .def(self == other<world_coordinates>())
             ,
         class_<world_vector>("veci")
@@ -405,6 +427,7 @@ lua::lua(server_entity_system& entities, world &w)
         class_<wfvec>("wfvec")
             .def_readwrite("intpart", &wfvec::pos)
             .def_readwrite("frac", &wfvec::frac)
+            .def("to_vecf", &wfvec::float_vec)
             .def(self + other<vector>())
             .def(self + other<wfvec>())
             .def(self - other<vector>())
@@ -415,10 +438,12 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("intpart", &wfpos::pos)
             .def_readwrite("frac", &wfpos::frac)
             .def(self + other<vector>())
+            .def(self + other<world_vector>())
             .def(self + other<wfvec>())
             .def(self - other<vector>())
             .def(self - other<wfvec>())
             .def(self - other<wfpos>())
+            .def(self - other<world_coordinates>())
             .def(self == other<wfpos>())
             ,
         class_<yaw_pitch>("direction")
@@ -426,17 +451,19 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("yaw", &yaw_pitch::x)
             .def_readwrite("pitch", &yaw_pitch::y)
             ,
+            /*
         class_<aabb<world_coordinates>>("box")
-            .def(constructor<const world_coordinates&>())
-            .def(constructor<const world_coordinates&, const world_coordinates&>())
+            .def(constructor<world_coordinates>())
+            //.def(constructor<world_coordinates, world_coordinates>())
             .def_readwrite("first", &aabb<world_coordinates>::first)
             .def_readwrite("second", &aabb<world_coordinates>::second)
             .def("make_correct", &aabb<world_coordinates>::make_correct)
             .def(self + other<world_coordinates>())
             ,
+                    */
         class_<aabb<vector>>("bounding_box")
-            .def(constructor<const vector&>())
-            .def(constructor<const vector&, const vector&>())
+            //.def(constructor<vector>())
+            //.def(constructor<vector, vector>())
             .def_readwrite("first", &aabb<vector>::first)
             .def_readwrite("second", &aabb<vector>::second)
             .def("make_correct", &aabb<vector>::make_correct)
@@ -727,11 +754,11 @@ void lua::on_approach(const world_coordinates& p, unsigned int radius_on,
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_approach" << std::endl;
+        log_msg("Unknown error in on_approach");
     }
 }
 
@@ -743,11 +770,11 @@ void lua::on_login(const object& callback)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_login" << std::endl;
+        log_msg("Unknown error in on_login");
     }
 }
 
@@ -763,11 +790,11 @@ void lua::on_component_change(int component_id, const object& callback)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_component_changed" << std::endl;
+        log_msg("Unknown error in on_component_change");
     }
 }
 
@@ -779,11 +806,11 @@ void lua::on_console(const object& callback)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_console" << std::endl;
+        log_msg("Unknown error in on_console");
     }
 }
 
@@ -797,11 +824,11 @@ void lua::player_logged_in(es::entity plr)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in player_logged_in" << std::endl;
+        log_msg("Unknown error in player_logged_in");
     }
 }
 
@@ -816,11 +843,11 @@ void lua::on_action(int type, const object& callback)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_action " << type << std::endl;
+        log_msg("Unknown error in on_action");
     }
 }
 
@@ -832,11 +859,11 @@ void lua::on_stop_action(int type, const object& callback)
     }
     catch (luabind::error&)
     {
-        std::cerr << "Lua error: " << lua_tostring(state_, -1) << std::endl;
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
     }
     catch (...)
     {
-        std::cerr << "Unknown error in on_stop_action" << std::endl;
+        log_msg("Unknown error in on_stop_action");
     }
 }
 
@@ -861,8 +888,19 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
     }
 
     trace("Calling action %1%", (int)button);
-    lua_entity tmp (entities_, plr);
-    call_function<void>(found->second, tmp, (int)slot, look, pos);
+    try
+    {
+        lua_entity tmp (entities_, plr);
+        call_function<void>(found->second, tmp, (int)slot, look, pos);
+    }
+    catch (luabind::error&)
+    {
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
+    }
+    catch (...)
+    {
+        log_msg("Unknown error in start_action");
+    }
 }
 
 void lua::stop_action(es::entity plr, uint8_t button)
@@ -872,8 +910,20 @@ void lua::stop_action(es::entity plr, uint8_t button)
         return;
 
     trace("Stopping action %1%", (int)button);
-    lua_entity tmp (entities_, plr);
-    call_function<void>(found->second, tmp);
+
+    try
+    {
+        lua_entity tmp (entities_, plr);
+        call_function<void>(found->second, tmp);
+    }
+    catch (luabind::error&)
+    {
+        log_msg("Lua error: %1%", lua_tostring(state_, -1));
+    }
+    catch (...)
+    {
+        log_msg("Unknown error in stop_action");
+    }
 }
 
 void lua::console(es::entity plr, const std::string& text)
