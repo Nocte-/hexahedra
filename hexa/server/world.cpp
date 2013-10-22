@@ -50,10 +50,7 @@ world::world (storage_i& storage)
     : storage_ (storage)
 {
     for (int i (0); i < 1; ++i)
-    {
-        boost::thread tmp ([=]{ worker(i); });
-        //workers_.emplace_back(std::move(tmp));
-    }
+        workers_.emplace_back([=]{ worker(i); });
 }
 
 world::~world()
