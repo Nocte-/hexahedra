@@ -150,7 +150,11 @@ void print_opencl()
     cl_uint maxComputeUnits;
 
     // get all platforms
-    clGetPlatformIDs(0, NULL, &platformCount);
+    if (clGetPlatformIDs(0, NULL, &platformCount) != CL_SUCCESS)
+    {
+        printf("clGetPlatformIDs failed\n");
+        return;
+    }
     platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
     clGetPlatformIDs(platformCount, platforms, NULL);
 
