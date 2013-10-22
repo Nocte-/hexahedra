@@ -531,7 +531,7 @@ void network::login (const packet_info& info)
     es_.set(info.plr, server_entity_system::c_name, msg.username);
     es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
     es_.set(info.plr, server_entity_system::c_velocity, vector(0,0,0));
-    es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.7f));
+    es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.73f));
     es_.set(info.plr, server_entity_system::c_lookat, yaw_pitch(0, 0));
     }
 

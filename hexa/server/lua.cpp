@@ -62,6 +62,26 @@ void lua::uglyhack(network* n) { net_ = n; }
 
 static material& get_material(uint16_t i) { return material_prop[i]; }
 
+static aabb<vector> blk_to_bb (const vector& in)
+{
+    return aabb<vector>(in);
+}
+
+static aabb<vector> blk_to_bb_wf (const wfvec& in)
+{
+    return aabb<vector>(in.float_vec());
+}
+
+static aabb<world_coordinates> blk_to_bb_wc (const world_coordinates& in)
+{
+    return aabb<world_coordinates>(in);
+}
+
+static aabb<vector> vecf_to_bb (const vector& in)
+{
+    return aabb<vector>({-in.x, -in.y, 0.0f}, in);
+}
+
 int add_file_and_line(lua_State* L)
 {
    lua_Debug d;
@@ -197,10 +217,10 @@ public:
     boost::optional<yaw_pitch> get_lookat() const
         { return get<yaw_pitch>(entity_system::c_lookat); }
 
-    boost::optional<aabb<vector>> get_bounding_box() const
-        { return get<aabb<vector>>(entity_system::c_boundingbox); }
+    boost::optional<vector> get_bounding_box() const
+        { return get<vector>(entity_system::c_boundingbox); }
 
-    void set_bounding_box (const aabb<vector>& v)
+    void set_bounding_box (const vector& v)
         { set(entity_system::c_boundingbox, v); }
 
 
@@ -395,6 +415,10 @@ lua::lua(server_entity_system& entities, world &w)
         def("are_overlapping", are_overlapping<vector>),
         def("is_inside", is_inside<world_coordinates>),
         def("is_inside", is_inside<vector>),
+        def("block_boundingbox", blk_to_bb),
+        def("block_boundingbox", blk_to_bb_wc),
+        def("block_boundingbox", blk_to_bb_wf),
+        def("boundingbox_from_size", vecf_to_bb),
 
         class_<world_coordinates>("pos")
             .def(constructor<uint32_t, uint32_t, uint32_t>())
@@ -427,7 +451,7 @@ lua::lua(server_entity_system& entities, world &w)
         class_<wfvec>("wfvec")
             .def_readwrite("intpart", &wfvec::pos)
             .def_readwrite("frac", &wfvec::frac)
-            .def("to_vecf", &wfvec::float_vec)
+            .property("as_vecf", &wfvec::float_vec)
             .def(self + other<vector>())
             .def(self + other<wfvec>())
             .def(self - other<vector>())
@@ -451,19 +475,17 @@ lua::lua(server_entity_system& entities, world &w)
             .def_readwrite("yaw", &yaw_pitch::x)
             .def_readwrite("pitch", &yaw_pitch::y)
             ,
-            /*
         class_<aabb<world_coordinates>>("box")
             .def(constructor<world_coordinates>())
-            //.def(constructor<world_coordinates, world_coordinates>())
+            .def(constructor<world_coordinates, world_coordinates>())
             .def_readwrite("first", &aabb<world_coordinates>::first)
             .def_readwrite("second", &aabb<world_coordinates>::second)
             .def("make_correct", &aabb<world_coordinates>::make_correct)
             .def(self + other<world_coordinates>())
             ,
-                    */
         class_<aabb<vector>>("bounding_box")
-            //.def(constructor<vector>())
-            //.def(constructor<vector, vector>())
+            .def(constructor<vector>())
+            .def(constructor<vector, vector>())
             .def_readwrite("first", &aabb<vector>::first)
             .def_readwrite("second", &aabb<vector>::second)
             .def("make_correct", &aabb<vector>::make_correct)
@@ -498,7 +520,7 @@ lua::lua(server_entity_system& entities, world &w)
             .property("impact", &lua_entity::get_impact)
             .property("model", &lua_entity::get_model, &lua_entity::set_model)
             .property("name", &lua_entity::get_name, &lua_entity::set_name)
-            .property("bounding_box", &lua_entity::get_bounding_box, &lua_entity::set_bounding_box)
+            .property("bounding_box_size", &lua_entity::get_bounding_box, &lua_entity::set_bounding_box)
             .property("look_at", &lua_entity::get_lookat)
             .property("on_ground", &lua_entity::on_ground)
             .property("hotbar_size", &lua_entity::hotbar_size,
@@ -888,14 +910,15 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
     }
 
     trace("Calling action %1%", (int)button);
+
     try
     {
         lua_entity tmp (entities_, plr);
-        call_function<void>(found->second, tmp, (int)slot, look, pos);
+        luabind::call_function<void>(found->second, tmp, (int)slot, look, pos);
     }
-    catch (luabind::error&)
+    catch (luabind::error& e)
     {
-        log_msg("Lua error: %1%", lua_tostring(state_, -1));
+        log_msg("Lua error: %1%", lua_tostring(e.state(), -1));
     }
     catch (...)
     {
@@ -914,7 +937,7 @@ void lua::stop_action(es::entity plr, uint8_t button)
     try
     {
         lua_entity tmp (entities_, plr);
-        call_function<void>(found->second, tmp);
+        luabind::call_function<void>(found->second, tmp);
     }
     catch (luabind::error&)
     {

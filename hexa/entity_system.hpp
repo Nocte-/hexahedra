@@ -49,7 +49,7 @@ public:
         c_force,        // vector       Force exerted
         c_walk,         // vector2      Walk vector
         c_orientation,  // float
-        c_boundingbox,  // vector
+        c_boundingbox,  // vector       Size of the AABB
         c_impact,       // vector       Resulting impact vector after collision
         c_model,        // uint16       3D model
         c_name,         // std::string  Name

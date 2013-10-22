@@ -17,6 +17,16 @@ function place_block (plr, inv, look_at, pos)
     }
 
     if (blk[1] ~= blk[2]) then 
+        local rel_pos = blk[1] - pos
+        local blk_bbox = block_boundingbox(rel_pos)
+        local player_bbox = boundingbox_from_size(plr.bounding_box_size)
+
+        if (are_overlapping(player_bbox, blk_bbox)) then
+            -- The player is trying to place a block that overlaps with his
+            -- or her own bounding box.
+            return
+        end
+
         local mat_id = material_id(actions[inv + 1])
         local info = material_definition(mat_id)
         if (info and info.on_place) then
