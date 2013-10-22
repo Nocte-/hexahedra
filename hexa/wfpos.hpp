@@ -288,6 +288,18 @@ operator- (const wfpos& lhs, const wfpos& rhs)
 }
 
 inline wfvec
+operator- (const wfpos& lhs, const world_coordinates& rhs)
+{
+    return wfvec(lhs.pos - rhs, lhs.frac);
+}
+
+inline wfvec
+operator- (const world_coordinates& lhs, const wfpos& rhs)
+{
+    return wfvec(lhs - rhs.pos, -rhs.frac);
+}
+
+inline wfvec
 operator+ (wfvec lhs, const wfvec& rhs)
     { return lhs += rhs; }
 
