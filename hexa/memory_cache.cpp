@@ -50,6 +50,10 @@ bool is_not_in_use (ptr p)
 memory_cache::~memory_cache()
 {
     cleanup();
+
+    boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
+    for (auto& h : heights_)
+        next_.store(h.first, h.second);
 }
 
 void
