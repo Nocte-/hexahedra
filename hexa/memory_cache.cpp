@@ -50,10 +50,6 @@ bool is_not_in_use (ptr p)
 memory_cache::~memory_cache()
 {
     cleanup();
-
-    boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
-    for (auto& h : heights_)
-        next_.store(h.first, h.second);
 }
 
 void
@@ -101,11 +97,7 @@ memory_cache::cleanup ()
     }
     {
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
-    heights_.prune(size_limit_,
-        [&](map_coordinates xy, chunk_height h)
-        {
-            next_.store(xy, h);
-        });
+    heights_.prune(size_limit_);
     }
 }
 
@@ -176,6 +168,7 @@ memory_cache::store (map_coordinates xy, chunk_height data)
 
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
     heights_[xy] = data;
+    next_.store(xy, data);
 }
 
 void
