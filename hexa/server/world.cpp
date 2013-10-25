@@ -78,7 +78,10 @@ void world::add_terrain_generator(std::unique_ptr<terrain_generator_i>&& gen)
 
     for (auto& t : terraingen_ | reversed)
     {
-        auto span_sq (minkowski_sum(t->span(), t->span()));
+        std::set<vector3<int>> inverse;
+        for (auto& e : t->span()) inverse.insert(-e);
+
+        auto span_sq (minkowski_sum(t->span(), inverse));
         sum = minkowski_sum(sum, span_sq);
         for (auto s : sum)
             ++phases_[s];
