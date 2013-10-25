@@ -497,9 +497,11 @@ mc( 77,  4, { name = "button.stone.n.pressed", texture = {"stone"}, custom_model
 -- Snow has 7 levels, repeated over 8-15
 for i=0,7 do
     mc( 78,  i    , { name = "snow", texture = {"snow"}, custom_block = {{0, 0, 0, 15, 15, i * 2 + 1}}, transparency = 0.9 } )
+end
+for i=0,6 do
     mc( 78,  i + 8, { name = "snow", texture = {"snow"}, custom_block = {{0, 0, 0, 15, 15, i * 2 + 1}}, transparency = 0.9 } )
 end
-
+mc( 78,  15, { name = "snow", texture = {"snow"} } )
 mc( 79,  0, { name = "ice", texture = {"ice"} } )
 mc( 80,  0, { name = "snow block", texture = {"snow"} } )
 
