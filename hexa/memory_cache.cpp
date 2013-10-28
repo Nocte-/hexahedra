@@ -66,16 +66,25 @@ memory_cache::cleanup ()
     }
     {
     boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
-    std::set<chunk_coordinates> helgrind;
-    std::copy(chunks_dirty_.begin(), chunks_dirty_.end(), std::inserter(helgrind, helgrind.begin()));
-    for (auto& p : helgrind) //chunks_dirty_)
+    auto i (chunks_dirty_.begin());
+    while (i != chunks_dirty_.end())
     {
-        boost::lock_guard<boost::mutex> lock (chunks_.get(p)->lock());
-        next_.store(persistent_storage_i::chunk, p, compress(serialize(*chunks_.get(p))));
+        boost::unique_lock<boost::mutex> lock (chunks_.get(*i)->lock(), boost::try_to_lock_t());
+        if (lock.owns_lock())
+        {
+            next_.store(persistent_storage_i::chunk, *i,
+                        compress(serialize(*chunks_.get(*i))));
+            i = chunks_dirty_.erase(i);
+        }
+        else
+        {
+            ++i;
+        }
     }
-    chunks_dirty_.clear();
-    //chunks_.prune_if(size_limit_, is_not_in_use<chunk_ptr>);
-    chunks_.prune(size_limit_);
+    typedef lru_cache<chunk_coordinates, chunk_ptr>::value_type pair_t;
+    chunks_.prune_if(size_limit_, [=](const pair_t& p){ return chunks_dirty_.count(p.first) == 0; });
+
+    //chunks_.prune(size_limit_);
     }
     {
     boost::lock_guard<boost::mutex> lightmaps_lock (lightmaps_mutex_);
@@ -174,6 +183,7 @@ memory_cache::store (map_coordinates xy, chunk_height data)
 void
 memory_cache::store (const locked_subsection& region)
 {
+    boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
     for (auto& p : region)
     {
         chunks_dirty_.insert(p.first);
@@ -249,12 +259,12 @@ chunk_ptr
 memory_cache::get_chunk (chunk_coordinates xyz)
 {
     boost::lock_guard<boost::mutex> chunks_lock (chunks_mutex_);
+
     auto found (chunks_.try_get(xyz));
     if (found)
         return *found;
 
     chunks_dirty_.erase(xyz);
-
     if (!next_.is_available(persistent_storage_i::chunk, xyz))
         return nullptr;
 

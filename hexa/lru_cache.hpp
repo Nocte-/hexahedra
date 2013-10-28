@@ -115,7 +115,7 @@ public:
         auto i (std::prev(list_.end()));
         while (size_ > max_size)
         {
-            if (op(i->second))
+            if (op(*i))
             {
                 map_.erase(i->first);
                 i = list_.erase(i);
