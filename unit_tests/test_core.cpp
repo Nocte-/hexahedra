@@ -291,6 +291,43 @@ BOOST_AUTO_TEST_CASE (lrucache_test)
 
     cache.clear();
     BOOST_CHECK(cache.empty());
+
+    cache[1] = "one";
+    cache[8] = "eight";
+    cache[5] = "five";
+    cache[4] = "four";
+    cache.prune_if(1, [=](const lru_cache<int, std::string>::value_type& p){ return p.first % 2 == 0; });
+    BOOST_CHECK_EQUAL(cache.size(), 2);
+    BOOST_CHECK_EQUAL(cache.get(1), "one");
+    BOOST_CHECK_EQUAL(cache.get(5), "five");
+
+    cache.clear();
+
+    cache[1] = "one";
+    cache[8] = "eight";
+    cache[5] = "five";
+    cache[4] = "four";
+    cache.prune_if(2, [=](const lru_cache<int, std::string>::value_type& p){ return p.first % 2 == 0; });
+    BOOST_CHECK_EQUAL(cache.size(), 2);
+    BOOST_CHECK_EQUAL(cache.get(1), "one");
+    BOOST_CHECK_EQUAL(cache.get(5), "five");
+
+    cache[1] = "one";
+    cache[8] = "eight";
+    cache[5] = "five";
+    cache[4] = "four";
+    cache.prune_if(3, [=](const lru_cache<int, std::string>::value_type& p){ return p.first % 2 == 0; });
+    BOOST_CHECK_EQUAL(cache.size(), 3);
+    BOOST_CHECK_EQUAL(cache.get(1), "one");
+    BOOST_CHECK_EQUAL(cache.get(5), "five");
+    BOOST_CHECK_EQUAL(cache.get(4), "four");
+
+    cache[1] = "one";
+    cache[8] = "eight";
+    cache[5] = "five";
+    cache[4] = "four";
+    cache.prune_if(8, [=](const lru_cache<int, std::string>::value_type& p){ return p.first % 2 == 0; });
+    BOOST_CHECK_EQUAL(cache.size(), 4);
 }
 
 
