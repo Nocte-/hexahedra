@@ -52,17 +52,16 @@ void replace (int x, int y, int z, chunk& dest, uint16_t check, uint16_t type)
 
 void soil_generator::generate(chunk_coordinates pos, chunk& dest)
 {
-    if (!w_.is_area_data_available(pos, surfacemap_))
+    trace("start soil generation for %1%", world_vector(pos - world_chunk_center));
+    const uint16_t old (16); // stone
+    auto sm (w_.get_area_data(pos, surfacemap_));
+
+    if (sm == nullptr)
     {
         log_msg("ERROR: No area data available for soil");
         return;
     }
 
-    trace("start soil generation for %1%", world_vector(pos - world_chunk_center));
-
-    const uint16_t old (16); // stone
-
-    auto sm (w_.get_area_data(pos, surfacemap_));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
 
     for (int x (0); x < chunk_size; ++x)

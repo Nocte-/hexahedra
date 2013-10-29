@@ -142,7 +142,9 @@ world::get_chunk (chunk_coordinates pos)
     //}
 
     {
+    trace("acquire read lock");
     auto rl (storage_.acquire_read_lock());
+    trace("got read lock");
     result = storage_.get_chunk(pos);
     }
     if (result != nullptr && result->generation_phase == terraingen_.size())
@@ -184,14 +186,18 @@ world::get_chunk (chunk_coordinates pos)
 
                 if (s.size() == 1)
                 {
+                    trace("  - generating single chunk %1% phase %2%", world_vector(abspos - pos), phase);
                     generator->generate(abspos, cnk);
                     cnk.generation_phase = phase + 1;
                 }
                 else if (ss.size() == s.size())
                 {
+                    trace("  - generating multi chunk %1% phase %2%", world_vector(abspos - pos), phase);
                     generator->generate(abspos, ss);
                     cnk.generation_phase = phase + 1;
                 }
+
+                trace("  - generating chunk %1% phase %2% done", world_vector(abspos - pos), phase);
             }
             else
             {
@@ -202,7 +208,9 @@ world::get_chunk (chunk_coordinates pos)
     }
 
     {
+    trace("acquire write lock");
     auto wl (storage_.acquire_write_lock());
+    trace("got lock, store chunks");
     storage_.store(locked);
     }
 
@@ -239,7 +247,7 @@ world::store (chunk_coordinates pos, chunk_ptr data)
         set_coarse_height(pos, h);
 
     {
-    trace("store chunk %1% write lock", pos);
+    trace("store chunk %1%, acquire write lock", pos);
     auto lock (storage_.acquire_write_lock());
     trace("store chunk %1% write lock acquired", pos);
     storage_.store(pos, data);
@@ -275,7 +283,7 @@ world::store (chunk_coordinates pos, chunk_ptr data)
         }
 
         {
-        trace("store chunk surface/lightmap %1% write lock", pos);
+        trace("store chunk surface/lightmap %1%, acquire write lock", pos);
         auto lock (storage_.acquire_write_lock());
         trace("store chunk surface/lightmap %1% write lock acquired", pos);
         storage_.store(pos, updated_surface);
@@ -302,7 +310,9 @@ world::store (chunk_coordinates pos, chunk_ptr data)
 bool
 world::is_chunk_available (chunk_coordinates pos)
 {
+    trace("acquire read lock");
     auto lock (storage_.acquire_read_lock());
+    trace("got read lock");
     return storage_.is_chunk_available(pos);
 }
 
@@ -358,14 +368,18 @@ world::get_lightmap (chunk_coordinates pos)
 bool
 world::is_lightmap_available (chunk_coordinates pos)
 {
+    trace("acquire read lock");
     auto lock (storage_.acquire_read_lock());
+    trace("got read lock");
     return storage_.is_lightmap_available(pos);
 }
 
 void
 world::store (chunk_coordinates pos, lightmap_ptr data)
 {
+    trace("acquire write lock");
     auto lock (storage_.acquire_write_lock());
+    trace("got write lock, storing data");
     storage_.store(pos, data);
 }
 
@@ -467,14 +481,16 @@ world::get_surface (chunk_coordinates pos)
 bool
 world::is_surface_available (chunk_coordinates pos)
 {
+    trace("acquire read lock");
     auto lock (storage_.acquire_read_lock());
+    trace("got read lock");
     return storage_.is_surface_available(pos);
 }
 
 void
 world::store (chunk_coordinates pos, surface_ptr data)
 {
-    trace("store surface %1%", world_vector(pos - world_chunk_center));
+    trace("store surface %1%, acquire write lock", world_vector(pos - world_chunk_center));
     auto lock (storage_.acquire_write_lock());
     storage_.store(pos, data);
     trace("store surface %1% done", world_vector(pos - world_chunk_center));
@@ -541,14 +557,18 @@ world::get_coarse_height (map_coordinates pos)
 bool
 world::is_coarse_height_available (map_coordinates pos)
 {
+    trace("acquire read lock");
     auto lock (storage_.acquire_read_lock());
+    trace("got read lock");
     return storage_.is_coarse_height_available(pos);
 }
 
 void
 world::store (map_coordinates pos, chunk_height data)
 {
+    trace("acquire write lock");
     auto lock (storage_.acquire_write_lock());
+    trace("got write lock, storing height data");
     storage_.store(pos, data);
 }
 
@@ -582,7 +602,9 @@ world::raycast(const wfpos& origin, const yaw_pitch& direction,
     if (line.size() < 2)
         return tuple_type(origin.pos, origin.pos);
 
+    trace("acquire read lock");
     auto lock (storage_.acquire_read_lock());
+    trace("got read lock");
     for (auto i (std::next(line.begin())); i != line.end(); ++i)
     {
         auto coll_block (get_block_nolocking(*i + origin.pos));
@@ -771,7 +793,9 @@ world::refine_lightmap (chunk_coordinates pos, int phase)
 chunk_ptr
 world::get_or_create_chunk(chunk_coordinates pos)
 {
+    trace("acquire write lock");
     auto storage_lock (storage_.acquire_write_lock());
+    trace("got write lock, creating chunk");
 
     auto result (storage_.get_chunk(pos));
 
@@ -816,43 +840,6 @@ world::get_or_create_surface(chunk_coordinates pos)
     }
     return result;
 }
-
-/*
-chunk_ptr
-world::get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_height)
-{
-    trace("get or generate chunk %1%, phase %2%", world_vector(pos - world_chunk_center), phase);
-    auto result (storage_.get_chunk(pos));
-
-    if (result == nullptr)
-    {
-        boost::lock_guard<boost::mutex> locked (check_lock_);
-        assert(check_.count(pos) == 0);
-        check_.insert(pos);
-
-        result = std::make_shared<chunk>();
-        auto coarse_h (get_coarse_height(pos));
-        if (needs_chunk_height_adjustment(pos, coarse_h))
-        {
-            if (!adjust_height)
-                return nullptr;
-
-            trace("new air chunk at %1%", world_vector(pos - world_chunk_center));
-            set_coarse_height(pos, coarse_h);
-        }
-        else
-        {
-            trace("new blank chunk at %1%", world_vector(pos - world_chunk_center));
-        }
-        storage_.store(pos, result);
-    }
-    trace("get or generate chunk %1%, phase %2%, generate terrain", world_vector(pos - world_chunk_center), phase);
-    generate_terrain(pos, result, phase);
-    trace("get or generate chunk %1%, phase %2%, done", world_vector(pos - world_chunk_center), phase);
-
-    return result;
-}
-*/
 
 void
 world::generate_terrain(chunk_coordinates pos, const chunk_ptr& chunk)
@@ -915,7 +902,9 @@ world::lock_chunks (const std::set<chunk_coordinates>& region)
 {
     locked_subsection result;
 
+    trace("acquire write lock");
     auto storage_lock (storage_.acquire_write_lock());
+    trace("got write lock");
 
     for (auto cnk_pos : region)
     {

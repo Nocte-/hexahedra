@@ -42,33 +42,26 @@ tree_generator::tree_generator(world& w, const ptree& conf)
 
 void tree_generator::generate(chunk_coordinates pos, chunk& dest)
 {
+    log_msg("ERROR: tree_generator called with single chunk");
 }
 
 void tree_generator::generate(chunk_coordinates pos,
                               world_subsection<chunk_ptr>& region)
 {
-    if (!w_.is_area_data_available(pos, surfacemap_))
+    trace("start tree generation for %1%", world_vector(pos - world_chunk_center));
+    auto sm  (w_.get_area_data(pos, surfacemap_));
+
+    if (sm == nullptr)
     {
         trace("ERROR: can't plant trees at %1%, no surface data", world_vector(pos - world_chunk_center));
         return;
     }
 
-    trace("start tree generation for %1%", world_vector(pos - world_chunk_center));
-
-    auto sm  (w_.get_area_data(pos, surfacemap_));
     int16_t z_offset (convert_height_16bit(pos.z * chunk_size));
-
-    //range<chunk_coordinates> rng (pos - chunk_coordinates(1, 1, 0),
-    //                              pos + chunk_coordinates(2, 2, 2));
-    //auto region (w_.lock_range(rng, *this));
-
     for (int count (0) ; count < 1; ++count)
     {
         uint8_t ox (rand() % chunk_size);
         uint8_t oy (rand() % chunk_size);
-
-        //uint8_t ox ((8 * (count % 2)) % chunk_size);
-        //uint8_t oy ((8 * (count / 2)) % chunk_size);
 
         int16_t zpos ((*sm)(ox, oy));
 
