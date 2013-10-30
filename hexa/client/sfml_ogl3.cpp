@@ -464,15 +464,15 @@ void sfml_ogl3::prepare(const player& plr)
         textures_ready_ = false;
     }
 
-    static float count (0.5);
+    static float count (0.5f);
     count += 0.0001f;
     if (count >= 1)
         count -= 1;
 
-    count = 0.5;
+    count = 0.5f;
 
     sky_color(sky_grad(count));
-    ambient_color(0.6f * color(0.6, 0.7, 1.0));//amb_grad(count));
+    ambient_color(0.6f * color(0.6f, 0.7f, 1.0f));//amb_grad(count));
     sun_color(0.6f * sun_grad(count));
     terrain_shader_.use();
     artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);

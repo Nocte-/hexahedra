@@ -338,7 +338,7 @@ public:
 
     ray<float> aiming_at() const
     {
-        return ray<float>(vector::origin() + p_.position_fraction + vector(0,0,1.7),
+        return ray<float>(vector::origin() + p_.position_fraction + vector(0,0,1.7f),
                           p_.head_angle);
     }
 
