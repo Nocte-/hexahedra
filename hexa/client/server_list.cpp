@@ -60,6 +60,10 @@ std::vector<server_info> get_server_list(const std::string& json_uri)
 {
     std::vector<server_info> result;
 
+#if defined(_MSC_VER) && defined(_DEBUG)
+    return result;
+#endif
+
     http::client::request rq (json_uri);
     rq << header("Connection", "close");
     http::client temp_client;

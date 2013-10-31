@@ -180,11 +180,13 @@ public:
 
         uint16_t byte_size (val.size() * sizeof(char));
         write(htons(byte_size));
-        size_type pos (write_.size());
-        write_.resize(pos + byte_size);
-        const char* ptr (reinterpret_cast<const char*>(&*val.begin()));
-        std::copy(ptr, ptr + byte_size, write_.begin() + pos);
-
+        if (byte_size > 0)
+        {
+            size_type pos(write_.size());
+            write_.resize(pos + byte_size);
+            const char* ptr(reinterpret_cast<const char*>(&*val.begin()));
+            std::copy(ptr, ptr + byte_size, write_.begin() + pos);
+        }
         return *this;
     }
 
@@ -287,7 +289,7 @@ public:
         if (!val.empty())
         {
             const char* s_ptr (reinterpret_cast<const char*>(&*val.begin()));
-            const char* e_ptr (reinterpret_cast<const char*>(&*val.end()));
+            const char* e_ptr(s_ptr + sizeof(typename t::value_type) * val.size());
             write_.insert(write_.end(), s_ptr, e_ptr);
         }
 
@@ -460,8 +462,6 @@ public:
 
         if (std::distance(cursor_, read_.end()) < len)
         {
-            std::cout << "end of string " << len << " " << std::distance(cursor_, read_.end())
-                      << " " << std::distance(read_.begin(), read_.end()) << std::endl;
             assert(false);
             throw std::runtime_error("end of string reached");
         }

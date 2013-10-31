@@ -114,10 +114,11 @@ compressed_data compress (const input_t& in)
     if (byte_size > 0xffff)
         throw std::runtime_error("too much data for compression");
 
-    auto in_ptr (reinterpret_cast<const char*>(&*in.begin()));
     compressed_data out;
     if (byte_size > 0)
     {
+        auto in_ptr(reinterpret_cast<const char*>(&*in.begin()));
+
         out.resize(byte_size + 16);
         std::fill(out.begin(), out.end(), 0);
         out.unpacked_len = byte_size;
