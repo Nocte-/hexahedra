@@ -294,6 +294,14 @@ double angle(const t& a, const t& b)
     return std::acos(clamp(dot_prod(a, b) / length_prod), -1.0, 1.0);
 }
 
+/** Project a vector onto another. */
+template <typename t>
+t project_vector (const t& a, const t& b)
+{
+    assert(b != t::zero());
+    return dot_prod(a, b) / squared_length(b) * b;
+}
+
 /** Minkowski sum of two sets. */
 template <typename t>
 t minkowski_sum (const t& a, const t& b)

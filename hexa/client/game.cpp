@@ -45,11 +45,13 @@ namespace hexa {
 
 game::game (const std::string& title, unsigned int width, unsigned int height)
     : window_(sf::VideoMode(width, height, 32), title,
-              sf::Style::Resize | sf::Style::Close,
+              sf::Style::Default,
               sf::ContextSettings(16, 8, 4))
+    , window_title_(title)
     , width_(width)
     , height_(height)
     , rel_mouse_(false)
+    , fullscreen_ (false)
     , time_(0.0)
 {
     std::string icon_file (PIXMAP_PATH "/hexahedra.png");
@@ -155,47 +157,23 @@ void game::poll_events()
 
     while (window_.pollEvent(ev))
     {
-//        curr.process_event(ev);
-
         switch (ev.type)
         {
         case sf::Event::Closed:
             curr.process_event(event::window_close);
             break;
 
-        case sf::Event::Resized:
-            if (width_ == ev.size.width && height_ == ev.size.height)
-                break;
-
-            width_ = ev.size.width;
-            height_ = ev.size.height;
-
-            for (auto& state : states_)
-                state->resize(width_, height_);
-
+        case sf::Event::Resized:          
+            resize(ev.size.width, ev.size.height);
             break;
 
         case sf::Event::KeyPressed:
-            key_pressed_[ev.key.code] = true;
-            curr.process_event({event::key_down, (uint32_t)ev.key.code});
-
-            if (ev.key.code == sf::Keyboard::Key::F2)
             {
-                using namespace boost::posix_time;
-
-                std::string png_file
-                    ((format("%1%/screenshot-%2%.jpg")
-                        % app_user_dir().string()
-                        % to_iso_string(second_clock::local_time())).str());
-
-                window().capture().saveToFile(png_file);
-                log_msg("screenshot saved to %1%", png_file);
+            uint32_t keycode (ev.key.code);
+            key_pressed_[keycode] = true;
+            curr.process_event({event::key_down, keycode});
+            handle_keypress(keycode);
             }
-            else if (ev.key.code == sf::Keyboard::Key::F3)
-            {
-                log_msg("-----------------");
-            }
-
             break;
 
         case sf::Event::KeyReleased:
@@ -310,6 +288,75 @@ void game::relative_mouse(bool on)
     {
         window().setMouseCursorVisible(true);
     }
+}
+
+void game::handle_keypress(uint32_t keycode)
+{
+    switch (key(keycode))
+    {
+    case key::f2:
+        {
+        using namespace boost::posix_time;
+
+        std::string png_file
+            ((format("%1%/screenshot-%2%.jpg")
+                % app_user_dir().string()
+                % to_iso_string(second_clock::local_time())).str());
+
+        window().capture().saveToFile(png_file);
+        log_msg("screenshot saved to %1%", png_file);
+        }
+        break;
+
+    case key::f3:
+        log_msg("-----------------");
+        break;
+
+    case key::f11:
+        toggle_fullscreen();
+        break;
+
+    default:
+        ;
+    }
+}
+
+void game::resize(unsigned int width, unsigned int height)
+{
+    if (width == width_ && height == height_)
+        return;
+
+    width_ = width;
+    height_= height;
+
+    for (auto& state : states_)
+        state->resize(width_, height_);
+}
+
+void game::toggle_fullscreen()
+{
+    fullscreen_ = !fullscreen_;
+    unsigned int new_width, new_height;
+    if (fullscreen_)
+    {
+        auto desktop (sf::VideoMode::getDesktopMode());
+        window_width_ = width_;
+        window_height_ = height_;
+        new_width = desktop.width;
+        new_height = desktop.height;
+    }
+    else
+    {
+        new_width = window_width_;
+        new_height = window_height_;
+    }
+    resize(new_width, new_height);
+    window_.create(sf::VideoMode(width_, height_, 32), window_title_,
+                   fullscreen_ ? sf::Style::Fullscreen : sf::Style::Default,
+                   sf::ContextSettings(16, 8, 4));
+    window_.setVerticalSyncEnabled(true);
+    rel_mouse_ = !rel_mouse_;
+    relative_mouse(!rel_mouse_);
 }
 
 } // namespace hexa

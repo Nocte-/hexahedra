@@ -83,6 +83,9 @@ public:
 
 private:
     void            poll_events();
+    void            handle_keypress(uint32_t keycode);
+    void            resize(unsigned int width, unsigned int height);
+    void            toggle_fullscreen();
 
 private:
     /** Stack of game states.
@@ -91,6 +94,7 @@ private:
     std::vector<std::unique_ptr<game_state>> states_;
 
     sf::RenderWindow    window_;
+    std::string         window_title_;
     unsigned int        width_, height_;
 
     /** Keeps track of which keys are pressed. */
@@ -107,6 +111,12 @@ private:
 
     /** Using relative mouse mode? */
     bool                rel_mouse_;
+
+    /** In fullscreen mode? */
+    bool                fullscreen_;
+
+    /** Remember the old window size when switching to fullscreen. */
+    unsigned int        window_width_, window_height_;
 
     /** Current mouse position. */
     vector2<int>        mouse_pos_;
