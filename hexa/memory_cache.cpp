@@ -230,7 +230,7 @@ memory_cache::is_coarse_height_available (map_coordinates xy)
 {
     boost::lock_guard<boost::mutex> heights_lock (heights_mutex_);
     return    heights_.count(xy) > 0
-           || next_.is_available(persistent_storage_i::height, xy);
+           || next_.is_available(persistent_storage_i::cnk_height, xy);
 }
 
 area_ptr
@@ -324,7 +324,7 @@ memory_cache::get_coarse_height (map_coordinates xy)
     auto found (heights_.try_get(xy));
     if (!found)
     {
-        if (!next_.is_available(persistent_storage_i::height, xy))
+        if (!next_.is_available(persistent_storage_i::cnk_height, xy))
             return undefined_height;
 
         chunk_height result (next_.retrieve(xy));

@@ -45,7 +45,7 @@ class persistent_storage_i
 public:
     typedef enum
     {
-        area = 0, chunk, surface, light, height
+        area = 0, chunk, surface, light, cnk_height
     }
     data_type;
 

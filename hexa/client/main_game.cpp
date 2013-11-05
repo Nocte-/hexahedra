@@ -49,7 +49,6 @@
 #include <hexa/lightmap.hpp>
 #include <hexa/ray.hpp>
 #include <hexa/voxel_algorithm.hpp>
-#include <hexa/physics/euler_integrater.hpp>
 #include <hexa/process.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/voxel_range.hpp>
@@ -61,6 +60,7 @@
 #include "sfml_ogl3.hpp"
 #include "../persistence_null.hpp"
 #include "../persistence_sqlite.hpp"
+#include "../persistence_leveldb.hpp"
 #include "../memory_cache.hpp"
 #include "../entity_system.hpp"
 #include "../entity_system_physics.hpp"
@@ -166,19 +166,21 @@ void main_game::setup_world (const std::string& host, uint16_t port)
     std::string host_id ((format("%1%.%2%") % host % port).str());
     fs::path gamepath (gameroot / host_id);
 
-    fs::path db (gamepath / "world.db");
-
     if (   !fs::exists(gamepath)
         && !fs::create_directories(gamepath))
     {
         throw std::runtime_error((format("error: cannot create directory '%1%'") % gamepath.string()).str());
     }
 
+    fs::path db (gamepath / "world.leveldb");
+
     if (singleplayer_)
-        aux_ = std::make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
+        aux_ = std::make_unique<persistence_leveldb>(io_, gamepath / "local.leveldb");
+        //aux_ = std::make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
         //aux_ = make_unique<persistence_null>();
     else
-        aux_ = std::make_unique<persistence_sqlite>(io_, db, db_setup);
+        aux_ = std::make_unique<persistence_leveldb>(io_, gamepath / "local.leveldb");
+        //aux_ = std::make_unique<persistence_sqlite>(io_, db, db_setup);
 
     world_ = std::make_unique<memory_cache>(*aux_);
 }

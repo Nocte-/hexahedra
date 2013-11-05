@@ -597,14 +597,14 @@ public:
 //  source's type in a template.
 // @param src       Data will be deserialized from this object
 // @return A deserializer object for \a dest
-template <class obj>
+template <typename obj>
 deserializer<obj> make_deserializer (const obj& src)
 {
     return deserializer<obj>(src);
 }
 
-template <class obj>
-obj deserialize_as (const std::vector<char>& buffer, obj result = obj())
+template <typename obj, typename buf_t>
+obj deserialize_as (const buf_t& buffer, obj result = obj())
 {
     if (!buffer.empty())
         make_deserializer(buffer)(result);

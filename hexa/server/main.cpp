@@ -54,6 +54,7 @@
 #include <hexa/drop_privileges.hpp>
 #include <hexa/voxel_range.hpp>
 #include <hexa/persistence_sqlite.hpp>
+#include <hexa/persistence_leveldb.hpp>
 #include <hexa/memory_cache.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/entity_system_physics.hpp>
@@ -333,12 +334,13 @@ int main (int argc, char* argv[])
 
         // Set up the game world
         //hexa::network::connections_t players;
-        fs::path db_file (dbdir / "world.db");
+        fs::path db_file (dbdir / "world.leveldb");
 
         trace("Game DB %1%", db_file.string());
         log_msg("Server game DB: %1%", db_file.string());
 
-        persistence_sqlite          db_per (io_srv, db_file, datadir / "dbsetup.sql");
+        //persistence_sqlite          db_per (io_srv, db_file, datadir / "dbsetup.sql");
+        persistence_leveldb         db_per (io_srv, db_file);
         memory_cache                storage (db_per);
         hexa::server_entity_system  entities;
         hexa::world                 world (storage);
