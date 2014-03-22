@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// voxel_sprite.cpp
+// server/voxel_sprite.cpp
 //
 // This file is part of Hexahedra.
 //
@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "voxel_sprite.hpp"
 
 #include <cassert>
@@ -32,23 +32,23 @@ using namespace boost::range;
 
 namespace hexa {
 
-void paste (world& w, const voxel_sprite& sprite, world_coordinates pos)
+void paste (world_write& w, const voxel_sprite& sprite, world_coordinates pos)
 {
     world_coordinates corner (pos - sprite.offset());
     auto s (sprite.shape());
     world_coordinates size (s[0], s[1], s[2]);
-    
+
     // The bounding box of the sprite as it will appear in the game world.
     aabb<world_coordinates> sprite_box (corner, corner + size);
 
     for_each(to_chunk_range(sprite_box), [&](chunk_coordinates c)
     {
-        auto& terrain (*w.get_chunk(c));
+        auto& terrain (w.get_chunk(c));
         paste (terrain, c, sprite, pos);
     });
 }
 
-void paste (chunk& cnk, chunk_coordinates cnk_pos, 
+void paste (chunk& cnk, chunk_coordinates cnk_pos,
             const voxel_sprite& sprite, world_coordinates pos)
 {
     world_coordinates corner (pos - sprite.offset());
@@ -67,7 +67,7 @@ void paste (chunk& cnk, chunk_coordinates cnk_pos,
     auto inter (intersection(sprite_box, cnk_box));
 
     // Abort if the intersection is empty.
-    if (!inter.is_correct()) 
+    if (!inter.is_correct())
         return;
 
     for_each(range<world_coordinates>(inter), [&](world_coordinates w)
@@ -84,7 +84,8 @@ void paste (chunk& cnk, chunk_coordinates cnk_pos,
     });
 }
 
-voxel_sprite deserialize (const std::string& buf)
+const voxel_sprite
+deserialize (const std::string& buf)
 {
     auto ds (make_deserializer(buf));
 
@@ -116,7 +117,8 @@ voxel_sprite deserialize (const std::string& buf)
     return result;
 }
 
-voxel_sprite deserialize_text (const std::string& buf)
+const voxel_sprite
+deserialize_text(const std::string& buf)
 {
     std::stringstream str (buf);
 

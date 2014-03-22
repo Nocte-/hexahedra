@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/client/loading_screen.hpp
+/// \file   client/loading_screen.hpp
 /// \brief  Shown while the client is connecting to the server
 //
 // This file is part of Hexahedra.
@@ -17,15 +17,17 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "game_state.hpp"
 
 namespace hexa {
 
+/** A simple game state that just shows "connecting...", and fades out
+ ** to the main game state when it is done. */
 class loading_screen : public game_state
 {
 public:
@@ -37,7 +39,7 @@ public:
 
     void update (double time_delta);
     void render();
-    void process_event (const event&);
+    bool process_event (const event&);
     bool is_transparent() const { return true; }
     transition next_state() const;
 

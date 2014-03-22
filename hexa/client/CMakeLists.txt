@@ -2,9 +2,9 @@ cmake_minimum_required (VERSION 2.8.3)
 set(EXE hexahedra)
 set(LIBNAME hexaclient)
 
-file(GLOB SOURCE_FILES "*.cpp")
+file(GLOB SOURCE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
 list(REMOVE_ITEM SOURCE_FILES main.cpp)
-file(GLOB HEADER_FILES "*.hpp")
+file(GLOB HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.hpp")
 
 source_group(include FILES ${HEADER_FILES})
 source_group(source  FILES ${SOURCE_FILES})
@@ -29,7 +29,7 @@ if(WIN32)
                          -i${RC_FILE} -o${RC_OBJ_FILE}
                          WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
   else()
-     set(RC_OBJ_FILE ${RC_FILE})   
+     set(RC_OBJ_FILE ${RC_FILE})
   endif()
 endif()
 
@@ -38,12 +38,14 @@ add_executable(${EXE} WIN32 main.cpp ${RC_OBJ_FILE} ${HEADER_FILES})
 find_package(Boost ${REQUIRED_BOOST_VERSION} REQUIRED COMPONENTS chrono date_time iostreams program_options filesystem signals system ${BOOST_THREAD_LIBNAME} ${ADDITIONAL_BOOST_LIBS})
 find_package(SFML 2 REQUIRED COMPONENTS graphics window system ${ADDITIONAL_SFML_LIBS})
 
-include_directories(${Boost_INCLUDE_DIRS} ${SFML_INCLUDE_DIR})
+include_directories(${Boost_INCLUDE_DIRS} ${SFML_INCLUDE_DIR} ${LEVELDB_INCLUDE_DIR})
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES} ${SFML_LIBRARIES})
 
 set(NEED_GLEW "")
 if(NOT SFML_STATIC_LIBRARIES)
     set(NEED_GLEW "GLEW")
+else()
+    include_directories(${GLEW_INCLUDE_DIR})
 endif()
 
 foreach (LIB ${NEED_GLEW} OpenGL CryptoPP ENet ES)

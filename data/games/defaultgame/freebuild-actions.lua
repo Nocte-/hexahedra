@@ -6,14 +6,10 @@ function place_block (plr, inv, look_at, pos)
     local actions = { 
       "planks",
       "fence.0000", 
-      "water",
-      "bookshelf",
-      "obsidian",
-      "torch (floor)",
-      "glass.red",
-      "glass.green",
       "glass.white",
-      "glowstone"
+      "bookshelf",
+      "chest (n)",
+      "bricks"
     }
 
     if (blk[1] ~= blk[2]) then 
@@ -27,12 +23,12 @@ function place_block (plr, inv, look_at, pos)
             return
         end
 
-        local mat_id = material_id(actions[inv + 1])
+        local mat_id = material_id(actions[inv])
         local info = material_definition(mat_id)
         if (info and info.on_place) then
           info.on_place(blk[1], mat_id)
         else     
-          change_block(blk[1], actions[inv + 1])
+          change_block(blk[1], actions[inv])
         end
     end
 end

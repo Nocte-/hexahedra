@@ -5,12 +5,14 @@ ENDIF(ENET_LIBRARY AND ENET_INCLUDE_DIR)
 
 find_path(ENET_INCLUDE_DIR
   enet/enet.h
-  "${CMAKE_SOURCE_DIR}/../enet-1.3.6/include"
+  "${ENET_ROOT}/include"
+  "${CMAKE_SOURCE_DIR}/../enet-1.3.11/include"
   "${CMAKE_SOURCE_DIR}/../enet/include"
   )
 
 find_library(ENET_LIBRARY enet
-  "${CMAKE_SOURCE_DIR}/../enet-1.3.6"
+  "${ENET_ROOT}"
+  "${CMAKE_SOURCE_DIR}/../enet-1.3.11"
   "${CMAKE_SOURCE_DIR}/../enet"
   enet)
 

@@ -23,8 +23,7 @@
 #include "trace.hpp"
 
 #include <iostream>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/locks.hpp>
+#include <mutex>
 #include <boost/format.hpp>
 
 #include "log.hpp"
@@ -58,15 +57,15 @@ string to_string(int i)
 namespace hexa {
 
 namespace {
-boost::mutex debug_trace_mutex;
+std::mutex debug_trace_mutex;
 }
 
 void trace_impl(const char* func, const char* file, unsigned int line,
                 const std::string& msg)
 {
-    boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+    std::lock_guard<std::mutex> g (debug_trace_mutex);
     std::cout << file << ':' << line << " (" << func << ") : " << msg << std::endl;
-    log_msg("%1%:%2%  %3%", file, line, msg);
+    //log_msg("%1%:%2%  %3%", file, line, msg);
 }
 
 void trace_impl_s(const char* func, const char* file, unsigned int line,
@@ -74,11 +73,11 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
 {
     try
     {
-        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::lock_guard<std::mutex> g (debug_trace_mutex);
         std::cout << file << ':' << line << " (" << func << ") : "
             << (format(msg) % a).str() << std::endl;
 
-        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
+        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
     }
     catch(...)
     {
@@ -92,11 +91,11 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
 {
     try
     {
-        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::lock_guard<std::mutex> g (debug_trace_mutex);
         std::cout << file << ':' << line << " (" << func << ") : "
             << (format(msg) % a % b).str() << std::endl;
 
-        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
+        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
     }
     catch(...)
     {
@@ -110,11 +109,11 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
 {
     try
     {
-        boost::lock_guard<boost::mutex> g (debug_trace_mutex);
+        std::lock_guard<std::mutex> g (debug_trace_mutex);
         std::cout << file << ':' << line << " (" << func << ") : "
             << (format(msg) % a % b %c).str() << std::endl;
 
-        log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b % c).str());
+        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b % c).str());
     }
     catch(...)
     {

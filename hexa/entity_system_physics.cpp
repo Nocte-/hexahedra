@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "entity_system_physics.hpp"
 
 #include "algorithm.hpp"
@@ -26,7 +26,6 @@
 #include "collision.hpp"
 #include "geometric.hpp"
 #include "voxel_range.hpp"
-#include "storage_i.hpp"
 #include "trace.hpp"
 
 namespace hexa {
@@ -37,15 +36,11 @@ void system_walk (es::storage& s, float timestep)
                                                   entity_system::c_walk,
                                                   entity_system::c_lookat,
         [&](es::storage::iterator i,
-            es::storage::var_ref<vector> v_,
-            es::storage::var_ref<vector2<float>> f_,
-            es::storage::var_ref<yaw_pitch> l_)
+            vector& v,
+            vector2<float>& f,
+            yaw_pitch& l)
     {
         constexpr float max_walk_speed (5.0f);
-
-        vector v (v_);
-        vector2<float> f (f_);
-        yaw_pitch l (l_);
 
         vector2<float> old (v);
         vector2<float> result (rotate(f, -l.x) * max_walk_speed);
@@ -57,7 +52,7 @@ void system_walk (es::storage& s, float timestep)
         v.x = result.x;
         v.y = result.y;
 
-        v_ = v;
+        return true;
 
 /*
         constexpr float max_walk_speed_sq (max_walk_speed * max_walk_speed);
@@ -86,13 +81,12 @@ void system_force (es::storage& s, float timestep)
     s.for_each<vector, vector>(entity_system::c_velocity,
                                entity_system::c_force,
         [&](es::storage::iterator i,
-            es::storage::var_ref<vector> v_,
-            es::storage::var_ref<vector> f_)
+            vector& v,
+            vector& f)
     {
-        vector f (f_);
-
         // Simple Euler for now.
-        v_ += f * timestep;
+        v += f * timestep;
+        return true;
     });
 }
 
@@ -100,15 +94,15 @@ void system_gravity (es::storage& s, float timestep)
 {
     s.for_each<vector>(entity_system::c_velocity,
         [&](es::storage::iterator i,
-            es::storage::var_ref<vector> v_)
+            vector& v)
     {
         constexpr float gravity (15.f); // 9.81 doesn't feel right
         constexpr float air_viscosity (0.008f);
-        vector v (v_);
 
         v += vector(0, 0, -gravity) * timestep;
         v -= (v * absolute(v) * air_viscosity) * timestep;
-        v_ = v;
+
+        return true;
     });
 }
 
@@ -117,17 +111,14 @@ void system_motion (es::storage& s, float timestep)
     s.for_each<wfpos, vector>(entity_system::c_position,
                               entity_system::c_velocity,
         [&](es::storage::iterator i,
-            es::storage::var_ref<wfpos> p_,
-            es::storage::var_ref<vector> v_)
+            wfpos& p,
+            vector& v)
     {
-        vector v (v_);
-        wfpos  p (p_);
         p += v * timestep;
         p.normalize();
-        p_ = p;
+        return true;
     });
 }
-
 
 static aabb<vector>
 make_collision_box (const vector& origin, const vector& size)
@@ -135,22 +126,18 @@ make_collision_box (const vector& origin, const vector& size)
     return {origin - flat(size), origin + size};
 }
 
-void system_terrain_collision (es::storage& s, storage_i& terrain)
+void system_terrain_collision (es::storage& s, get_surf_func get_surface, is_air_func is_air)
 {
     s.for_each<wfpos, vector, vector>(entity_system::c_position,
                                       entity_system::c_velocity,
                                       entity_system::c_boundingbox,
         [&](es::storage::iterator i,
-            es::storage::var_ref<wfpos>  p_,
-            es::storage::var_ref<vector> v_,
-            es::storage::var_ref<vector> bb_)
+            wfpos&  p,
+            vector& v,
+            vector& bb)
     {
-        wfpos p (p_);
-
         p.normalize();
         auto& offset (p.pos);
-        vector v (v_);
-        vector bb (bb_);
 
         aabb<vector> box (make_collision_box(p.frac, bb));
 
@@ -158,12 +145,12 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
         range<world_coordinates> cbr (cast_to<world_coordinates>(box) + offset);
         for (auto b : to_chunk_range(cbr))
         {
-            if (is_air_chunk(b, terrain.get_coarse_height(b)))
+            if (is_air(b))
                 continue;
 
             world_rel_coordinates local_offset ((b * chunk_size) - offset);
-            surface_ptr data (terrain.get_surface(b));
-            if (data == nullptr)
+            auto data (get_surface(b));
+            if (!data)
             {
                 // No surface data available yet; block the whole chunk
                 cm.emplace_back(aabb<vector>(local_offset, chunk_size), 0x3f);
@@ -236,11 +223,10 @@ void system_terrain_collision (es::storage& s, storage_i& terrain)
             if (impact.x != 0) { impact.x = -v.x; v.x = 0; }
             if (impact.y != 0) { impact.y = -v.y; v.y = 0; }
             if (impact.z != 0) { impact.z = -v.z; v.z = 0; }
-            v_ = v;
         }
 
-        p_ = p;
         s.set(i, entity_system::c_impact, impact);
+        return true;
     });
 }
 
@@ -251,13 +237,11 @@ void system_terrain_friction (es::storage& s, float timestep)
     s.for_each<vector, vector>(entity_system::c_velocity,
                                entity_system::c_impact,
         [&](es::storage::iterator i,
-            es::storage::var_ref<vector> v_,
-            es::storage::var_ref<vector> m_)
+            vector& v,
+            vector& m)
     {
         constexpr float friction (16.0f);
 
-        vector m (m_);
-        vector v (v_);
         if (m.z > 0 && v != vector(0,0,0))
         {
             vector nv (normalize(v) * friction * timestep);
@@ -269,8 +253,11 @@ void system_terrain_friction (es::storage& s, float timestep)
             if (std::abs(nv.y) > std::abs(v.y)) nv.y = v.y;
             if (std::abs(nv.z) > std::abs(v.z)) nv.z = v.z;
 
-            v_ = v - nv;
+            v -= nv;
+
+            return true;
         }
+        return false;
     });
 }
 
@@ -281,26 +268,20 @@ void system_lag_compensate (es::storage& s, float timestep, uint32_t skip)
                               entity_system::c_velocity,
                               entity_system::c_lag_comp,
         [&](es::storage::iterator i,
-            es::storage::var_ref<wfpos> p_,
-            es::storage::var_ref<vector> v_,
-            es::storage::var_ref<last_known_phys> d_)
+            wfpos& p,
+            vector& v,
+            last_known_phys& d)
     {
         if (i->first == skip)
-            return;
-
-        last_known_phys d (d_);
+            return false;
 
         d.position += d.speed * timestep;
-        d_ = d;
-
-        wfpos p (p_);
-        vector v (v_);
 
         auto sq (squared_distance(p, d.position));
         if (sq < 0.00002f || sq > 16.f)
         {
-            p_ = d.position;
-            v_ = d.speed;
+            p = d.position;
+            v = d.speed;
         }
         else
         {
@@ -309,9 +290,10 @@ void system_lag_compensate (es::storage& s, float timestep, uint32_t skip)
             //
             constexpr float halftime (0.2f);
             float amount (1.0f - std::pow(0.5f, timestep / halftime));
-            p_ = lerp(p, d.position, amount);
-            v_ = lerp(v, d.speed, amount);
+            p = lerp(p, d.position, amount);
+            v = lerp(v, d.speed, amount);
         }
+        return true;
     });
 }
 

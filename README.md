@@ -19,11 +19,12 @@ This library depends on the following projects:
 
 - The [Simple and Fast Multimedia Library](http://www.sfml-dev.org/), for I/O abstraction and OpenGL initialization.
 - Scripting is done through [Lua](http://www.lua.org/) and [LuaBind](http://www.rasterbar.com/products/luabind.html).
-- The save files are stored using [SQLite](http://www.sqlite.org/).
+- The save files are stored using [LevelDB](http://code.google.com/p/leveldb/).
 - Uses the [IQM](http://lee.fov120.com/iqm/) format for storing 3D models and animations.
 - The network layer is provided by [ENet](http://enet.bespin.org/).
 - The [Jura](http://www.google.com/webfonts/specimen/Jura) font is provided as the default.
 - The GUI uses [Rhea](http://github.com/Nocte-/rhea) as its layout constraint solver.
+- [HexaNoise](http://github.com/Nocte-/hexanoise) (used for [terrain generation](http://github.com/Nocte-/hexahedra/wiki/HNDL-examples)) is now available as a separate MIT-licensed library.
 
 Build status
 ------------

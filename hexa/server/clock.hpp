@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/server/clock.hpp
+/// \file   server/clock.hpp
 /// \brief  This clock is kept synchronized with the server's clock
 //
 // This file is part of Hexahedra.
@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "../basic_types.hpp"

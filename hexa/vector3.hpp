@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -192,10 +192,29 @@ public:
         return *this;
     }
 
+    /** Modulo operator, only works for power-of-two modulos.
+     *  The resulting values are always positive. */
     self& operator%= (int mod)
     {
-        x %= mod; y %= mod; z %= mod;
+        --mod;
+        x &= mod; y &= mod; z &= mod;
         return *this;
+    }
+
+    /** Modulo function, always returns a positive result. */
+    self mod (int mod) const
+    {
+        return self((x%mod+mod)%mod,
+                    (y%mod+mod)%mod,
+                    (z%mod+mod)%mod);
+    }
+
+    /** Modulo function, always returns a positive result. */
+    self mod (const self& mod) const
+    {
+        return self((x%mod.x+mod.x)%mod.x,
+                    (y%mod.y+mod.y)%mod.y,
+                    (z%mod.z+mod.z)%mod.z);
     }
 
     self& operator++ ()
@@ -276,6 +295,30 @@ const vector3<t> operator/ (vector3<t> p, div_t div)
     return p /= div;
 }
 
+template <typename div_t>
+const vector3<int8_t> operator/ (vector3<int8_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div), divd(p.z, div)};
+}
+
+template <typename div_t>
+const vector3<int16_t> operator/ (vector3<int16_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div), divd(p.z, div)};
+}
+
+template <typename div_t>
+const vector3<int32_t> operator/ (vector3<int32_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div), divd(p.z, div)};
+}
+
+template <typename t>
+const vector3<t> operator>> (vector3<t> p, int sh)
+{
+    return {p.x >> sh, p.y >> sh, p.z >> sh};
+}
+
 template <typename t>
 const vector3<t> operator% (vector3<t> p, int mod)
 {
@@ -288,7 +331,8 @@ const vector3<t> operator% (vector3<t> p, int mod)
  * This is a specialized version of the one in algorithm.hpp, because
  * the call to std::abs is not needed for unsigned ints. */
 template <> inline
-unsigned int manhattan_length<vector3<unsigned int>>(const vector3<unsigned int>& v)
+const unsigned int
+manhattan_length<vector3<unsigned int>>(const vector3<unsigned int>& v)
 {
     return v[0] + v[1] + v[2];
 }

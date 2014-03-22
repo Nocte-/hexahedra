@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -326,7 +326,7 @@ operator+ (wfpos lhs, const world_vector& rhs)
     { return lhs += rhs; }
 
 inline wfpos
-operator+ (wfpos lhs, const vector& rhs)
+operator+ (wfpos lhs, const hexa::vector& rhs)
     { return lhs += rhs; }
 
 
@@ -339,7 +339,7 @@ operator- (wfpos lhs, const world_vector& rhs)
     { return lhs -= rhs; }
 
 inline wfpos
-operator- (wfpos lhs, const vector& rhs)
+operator- (wfpos lhs, const hexa::vector& rhs)
     { return lhs -= rhs; }
 
 inline wfvec
@@ -357,19 +357,19 @@ operator/ (wfvec lhs, float rhs)
 // Some specializations of functions found in algorithms.hpp:
 
 template <> inline
-double squared_length (const wfvec& v)
+const double squared_length (const wfvec& v)
 {
     return squared_length(v.double_vec());
 }
 
 template <> inline
-double squared_distance (const wfpos& a, const wfpos& b)
+const double squared_distance (const wfpos& a, const wfpos& b)
 {
     return squared_length(a.relative_to(b));
 }
 
 template <> inline
-wfpos lerp (const wfpos& from, const wfpos& to, double amount)
+const wfpos lerp (const wfpos& from, const wfpos& to, double amount)
 {
     return from + to.relative_to(from) * amount;
 }

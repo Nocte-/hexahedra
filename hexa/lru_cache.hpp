@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cstddef>
@@ -105,7 +105,8 @@ public:
      *  If the cache is larger than the maximum, the oldest entries
      *  will be deleted.  Unlike prune(), there is no guarantee the
      *  cache will be smaller than max_size after the function returns.
-     * @param max_size  The maximum cache size */
+     * @param max_size  The maximum cache size
+     * @param op        Only elements for which op(x) is true are pruned */
     template <typename pred>
     void prune_if (size_t max_size, pred op)
     {
@@ -221,7 +222,7 @@ public:
     {
         auto found (map_.find(k));
         if (found == map_.end())
-            return false;
+            return boost::optional<mapped_type&>();
 
         return found->second->second;
     }

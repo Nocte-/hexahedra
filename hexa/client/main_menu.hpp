@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cstdint>
@@ -33,6 +33,7 @@
 
 namespace hexa {
 
+/** Game state for the main menu. */
 class main_menu : public game_state
 {
 public:
@@ -41,7 +42,7 @@ public:
     std::string name() const override { return "main menu"; }
     void update (double time_delta) override;
     void render() override;
-    void process_event (const event&) override;
+    bool process_event (const event&) override;
     void resize (unsigned int x, unsigned int y) override;
     void expose() override;
 

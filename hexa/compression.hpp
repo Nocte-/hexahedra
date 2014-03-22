@@ -46,12 +46,16 @@ public:
 public:
     compressed_data() : unpacked_len(0) { }
 
+    compressed_data(const compressed_data&) = default;
+
 	compressed_data(compressed_data&& m)
 		: buf(std::move(m.buf))
 		, unpacked_len(m.unpacked_len)
 	{
 		m.unpacked_len = 0;
 	}
+
+    compressed_data& operator= (const compressed_data&) = default;
 
     compressed_data& operator= (compressed_data&& m)
     {
@@ -164,7 +168,8 @@ template <class output_t>
 output_t decompress_as (const compressed_data& in)
 {
     output_t out;
-    return decompress(in, out);
+    decompress(in, out);
+    return out;
 }
 
 

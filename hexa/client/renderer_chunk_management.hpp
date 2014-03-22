@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <deque>
@@ -49,7 +49,7 @@ public:
     /// Buffers are kept sorted by their Manhattan distance.
     typedef std::vector<vbos_t> sorted_vbos_t;
 
-    typedef std::unordered_map<chunk_coordinates, occlusion_query> oqs_t;
+    typedef std::unordered_map<chunk_coordinates, gl::occlusion_query> oqs_t;
     typedef oqs_t::value_type oqs_value_t;
     typedef std::vector<oqs_t> sorted_oqs_t;
 
@@ -122,7 +122,7 @@ public:
             return;
         }
         //trace("new OQ %1%", world_rel_coordinates(pos - world_chunk_center));
-        occlusion_queries[dist][pos] = occlusion_query();
+        occlusion_queries[dist][pos] = gl::occlusion_query();
     }
 
     void cancel_occlusion_query(chunk_coordinates pos)
@@ -152,7 +152,7 @@ public:
                     && is_air_chunk(qry.first, z))
                 {
                     //trace("OQ %1% is above height limit, canceling", world_rel_coordinates(qry.first - world_chunk_center));
-                    qry.second.set_state(occlusion_query::air);
+                    qry.second.set_state(gl::occlusion_query::air);
                 }
             }
         }
@@ -166,26 +166,26 @@ public:
         {
             for (auto& p : l)
             {
-                occlusion_query& qry (p.second);
+                gl::occlusion_query& qry (p.second);
 
-                if (    qry.state() == occlusion_query::cancelled
-                    ||  qry.state() == occlusion_query::air)
+                if (    qry.state() == gl::occlusion_query::cancelled
+                    ||  qry.state() == gl::occlusion_query::air)
                 {
                     //trace("OQ %1% is canceled/air", world_rel_coordinates(p.first - world_chunk_center));
                     result.push_back(p.first);
                 }
-                else if (   qry.state() == occlusion_query::busy
+                else if (   qry.state() == gl::occlusion_query::busy
                          && qry.is_result_available())
                 {
                     if (qry.result() > 8)
                     {
                         //trace("OQ %1% is visible", world_rel_coordinates(p.first - world_chunk_center));
-                        qry.set_state(occlusion_query::visible);
+                        qry.set_state(gl::occlusion_query::visible);
                         result.push_back(p.first);
                     }
                     else
                     {
-                        qry.set_state(occlusion_query::occluded);
+                        qry.set_state(gl::occlusion_query::occluded);
                     }
                 }
             }
@@ -271,10 +271,8 @@ protected:
     sorted_vbos_t       transparent_vbos;
     /// The occlusion queries
     sorted_oqs_t        occlusion_queries;
-
     /// The current view distance, measured in chunks.
-    size_t  view_dist_;
-
+    size_t              view_dist_;
 
     /// A buffer that is queued until the next frame, when it will be
     /// transferred to the GPU.

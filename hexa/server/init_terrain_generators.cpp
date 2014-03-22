@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 #include "init_terrain_generators.hpp"
 
@@ -27,71 +27,98 @@
 
 #include "world.hpp"
 
-#include "ambient_occlusion_lightmap.hpp"
-#include "test_lightmap.hpp"
-#include "lamp_lightmap.hpp"
-#include "radiosity_lightmap.hpp"
-#include "sun_lightmap.hpp"
-#include "uniform_lightmap.hpp"
+#include "area/area_generator.hpp"
+#include "area/fixed_value_area_generator.hpp"
 
-#include "anvil.hpp"
-#include "binvox_world_generator.hpp"
-#include "biome_generator.hpp"
-#include "flatworld_generator.hpp"
-#include "gridworld_generator.hpp"
-#include "heightmap_generator.hpp"
-#include "lua_heightmap_generator.hpp"
-#include "null_area_generator.hpp"
-#include "ocean_generator.hpp"
-#include "robinton_generator.hpp"
-#include "standard_world_generator.hpp"
-#include "surface_generator.hpp"
-#include "soil_generator.hpp"
-#include "tree_generator.hpp"
+#include "lightmap/ambient_occlusion_lightmap.hpp"
+#include "lightmap/test_lightmap.hpp"
+#include "lightmap/lamp_lightmap.hpp"
+#include "lightmap/radiosity_lightmap.hpp"
+#include "lightmap/sun_lightmap.hpp"
+#include "lightmap/uniform_lightmap.hpp"
+
+#include "terrain/cave_generator.hpp"
+#include "terrain/flatworld_generator.hpp"
+#include "terrain/heightmap_terrain_generator.hpp"
+#include "terrain/testpattern_generator.hpp"
+#include "terrain/soil_generator.hpp"
+
+/*
+#include "terrain/anvil.hpp"
+#include "terrain/binvox_world_generator.hpp"
+#include "terrain/gridworld_generator.hpp"
+#include "terrain/ocean_generator.hpp"
+#include "terrain/robinton_generator.hpp"
+#include "terrain/topsurface_generator.hpp"
+#include "terrain/tree_generator.hpp"
+*/
 
 using boost::format;
 using namespace boost::property_tree;
 
 namespace hexa {
 
-void init_terrain_gen (world& w, const ptree& config)
+void init_terrain_gen (world& w, const ptree& config, noise::generator_context& gen_ctx)
 {
-    for (const auto& area : config.get_child("areas"))
+    auto area_def (config.get_child_optional("areas"));
+    if (area_def)
+    for (const auto& area : *area_def)
     {
         const auto& info (area.second);
-        auto module (info.get<std::string>("module"));
+        auto name  (info.get<std::string>("name"));
+        auto def   (info.get<std::string>("def", ""));
+        auto cache (info.get<std::string>("cache", ""));
 
-        trace((format("area module %1%") % module).str());
+        trace((format("area name '%1%'") % name).str());
         try
         {
-            if (module == "standard_heightmap")
-                w.add_area_generator(std::make_unique<heightmap_generator>(w, info));
-
-            else if (module == "biome")
-                w.add_area_generator(std::make_unique<biome_generator>(w, info));
-
-            else if (module == "null")
-                w.add_area_generator(std::make_unique<null_area_generator>(w, info));
+            if (def.empty())
+                w.add_area_generator(std::make_unique<fixed_value_area_generator>(w, info));
 
             else
-                std::cout << "Warning: unknown area module " << module << std::endl;
+            {
+                gen_ctx.set_script(name, def);
+                w.add_area_generator(std::make_unique<area_generator>(w, info, gen_ctx));
+            }
         }
         catch (ptree_bad_path& e)
         {
-            throw std::runtime_error((format("cannot initialize area module '%1%': required property '%2%' missing") % module % e.path<std::string>()).str());
+            throw std::runtime_error((format("cannot initialize area generator '%1%': required property '%2%' missing") % name % e.path<std::string>()).str());
+        }
+        catch (std::exception& e)
+        {
+            throw std::runtime_error((format("cannot initialize area generator '%1%': %2%") % name % e.what()).str());
         }
     }
 
-    for (const auto& area : config.get_child("terrain"))
+    auto terrain_def (config.get_child_optional("terrain"));
+    if (terrain_def)
+    for (const auto& def : *terrain_def)
     {
-        const auto& info (area.second);
+        const auto& info (def.second);
         auto module (info.get<std::string>("module"));
 
         trace((format("terrain generator %1%") % module).str());
         try
         {
+            if (module == "caves")
+                w.add_terrain_generator(std::make_unique<cave_generator>(w, info));
+
+            else if (module == "flat")
+                w.add_terrain_generator(std::make_unique<flatworld_generator>(w, info));
+
+            else if (module == "soil")
+                w.add_terrain_generator(std::make_unique<soil_generator>(w, info));
+
+            else if (module == "heightmap_terrain")
+                w.add_terrain_generator(std::make_unique<heightmap_terrain_generator>(w, info));
+
+            else if (module == "testpattern")
+                w.add_terrain_generator(std::make_unique<testpattern_generator>(w, info));
+
+/*
             if (module == "anvil")
-				w.add_terrain_generator(std::make_unique<anvil_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<anvil_generator>(w, info));
 
             else if (module == "binvox")
                 w.add_terrain_generator(std::make_unique<binvox_world_generator>(w, info));
@@ -99,24 +126,21 @@ void init_terrain_gen (world& w, const ptree& config)
             else if (module == "flat")
                 w.add_terrain_generator(std::make_unique<flatworld_generator>(w, info));
 
+            else if (module == "grid")
+                w.add_terrain_generator(std::make_unique<gridworld_generator>(w, info));
+
             else if (module == "robinton")
                 w.add_terrain_generator(std::make_unique<robinton_generator>(w, info));
-
-            else if (module == "standard")
-                w.add_terrain_generator(std::make_unique<standard_world_generator>(w, info));
 
             else if (module == "ocean")
                 w.add_terrain_generator(std::make_unique<ocean_generator>(w, info));
 
             else if (module == "topsurface")
-                w.add_terrain_generator(std::make_unique<surface_generator>(w, info));
-
-            else if (module == "soil")
-                w.add_terrain_generator(std::make_unique<soil_generator>(w, info));
+                w.add_terrain_generator(std::make_unique<topsurface_generator>(w, info));
 
             else if (module == "trees")
                 w.add_terrain_generator(std::make_unique<tree_generator>(w, info));
-
+*/
             else
                 std::cout << "Warning: unknown terrain module " << module << std::endl;
         }
@@ -126,9 +150,11 @@ void init_terrain_gen (world& w, const ptree& config)
         }
     }
 
-    for (const auto& area : config.get_child("light"))
+    auto light_def (config.get_child_optional("light"));
+    if (light_def)
+    for (const auto& def : *light_def)
     {
-        const auto& info (area.second);
+        const auto& info (def.second);
         auto module (info.get<std::string>("module"));
 
         trace((format("lightmap %1%") % module).str());

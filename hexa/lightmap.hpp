@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <memory>
@@ -112,7 +112,6 @@ public:
     template <class archive>
     archive& serialize(archive& ar)
     {
-        ///\todo Serialize lightmaps properly
         return ar(data);
     }
 };

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// hexa/client/clock.cpp
+// hexa/server/clock.cpp
 //
 // This file is part of Hexahedra.
 //
@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "clock.hpp"
 
 #include <boost/chrono.hpp>

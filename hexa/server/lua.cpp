@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "lua.hpp"
 
 #include <iostream>
@@ -37,9 +37,11 @@
 #include <hexa/trace.hpp>
 #include <hexa/vector3.hpp>
 #include <hexa/voxel_algorithm.hpp>
+
 #include "player.hpp"
 #include "network.hpp"
 #include "server_entity_system.hpp"
+#include "world.hpp"
 
 using namespace boost;
 using namespace luabind;
@@ -55,6 +57,8 @@ std::unordered_map<int, luabind::object> lua::cb_stop_action;
 std::unordered_map<int, luabind::object> lua::cb_on_place;
 std::unordered_map<int, luabind::object> lua::cb_on_remove;
 std::unordered_map<int, luabind::object> lua::material_definitions;
+luabind::object                          lua::cb_authenticate_player;
+
 world* lua::world_ = nullptr;
 network* lua::net_ = nullptr;
 
@@ -381,7 +385,7 @@ private:
 
 lua::lua(server_entity_system& entities, world &w)
     : entities_(entities)
-{  
+{
     world_ = &w;
     state_ = lua_open();
 
@@ -399,10 +403,11 @@ lua::lua(server_entity_system& entities, world &w)
         def("define_component", define_component),
         def("material", get_material),
         def("material_definition", material_definition),
-        def("material_id",  find_material),
+        def("material_id",  material_id),
         def("change_block", lua::change_block),
         def("change_block", lua::change_block_s),
         def("get_block", get_block),
+        def("on_authenticate_player", on_authenticate_player),
         def("on_login", on_login),
         def("on_action", on_action),
         def("on_stop_action", on_stop_action),
@@ -643,7 +648,7 @@ void lua::define_material(uint16_t mat_id, const object& specs)
                 part.box.make_correct();
                 part.textures = find_textures(textures);
 
-                trace("custom model for material #%1%, %2%", mat_id, data.name);
+                //trace("custom model for material #%1%, %2%", mat_id, data.name);
                 data.model.emplace_back(std::move(part));
             }
         }
@@ -697,6 +702,13 @@ lua::material_definition(uint16_t id)
 {
     return material_definitions[id];
 }
+
+int
+lua::material_id (const std::string& name)
+{
+    return find_material(name, 0);
+}
+
 
 std::array<uint16_t, 6>
 lua::find_textures (const std::vector<std::string>& textures)
@@ -762,6 +774,13 @@ lua::find_textures (const std::vector<std::string>& textures)
             break;
     }
     return result;
+}
+
+
+void
+lua::on_authenticate_player(const luabind::object& callback)
+{
+    cb_authenticate_player = callback;
 }
 
 void lua::on_approach(const world_coordinates& p, unsigned int radius_on,
@@ -914,7 +933,7 @@ void lua::start_action(es::entity plr, uint8_t button, uint8_t slot,
     try
     {
         lua_entity tmp (entities_, plr);
-        luabind::call_function<void>(found->second, tmp, (int)slot, look, pos);
+        luabind::call_function<void>(found->second, tmp, (int)(slot + 1), look, pos);
     }
     catch (luabind::error& e)
     {
@@ -958,17 +977,21 @@ void lua::console(es::entity plr, const std::string& text)
 
 void lua::change_block(const world_coordinates& p, uint16_t type)
 {
-    gameworld().change_block(p, type);
+    trace("Change block %1% to %2%", p, type);
+    auto proxy (gameworld().acquire_write_access(p >> cnkshift));
+    trace("(Got write access)");
+    auto& cnk (proxy.get_chunk(p >> cnkshift));
+    cnk[p % chunk_size] = type;
 }
 
 void lua::change_block_s(const world_coordinates& p, const std::string& type)
 {
-    gameworld().change_block(p, type);
+    change_block(p, find_material(type));
 }
 
 void lua::place_block(const world_coordinates& p, uint16_t type)
 {
-    gameworld().change_block(p, type);
+    change_block(p, type);
     auto cb (cb_on_place.find(type));
     if (cb != cb_on_place.end())
         call_function<void>(cb->second, p, type);
@@ -981,13 +1004,13 @@ void lua::place_block_s(const world_coordinates& p, const std::string& type)
 
 uint16_t lua::get_block(const world_coordinates& p)
 {
-    return gameworld().get_block(p);
+    return hexa::get_block(gameworld(), p);
 }
 
 luabind::object
 lua::raycast(const wfpos& origin, const yaw_pitch& dir, float range)
 {
-    auto blocks (gameworld().raycast(origin, dir, range));
+    auto blocks (hexa::raycast(gameworld(), origin, dir, range));
     luabind::object result (newtable(state_));
     result[1] = std::get<0>(blocks);
     result[2] = std::get<1>(blocks);

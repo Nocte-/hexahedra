@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "persistent_storage_i.hpp"
@@ -33,37 +33,34 @@ public:
     persistence_null() {}
 
     void store (data_type type, chunk_coordinates xyz,
-                const compressed_data& data) { }
+                const compressed_data& data) override { }
 
-    void store (map_coordinates xy, chunk_height data) { }
+    void store (map_coordinates xy, chunk_height data) override { }
 
 
-    compressed_data retrieve (data_type, chunk_coordinates xyz)
+    compressed_data retrieve (data_type, chunk_coordinates xyz) override
         { return compressed_data(); }
 
-    chunk_height retrieve (map_coordinates xy)
+    chunk_height retrieve (map_coordinates xy) override
         { return undefined_height; }
 
 
-    bool is_available (data_type type, chunk_coordinates xyz)
+    bool is_available (data_type type, chunk_coordinates xyz) override
         { return false; }
 
-    bool is_available (data_type type, map_coordinates xy)
-        { return false; }
-
-    bool is_available (map_coordinates xy)
+    bool is_available (map_coordinates xy) override
         { return false; }
 
 
-    void store (const entity_system& es) { }
+    void store (const es::storage& es) override { }
 
-    void store (const entity_system& es, es::entity entity_id) { }
+    void store (const es::storage& es, es::storage::iterator entity) override { }
 
-    void retrieve (entity_system& es) { }
+    void retrieve (es::storage& es) override { }
 
-    void retrieve (entity_system& es, es::entity entity_id) { }
+    void retrieve (es::storage& es, es::entity entity_id) override { }
 
-    bool is_available (es::entity entity_id)
+    bool is_available (es::entity entity_id) override
         { return false; }
 };
 

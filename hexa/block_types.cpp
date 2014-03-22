@@ -18,7 +18,7 @@
 //
 // Copyright 2011-2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "block_types.hpp"
 
 #include <boost/range/algorithm.hpp>
@@ -39,10 +39,10 @@ material& register_new_material (uint16_t type_id)
     return material_prop[type_id];
 }
 
-uint16_t find_material(const std::string& name)
+uint16_t find_material(const std::string& name, uint16_t default_material)
 {
     auto found (find(material_prop, name));
-    return found == material_prop.end() ? 0 
+    return found == material_prop.end() ? default_material
            : std::distance(material_prop.begin(), found);
 }
 

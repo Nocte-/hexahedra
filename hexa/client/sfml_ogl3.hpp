@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   client/sfml_ogl3.hpp
+/// \file   hexa/client/sfml_ogl3.hpp
 /// \brief  SFML-based renderer that requires OpenGL 3.3
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <atomic>
@@ -57,7 +57,7 @@ typedef vertex_4< vtx_xyz<uint16_t>,        // Position
 class sfml_ogl3 : public sfml
 {
 public:
-    sfml_ogl3(sf::RenderWindow& win);
+    sfml_ogl3(sf::RenderWindow& win, scene& s);
     ~sfml_ogl3();
 
     void prepare(const player& plr);

@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <vector>
@@ -40,7 +40,7 @@ public:
      * @param radius       Radius in astronomical units.
      * @param angular_velocity Orbital velocity in radians per time unit.
      * @param angular_offset   Offset in radians. */
-    orbit (double inclination, double lon_asc, double radius, 
+    orbit (double inclination, double lon_asc, double radius,
            double angular_velocity, double angular_offset);
 
     /** Get the position of the body at a given point in time. */
@@ -55,7 +55,7 @@ private:
 
 /** Definition of a solar system, with a sun, a home planet, and any
  *  number of other moons and planets.
- *  Note that this is not meant to be an exact simulation. But hey, if 
+ *  Note that this is not meant to be an exact simulation. But hey, if
  *  it's good enough for Copernicus, it's good enough for us. */
 class solar_system
 {
@@ -77,30 +77,34 @@ public:
     /** Construct a solar system.
      * @param seconds_per_rotation  Rotation speed of the home planet.
      * @param gravitational_constant  Guassian gravitational constant. */
-    solar_system(double seconds_per_rotation, 
+    solar_system(double seconds_per_rotation,
                  double gravitational_constant = 0.017202);
 
     /** Returns a prefab solar system a bit like our own. */
     static solar_system real_system();
 
-    /** Add a planet. 
+    /** Add a planet.
      * @param planet_radius  Radius in millions of blocks.
      * @param orbit_radius   Orbit radius in astronomical units.
-     * @param tilt           The orbit's tilt from the ecliptic plane. */
+     * @param inclin         Inclination
+     * @param lon_asc        Longitudal ascension
+     * @param offset         Time offset */
     void add_planet (double planet_radius, double orbit_radius,
                      double inclin, double lon_asc, double offset = 0.0);
 
-    /** Add a moon. 
+    /** Add a moon.
      * @param moon_radius    Radius in millions of blocks.
      * @param orbit_radius   Orbit radius in astronomical units.
-     * @param tilt           The orbit's tilt from the ecliptic plane. */
+     * @param inclin         Inclination
+     * @param lon_asc        Longitudal ascension
+     * @param offset         Time offset */
     void add_moon (double moon_radius, double orbit_radius,
                    double inclin, double lon_asc, double offset = 0.0);
 
     yaw_pitch observe_sun (double time) const;
 
     std::vector<observation> observe_planets (double time) const;
-    
+
 private:
     double              sec_per_rotation_;
     orbit               home_planet_orbit_;

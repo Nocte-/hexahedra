@@ -19,7 +19,7 @@
 //
 // Copyright (C) 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <iostream>
@@ -34,9 +34,9 @@ class color : public vector3<float>
     typedef vector3<float>  base;
 
 public:
-    using base::operator[];
-    using base::operator*=;
-    using base::operator/=;
+    using vector3<float>::operator[];
+    using vector3<float>::operator*=;
+    using vector3<float>::operator/=;
 
 public:
     color () { }
@@ -160,6 +160,7 @@ const color_alpha operator* (color_alpha::value_type lhs, color_alpha rhs)
 
 //---------------------------------------------------------------------------
 
+/** Convert a color in CIE(x,y,Y) to SRGB. */
 inline const color xyY_to_srgb(const color& in)
 {
     // First convert xyY to XYZ tristimulus values
@@ -179,6 +180,8 @@ inline const color xyY_to_srgb(const color& in)
 }
 
 } // namespace hexa
+
+//---------------------------------------------------------------------------
 
 namespace std
 {

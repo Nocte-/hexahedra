@@ -18,7 +18,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "render_surface.hpp"
 
 namespace hexa {
@@ -59,7 +59,7 @@ optimize_greedy (render_surface::layer in)
 
         // Expand the rectangle horizontally until we encounter a different
         // tile.
-        map_index pos (search % chunk_size, search / chunk_size);
+        map_index pos (search % chunk_size, search >> cnkshift);
 
         while (   pos.x + rect.size.x < max_size
                && rect == in[pos + map_index(rect.size.x, 0)])

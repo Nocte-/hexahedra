@@ -17,11 +17,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
+#include <functional>
+#include <boost/optional.hpp>
+#include "basic_types.hpp"
+#include "surface.hpp"
 #include "entity_system.hpp"
 
 namespace hexa {
@@ -41,7 +45,9 @@ void system_gravity  (es::storage& s, float timestep);
 void system_motion (es::storage& s, float timestep);
 
 /// Collision checks against terrain
-void system_terrain_collision (es::storage& s,storage_i& terrain);
+typedef std::function<boost::optional<const surface_data&>(chunk_coordinates)> get_surf_func;
+typedef std::function<bool(chunk_coordinates)> is_air_func;
+void system_terrain_collision (es::storage& s, get_surf_func get_surface, is_air_func is_air);
 
 /// Apply friction from moving over terrain
 void system_terrain_friction (es::storage& s, float timestep);

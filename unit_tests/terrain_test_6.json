@@ -1,0 +1,29 @@
+{
+
+"areas": [
+    {
+        "name": "heightmap",
+        "def": "20"
+    },
+    {
+        "name": "biomes",
+        "def": "x"
+    },
+    {   "name": "surface" }
+],
+
+"terrain": [
+    { "module": "heightmap_terrain",
+      "material": "two" },
+    { "module": "soil",
+      "replace": "two",
+      "material": [
+      [ "three" ],
+      [ "four", "four" ],
+      [ "five", "four", "three" ]
+      ]
+    }
+]
+
+}
+

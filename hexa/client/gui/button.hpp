@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   client/gui/widget.hpp
-/// \brief  Base class for all widgets.
+/// \file   client/gui/button.hpp
+/// \brief  Button widget
 //
 // This file is part of Hexahedra.
 //

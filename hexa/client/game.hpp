@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   client/game_state.hpp
+/// \file   client/game.hpp
 /// \brief  Manages game states
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -34,18 +34,34 @@
 namespace hexa {
 
 class game_state;
+struct event;
 
 /** Manages game states
  * A title screen, a main menu, and the actual game are examples of
  * game states.  The individual states are implemented in their own
- * classes, \a game only ties them together. */
+ * classes, \a game only coordinates transitions and events.
+ *
+ * States are kept as a stack.  Whenever the currently active state (the
+ * one on top of the stack) signals it is done, \a game gets a \a transition
+ * object, instructing it what to do next.  Three things can happen at this
+ * point:
+ * - A new game_state is put on top of the stack.
+ * - A new game_state replaces the current one.
+ * - The current state is popped off the stack, and the one below it becomes
+ *   active.  If the stack is empty, the application exits.
+ *
+ * Also, states can be transparent.  This means the state underneath it on
+ * the stack still gets drawn and receives window resize events, but it
+ * does not receive keyboard and mouse events.  This is useful for things
+ * like modal dialog boxes, or paused/loading screens.
+ */
 class game
 {
 public:
     /** Initialize the game.
-     * \param title     Window title
-     * \param width     Initial window width
-     * \param height    Initial window height */
+     * @param title     Window title
+     * @param width     Initial window width
+     * @param height    Initial window height */
     game (const std::string& title, unsigned int width, unsigned int height);
 
     /** Start the event loop, showing this game state. */
@@ -55,7 +71,7 @@ public:
     void push (std::unique_ptr<game_state> new_state);
 
     /** Create a new game state.
-     * \param parameters    List of parameters that will be forwarded to
+     * @param parameters    List of parameters that will be forwarded to
      *                      the constructor of \a t */
     template <typename t, typename... args>
     std::unique_ptr<game_state> make_state(args&&... parameters)
@@ -86,11 +102,12 @@ private:
     void            handle_keypress(uint32_t keycode);
     void            resize(unsigned int width, unsigned int height);
     void            toggle_fullscreen();
+    void            process_event (const event& ev);
 
 private:
-    /** Stack of game states.
-     *  Every time a state is finished, it is popped off the stack and
-     *  the previous one is exposed. */
+    /** The game state stack.
+     *  Not implemented as an actual std::stack because we need to iterate
+     *  through it. */
     std::vector<std::unique_ptr<game_state>> states_;
 
     sf::RenderWindow    window_;
@@ -121,7 +138,7 @@ private:
     /** Current mouse position. */
     vector2<int>        mouse_pos_;
 
-    /** Total time passed. */
+    /** Total time passed, in seconds. */
     double              time_;
 };
 

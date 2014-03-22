@@ -1,5 +1,5 @@
+#define BOOST_TEST_MODULE hexahedra_test
 
-#define BOOST_TEST_MODULE hexahedra_core test
 #include <boost/test/unit_test.hpp>
 
 #include <chrono>
@@ -8,6 +8,7 @@
 #include <thread>
 #include <boost/range/algorithm.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/filesystem/convenience.hpp>
 
 #include <hexa/aabb.hpp>
 #include <hexa/algorithm.hpp>
@@ -15,22 +16,56 @@
 #include <hexa/collision.hpp>
 #include <hexa/compression.hpp>
 #include <hexa/concurrent_queue.hpp>
+#include <hexa/crypto.hpp>
 #include <hexa/geometric.hpp>
+#include <hexa/hotbar_slot.hpp>
 #include <hexa/lru_cache.hpp>
-#include <hexa/memory_cache.hpp>
-#include <hexa/neighborhood.hpp>
-#include <hexa/persistence_sqlite.hpp>
+#include <hexa/persistence_leveldb.hpp>
 #include <hexa/persistence_null.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/quaternion.hpp>
+#include <hexa/server/random.hpp>
 #include <hexa/ray.hpp>
 #include <hexa/ray_bundle.hpp>
 #include <hexa/serialize.hpp>
 #include <hexa/surface.hpp>
+#include <hexa/trace.hpp>
 #include <hexa/vector3.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
 #include <hexa/wfpos.hpp>
+
+namespace es {
+
+template<>
+void serialize<std::string>(const std::string& s, std::vector<char>& buf)
+{
+    uint16_t size (s.size());
+    buf.push_back(size & 0xff);
+    buf.push_back(size >> 8);
+    buf.insert(buf.end(), s.begin(), s.end());
+}
+
+template<>
+std::vector<char>::const_iterator
+deserialize<std::string>(std::string& obj, std::vector<char>::const_iterator first, std::vector<char>::const_iterator last)
+{
+    if (std::distance(first, last) < 2)
+        throw  std::runtime_error("cannot deserialize string: no length field");
+
+    uint16_t size (uint8_t(*first++));
+    size += (uint16_t(uint8_t(*first++)) << 8 );
+
+    if (std::distance(first, last) < size)
+        throw  std::runtime_error("cannot deserialize string: not enough data");
+
+    last = first + size;
+    obj.assign(first, last);
+    return last;
+}
+
+
+} // namespace es
 
 using namespace hexa;
 
@@ -48,6 +83,8 @@ t serialize_roundtrip(t& in)
     return out;
 }
 
+BOOST_AUTO_TEST_SUITE(core)
+
 BOOST_AUTO_TEST_CASE (serialize_test)
 {
     typedef std::vector<uint8_t> buffer;
@@ -63,6 +100,8 @@ BOOST_AUTO_TEST_CASE (serialize_test)
     dser(c);
     BOOST_CHECK_EQUAL(b, c);
 
+    //---
+
     buffer a2;
     auto ser2 (make_serializer(a2));
     block_vector d (10, 5, 4), e;
@@ -72,6 +111,41 @@ BOOST_AUTO_TEST_CASE (serialize_test)
     dser2(e);
     BOOST_CHECK_EQUAL(a2.size(), 2); // Not 3, block_vector is a special case
     BOOST_CHECK_EQUAL(d, e);
+
+    //---
+
+    buffer a3;
+    auto ser3 (make_serializer(a3));
+    hotbar hb1;
+    hb1.push_back(hotbar_slot(1, "lol"));
+    hb1.push_back(hotbar_slot(2, "foobar"));
+    ser3(hb1);
+
+    hotbar hb2;
+    auto dser3 (make_deserializer(a3));
+    dser3(hb2);
+    BOOST_CHECK_EQUAL(hb1.size(), hb2.size());
+    BOOST_CHECK_EQUAL(hb1[0].type, hb2[0].type);
+    BOOST_CHECK_EQUAL(hb1[0].name, hb2[0].name);
+    BOOST_CHECK_EQUAL(hb1[1].type, hb2[1].type);
+    BOOST_CHECK_EQUAL(hb1[1].name, hb2[1].name);
+
+    //---
+
+    chunk test_cnk;
+    auto p (prng(1234));
+    for (auto i : every_block_in_chunk)
+        test_cnk[i] = prng_next(p) & 0xffff;
+
+    buffer a4;
+    auto ser4 (make_serializer(a4));
+    ser4(test_cnk);
+
+    chunk compare_cnk;
+    auto dser4 (make_deserializer(a4));
+    dser4(compare_cnk);
+
+    BOOST_CHECK(test_cnk == compare_cnk);
 }
 
 BOOST_AUTO_TEST_CASE (vector2_test)
@@ -85,7 +159,16 @@ BOOST_AUTO_TEST_CASE (vector2_test)
     BOOST_CHECK_EQUAL(first + second, vector2<int>(5, 9));
     BOOST_CHECK_EQUAL(first - second, vector2<int>(-3, -5));
     BOOST_CHECK_EQUAL(first * second, vector2<int>(4, 14));
-    BOOST_CHECK_EQUAL(second % 3, vector2<int>(1, 1));
+    BOOST_CHECK_EQUAL(second.mod(3), vector2<int>(1, 1));
+
+    vector2<int> third (-1, -15);
+    BOOST_CHECK_EQUAL(third / chunk_size, vector2<int>(-1, -1));
+    BOOST_CHECK_EQUAL(third >> cnkshift, vector2<int>(-1, -1));
+    BOOST_CHECK_EQUAL(third % chunk_size, vector2<int>(15, 1));
+    vector2<int> fourth (-16, -31);
+    BOOST_CHECK_EQUAL(fourth / chunk_size, vector2<int>(-1, -2));
+    BOOST_CHECK_EQUAL(fourth >> cnkshift, vector2<int>(-1, -2));
+    BOOST_CHECK_EQUAL(fourth % chunk_size, vector2<int>(0, 1));
 }
 
 BOOST_AUTO_TEST_CASE (vector3_test)
@@ -95,12 +178,14 @@ BOOST_AUTO_TEST_CASE (vector3_test)
     BOOST_CHECK_EQUAL(first.y, 2);
     BOOST_CHECK_EQUAL(first.z, 3);
     BOOST_CHECK_EQUAL(first, vector3<int>(1, 2, 3));
+    BOOST_CHECK_EQUAL(first / chunk_size, vector3<int>(0, 0, 0));
+    BOOST_CHECK_EQUAL(first >> cnkshift, vector3<int>(0, 0, 0));
 
     vector3<int> second (4, 7, 13);
     BOOST_CHECK_EQUAL(first + second, vector3<int>(5, 9, 16));
     BOOST_CHECK_EQUAL(first - second, vector3<int>(-3, -5, -10));
     BOOST_CHECK_EQUAL(first * second, vector3<int>(4, 14, 39));
-    BOOST_CHECK_EQUAL(second % 3, vector3<int>(1, 1, 1));
+    BOOST_CHECK_EQUAL(second % 4, vector3<int>(0, 3, 1));
 
     vector3<int> third (-3, 8, 3);
     BOOST_CHECK_EQUAL(squared_length(first), 14);
@@ -108,6 +193,17 @@ BOOST_AUTO_TEST_CASE (vector3_test)
     BOOST_CHECK_EQUAL(diff(first, third), vector3<int>(4, 6, 0));
     BOOST_CHECK_EQUAL(manhattan_distance(first, first), 0);
     BOOST_CHECK_EQUAL(manhattan_distance(first, second), 18);
+    BOOST_CHECK_EQUAL(third / chunk_size, vector3<int>(-1, 0, 0));
+    BOOST_CHECK_EQUAL(third >> cnkshift, vector3<int>(-1, 0, 0));
+    BOOST_CHECK_EQUAL(third % chunk_size, vector3<int>(13, 8, 3));
+
+    vector3<int> fourth (-17, -16, 31);
+    BOOST_CHECK_EQUAL(fourth / chunk_size, vector3<int>(-2, -1, 1));
+    BOOST_CHECK_EQUAL(fourth >> cnkshift, vector3<int>(-2, -1, 1));
+    BOOST_CHECK_EQUAL(fourth % chunk_size, vector3<int>(15, 0, 15));
+
+    vector3<uint32_t> limit (0xffffffff);
+    BOOST_CHECK_EQUAL(limit >> cnkshift, chunk_world_limit - vec3i(1));
 }
 
 BOOST_AUTO_TEST_CASE (wfpos_test)
@@ -186,6 +282,32 @@ BOOST_AUTO_TEST_CASE (aabb_test)
     BOOST_CHECK(b.is_correct());
     BOOST_CHECK(!are_overlapping(a, b));
     BOOST_CHECK(!intersection(a, b).is_correct());
+}
+
+BOOST_AUTO_TEST_CASE (aabb_neg_test)
+{
+    {
+    aabb<vec3i> box ({ -4, -4, -4 }, { 4, 4, 4 });
+    auto box2 (box >> cnkshift);
+    BOOST_CHECK_EQUAL(box2.first,  vec3i(-1, -1, -1));
+    BOOST_CHECK_EQUAL(box2.second, vec3i(1, 1, 1));
+    }
+    {
+    aabb<vec3i> box ({ -18, -4, -4 }, { 4, 4, 15 });
+    auto box2 (box >> cnkshift);
+    BOOST_CHECK_EQUAL(box2.first,  vec3i(-2, -1, -1));
+    BOOST_CHECK_EQUAL(box2.second, vec3i(1, 1, 1));
+    }
+    {
+        aabb<vec3f> box ({ -1.f, -1.f, -1.f }, { 15.5f, 15.5f, 16.5f });
+        aabb<vec3i> boxi (cast_to<vec3i>(box));
+        BOOST_CHECK_EQUAL(boxi.first,  vec3i(-1, -1, -1));
+        BOOST_CHECK_EQUAL(boxi.second, vec3i(16, 16, 17));
+
+        aabb<vec3i> boxc (boxi >> cnkshift);
+        BOOST_CHECK_EQUAL(boxc.first,  vec3i(-1, -1, -1));
+        BOOST_CHECK_EQUAL(boxc.second, vec3i( 1,  1,  2));
+    }
 }
 
 BOOST_AUTO_TEST_CASE (aabb_ray_test)
@@ -331,6 +453,19 @@ BOOST_AUTO_TEST_CASE (lrucache_test)
 }
 
 
+BOOST_AUTO_TEST_CASE (crypto_test)
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        auto key   (crypto::make_new_key());
+        auto spriv (crypto::serialize_private_key(key));
+        auto spubl (crypto::serialize_public_key(key));
+
+        //std::cout << spriv << std::endl;
+        //std::cout << spubl << std::endl;
+    }
+}
+
 BOOST_AUTO_TEST_CASE (compress_test)
 {
     std::string li("Lorem ipsum dolor sit amet, consectetur xxxxxxxxxxxxxxxxx");
@@ -378,46 +513,133 @@ BOOST_AUTO_TEST_CASE (concurrent_queue_test)
     BOOST_CHECK_EQUAL(q.size(), 1);
 }
 
-/*
-BOOST_AUTO_TEST_CASE (sqlite_test)
+BOOST_AUTO_TEST_CASE (persistent_storage_test)
 {
-    using namespace boost;
+    boost::filesystem::path tmpdb ("storetest.leveldb");
+    boost::filesystem::remove_all (tmpdb);
 
-    persistent_storage_i::data_type chunk_type {persistent_storage_i::chunk};
+    {
+    es::storage st;
+    auto c1 (st.register_component<int>("first"));
 
-    filesystem::remove("world.db");
-    persistence_sqlite  per;
+    persistence_leveldb ldb (tmpdb);
 
-    chunk_coordinates cpos {10, 20, 30};
+    uint32_t rn (31337);
+    for (int i (0); i < 1000; ++i)
+    {
+        auto pos (prng_next_pos(rn));
+        auto type (static_cast<persistence_leveldb::data_type>(prng_next(rn) % 4));
+        binary_data buf (prng_next(rn) % 200);
+        for (auto& c : buf)
+            c = prng_next(rn) & 0xff;
 
-    BOOST_CHECK(per.is_available(chunk_type, cpos) == false);
-    BOOST_CHECK_THROW(per.retrieve(chunk_type, cpos), not_in_storage_error);
+        ldb.store(type, pos, compress(buf));
+        ldb.store(map_coordinates(pos.x, pos.y), pos.z);
+    }
 
-    binary_data bogus { 0x01, 0x00, 0x13, 0x24, 0x36, -127, 0x00 };
-    per.store(chunk_type, cpos, compress(bogus));
+    for (int i (0); i < 1000; ++i)
+    {
+        auto e (st.make(prng_next(rn)));
+        st.set<int>(e, c1, prng_next(rn));
+    }
+    ldb.store(st);
+    }
 
-    BOOST_CHECK(per.is_available(chunk_type, cpos));
-    compressed_data compare {per.retrieve(chunk_type, cpos)};
-    BOOST_CHECK(decompress(compare) == bogus);
+    {
+    es::storage st;
+    auto c1 (st.register_component<int>("first"));
 
-    //---
+    persistence_leveldb ldb (tmpdb);
+    ldb.retrieve(st);
 
-    persistent_storage_i::data_type surface_type {persistent_storage_i::surface};
-    chunk_coordinates spos {134217728, 134217720, 134217892};
+    uint32_t rn (31337);
+    for (int i (0); i < 1000; ++i)
+    {
+        auto pos (prng_next_pos(rn));
+        auto hgt = ldb.retrieve(map_coordinates(pos.x, pos.y));
+        BOOST_CHECK_EQUAL(hgt, pos.z);
 
-    BOOST_CHECK(per.is_available(surface_type, spos) == false);
-    BOOST_CHECK_THROW(per.retrieve(surface_type, spos), not_in_storage_error);
+        auto type (static_cast<persistence_leveldb::data_type>(prng_next(rn) % 4));
+        auto expected_len (prng_next(rn) % 200);
 
-    binary_data bogus2 { 0x01, 0x00, 0x3A, 0x28, 0x00, 0x00, 0x6B };
-    per.store(surface_type, spos, compress(bogus2));
+        auto buf = decompress(ldb.retrieve(type, pos));
+        BOOST_CHECK_EQUAL(buf.size(), expected_len);
+        for (auto& c : buf)
+            BOOST_CHECK_EQUAL(uint8_t(c), uint8_t(prng_next(rn) & 0xff));
+    }
 
-    BOOST_CHECK(per.is_available(surface_type, spos));
-    compressed_data compare2 {per.retrieve(surface_type, spos)};
-    BOOST_CHECK(decompress(compare2) == bogus2);
+    for (int i (0); i < 1000; ++i)
+    {
+        auto e (st.find(prng_next(rn)));
+        BOOST_CHECK(e != st.end());
+        BOOST_CHECK_EQUAL(st.get<int>(e, c1), prng_next(rn));
+    }
 
-    filesystem::remove("world.db");
+    }
+
+    boost::filesystem::remove_all(tmpdb);
 }
-*/
+
+BOOST_AUTO_TEST_CASE (es_loadsave_test)
+{
+    es::storage st;
+
+    auto c1 (st.register_component<int>("first"));
+    auto c2 (st.register_component<std::string>("second"));
+    auto c3 (st.register_component<wfpos>("pos"));
+    auto c4 (st.register_component<hotbar>("hb"));
+
+    auto e1 (st.new_entity());
+    auto e2 (st.new_entity());
+    auto e3 (st.new_entity());
+
+    hotbar testbar;
+    testbar.emplace_back(hotbar_slot(1, "lol"));
+
+    st.set(e1, c1, 42);
+    st.set(e2, c2, std::string("42"));
+    st.set(e3, c3, wfpos(1.234f, 5.678f, 9.012f));
+    st.set(e3, c4, testbar);
+
+    boost::filesystem::path tmpdb ("es.leveldb");
+    boost::filesystem::remove_all (tmpdb);
+
+    {
+    persistence_leveldb ldb (tmpdb);
+    ldb.store(st);
+    }
+
+    st.delete_entity(e1);
+    st.delete_entity(e2);
+    st.delete_entity(e3);
+
+    BOOST_CHECK_EQUAL(st.size(), 0);
+    {
+    persistence_leveldb ldb (tmpdb);
+    ldb.retrieve(st);
+    }
+    boost::filesystem::remove_all(tmpdb);
+    BOOST_CHECK_EQUAL(st.size(), 3);
+
+    auto ie1 (st.find(e1));
+    auto ie2 (st.find(e2));
+    auto ie3 (st.find(e3));
+
+    BOOST_CHECK(st.entity_has_component(ie1, c1));
+    BOOST_CHECK(!st.entity_has_component(ie1, c2));
+    BOOST_CHECK(!st.entity_has_component(ie2, c1));
+    BOOST_CHECK(st.entity_has_component(ie2, c2));
+    BOOST_CHECK(!st.entity_has_component(ie3, c2));
+    BOOST_CHECK(!st.entity_has_component(ie3, c1));
+    BOOST_CHECK(st.entity_has_component(ie3, c3));
+    BOOST_CHECK(st.entity_has_component(ie3, c4));
+
+    BOOST_CHECK_EQUAL(st.get<int>(ie1, c1), 42);
+    BOOST_CHECK_EQUAL(st.get<std::string>(ie2, c2), "42");
+    BOOST_CHECK_EQUAL(st.get<wfpos>(ie3, c3), wfpos(1.234f, 5.678f, 9.012f));
+    BOOST_CHECK_EQUAL(st.get<hotbar>(ie3, c4).size(), 1);
+    BOOST_CHECK_EQUAL(st.get<hotbar>(ie3, c4)[0].name, "lol");
+}
 
 BOOST_AUTO_TEST_CASE (voxelrange_test)
 {
@@ -446,87 +668,10 @@ BOOST_AUTO_TEST_CASE (voxelrange_test)
     BOOST_CHECK_EQUAL(count, chunk_volume);
 }
 
-BOOST_AUTO_TEST_CASE (neighborhood_test)
-{
-    /*
-    chunk_ptr c1(new chunk), c2(new chunk), c3(new chunk), c4(new chunk);
-
-    for (chunk_index i : every_block_in_chunk)
-    {
-        (*c1)[i] = i.x * 4 + i.y * 32 + i.z * 32 * 32;
-        (*c2)[i] = i.x * 4 + i.y * 32 + i.z * 32 * 32 + 1;
-        (*c3)[i] = i.x * 4 + i.y * 32 + i.z * 32 * 32 + 2;
-        (*c4)[i] = i.x * 4 + i.y * 32 + i.z * 32 * 32 + 3;
-    }
-
-    neighborhood<chunk_ptr> nbh (nothing, {0,0,0});
-
-    nbh.add({ 0, 0, 0}, c1);
-    nbh.add({-1, 0, 0}, c2);
-    nbh.add({ 1, 0, 0}, c3);
-    nbh.add({ 0, 1, 0}, c4);
-
-    typedef block_vector bv;
-
-    BOOST_CHECK_EQUAL(nbh[bv(2, 3, 4)], (*c1)[bv(2, 3, 4)]);
-    BOOST_CHECK_EQUAL(nbh[bv(0, 0, 0)], (*c1)[bv(0, 0, 0)]);
-    BOOST_CHECK_EQUAL(nbh[bv(15, 15, 15)], (*c1)[bv(15, 15, 15)]);
-
-    BOOST_CHECK_EQUAL(nbh[bv(-1, 0, 0)], (*c2)[bv(15, 0, 0)]);
-    BOOST_CHECK_EQUAL(nbh[bv(-2, 0, 0)], (*c2)[bv(14, 0, 0)]);
-    BOOST_CHECK_EQUAL(nbh[bv(-16, 1, 2)], (*c2)[bv(0, 1, 2)]);
-
-    BOOST_CHECK_EQUAL(nbh[bv(16, 0, 0)], (*c3)[bv(0, 0, 0)]);
-    BOOST_CHECK_EQUAL(nbh[bv(17, 3, 8)], (*c3)[bv(1, 3, 8)]);
-    BOOST_CHECK_EQUAL(nbh[bv(31, 1, 2)], (*c3)[bv(15, 1, 2)]);
-
-    BOOST_CHECK_EQUAL(nbh[bv(0, 16, 0)], (*c4)[bv(0, 0, 0)]);
-    BOOST_CHECK_EQUAL(nbh[bv(1, 18, 2)], (*c4)[bv(1, 2, 2)]);
-    BOOST_CHECK_EQUAL(nbh[bv(3, 31, 5)], (*c4)[bv(3, 15, 5)]);
-    */
-}
-
-/*
-BOOST_AUTO_TEST_CASE (clientworld_test)
-{
-    using namespace boost;
-
-    filesystem::remove("world.db");
-    persistence_sqlite db;
-    memory_cache map (db);
-
-    chunk_coordinates cc1 (100, 101, 102);
-    chunk_coordinates cc2 (200, 201, 202);
-    BOOST_CHECK(map.is_chunk_available(cc1) == false);
-    BOOST_CHECK(map.get_chunk(cc1) == nullptr);
-    BOOST_CHECK(map.is_lightmap_available(cc1) == false);
-    BOOST_CHECK(map.get_lightmap(cc1) == nullptr);
-
-    chunk_ptr c (new chunk);
-    for (chunk_index i : every_block_in_chunk)
-        (*c)[i] = i.x + i.y * 32 + i.z * 32 * 32;
-
-    lightmap_ptr lm (new lightmap);
-    map.store(cc1, c);
-    BOOST_CHECK(map.is_chunk_available(cc1));
-    BOOST_CHECK(map.get_chunk(cc1) != nullptr);
-    map.store(cc1, lm);
-    BOOST_CHECK(map.is_lightmap_available(cc1));
-    BOOST_CHECK(map.get_lightmap(cc1) != nullptr);
-
-    chunk_ptr compare (map.get_chunk(cc1));
-    BOOST_REQUIRE(compare != nullptr);
-    BOOST_CHECK(*compare == *c);
-    //BOOST_CHECK(callback1_exec);
-    //BOOST_CHECK(callback2_exec);
-}
-*/
-
-
 BOOST_AUTO_TEST_CASE (surfacedata_serialize_test)
 {
     surface_data test;
-    
+
     auto ret1 (serialize_roundtrip(test));
     BOOST_CHECK(ret1.opaque.empty());
     BOOST_CHECK(ret1.transparent.empty());
@@ -565,98 +710,8 @@ BOOST_AUTO_TEST_CASE (surfacedata_serialize_test)
     BOOST_CHECK_EQUAL(ret3.transparent[2047].type, 890 + 2047);
 }
 
-/*
-BOOST_AUTO_TEST_CASE (area_height_test)
-{
-    persistence_null per;
-    world w (per);
-    heightmap_generator gen (w);
-
-    area_data result;
-    gen.generate (map_coordinates(10, 20), result);
-}
-
-class test_heightmap : public area_generator_i
-{
-public:
-    test_heightmap(world& w) : area_generator_i (w, "heightmap") {}
-    virtual ~test_heightmap() {}
-
-    area_data& generate (const map_coordinates& xy, area_data& dest)
-    {
-        for (int x (0); x < chunk_size; ++x)
-            for (int y (0); y < chunk_size; ++y)
-                dest(x,y) = 127 + x + y;
-
-        return dest;
-    }
-};
-
-BOOST_AUTO_TEST_CASE (simple_terrain_test)
-{
-    persistence_null per;
-    simple_terrain_cache memcache (per);
-    world w (memcache);
-
-    test_heightmap thm (w);
-    w.add_area_generator(&thm);
-
-    standard_world_generator gen (w);
-    w.add_terrain_generator(&gen);
-
-    chunk_coordinates pos (world_chunk_center);
-    pos.z += 8;
-
-    chunk_ptr c (w.get_chunk(pos));
-    BOOST_REQUIRE(c != nullptr);
-
-    BOOST_CHECK_EQUAL((*c)(0, 0, 0), type::air);
-    BOOST_CHECK_EQUAL((*c)(1, 0, 0), type::rock);
-    BOOST_CHECK_EQUAL((*c)(0, 1, 0), type::rock);
-    BOOST_CHECK_EQUAL((*c)(1, 1, 0), type::rock);
-
-    BOOST_CHECK_EQUAL((*c)(0, 0, 1), type::air);
-    BOOST_CHECK_EQUAL((*c)(1, 0, 1), type::air);
-    BOOST_CHECK_EQUAL((*c)(0, 1, 1), type::air);
-    BOOST_CHECK_EQUAL((*c)(1, 1, 1), type::rock);
-
-    BOOST_CHECK_EQUAL((*c)(15, 15, 15), type::rock);
-}
-*/
-
 BOOST_AUTO_TEST_CASE (protocol_test)
 {
-    /*
-    msg::chunk_update testmsg;
-
-    chunk input;
-    uint16_t f (0);
-    for (auto x : every_block_in_chunk)
-        input[x] = (++f) % 14;
-
-    testmsg.position = chunk_coordinates(40, 50, 60);
-    testmsg.data = compress(input);
-
-    packet p {serialize_packet(testmsg)};
-    auto arch (make_deserializer(p));
-
-    uint8_t packet_id;
-    uint16_t packet_len;
-    arch(packet_id)(packet_len);
-
-    BOOST_CHECK_EQUAL(packet_id, msg::chunk_update::msg_id);
-
-    msg::chunk_update recv;
-    recv.serialize(arch);
-
-    chunk output;
-    decompress(recv.data, output);
-    BOOST_CHECK_EQUAL(testmsg.position, recv.position);
-    BOOST_CHECK(input == output);
-    */
-
-    //----------------------------------------------------------------------
-
     std::vector<uint8_t> buf;
 
     msg::request_heights rqh;
@@ -774,56 +829,6 @@ BOOST_AUTO_TEST_CASE (raybundle_test)
     BOOST_CHECK_EQUAL(two.branches[0].trunk[0], world_vector(2,2,2));
 }
 
-/*
-BOOST_AUTO_TEST_CASE (voxelsprite_test)
-{
-    voxel_sprite spr ({ 1, 1, 1});
-    chunk cnk;
-    boost::range::fill(cnk, 0);
-
-    world_coordinates i (0, 0, 0);
-    spr[i].type = 5;
-    paste(cnk, {0,0,0}, spr, {3,4,5});
-
-    BOOST_CHECK_EQUAL(cnk(0,0,0), 0);
-    BOOST_CHECK_EQUAL(cnk(3,4,5), 5);
-    BOOST_CHECK_EQUAL(cnk(3,4,6), 0);
-    BOOST_CHECK_EQUAL(cnk(3,4,4), 0);
-    BOOST_CHECK_EQUAL(cnk(3,3,5), 0);
-    BOOST_CHECK_EQUAL(cnk(3,5,5), 0);
-    BOOST_CHECK_EQUAL(cnk(2,4,5), 0);
-    BOOST_CHECK_EQUAL(cnk(4,4,5), 0);
-
-    voxel_sprite spr2 ({2, 2, 2});
-
-    spr2[world_coordinates{0,0,0}].type = 2;
-    spr2[world_coordinates{0,0,1}].type = 3;
-    spr2[world_coordinates{0,1,0}].type = 4;
-    spr2[world_coordinates{0,1,1}].type = 5;
-    spr2[world_coordinates{1,0,0}].type = 6;
-    spr2[world_coordinates{1,0,1}].type = 7;
-    spr2[world_coordinates{1,1,0}].type = 8;
-    spr2[world_coordinates{1,1,1}].type = 9;
-    paste(cnk, {0,0,0}, spr2, {1,2,3});
-    BOOST_CHECK_EQUAL(cnk(0,0,0), 0);
-    BOOST_CHECK_EQUAL(cnk(1,2,3), 2);
-    BOOST_CHECK_EQUAL(cnk(1,2,4), 3);
-    BOOST_CHECK_EQUAL(cnk(1,2,5), 0);
-    BOOST_CHECK_EQUAL(cnk(2,3,4), 9);
-    BOOST_CHECK_EQUAL(cnk(1,3,4), 5);
-    BOOST_CHECK_EQUAL(cnk(3,3,4), 0);
-
-    paste(cnk, {1,1,1}, spr2, {15, 15, 15});
-    BOOST_CHECK_EQUAL(cnk(0,0,0), 9);
-
-    paste(cnk, {1,1,1}, spr2, {16, 16, 16});
-    BOOST_CHECK_EQUAL(cnk(0,0,0), 9);
-
-    spr2[world_coordinates{0,0,0}].mask = true;
-    paste(cnk, {1,1,1}, spr2, {16, 16, 16});
-    BOOST_CHECK_EQUAL(cnk(0,0,0), 2);
-}
-*/
 
 BOOST_AUTO_TEST_CASE (quaternion_test)
 {
@@ -903,4 +908,5 @@ BOOST_AUTO_TEST_CASE (quaternion_test)
     }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
 

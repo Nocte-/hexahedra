@@ -18,7 +18,7 @@
 //
 // Copyright 2012, 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "main_menu.hpp"
 
 #include <array>
@@ -168,7 +168,7 @@ main_menu::main_menu(game& the_game)
     , servers_(get_server_list("http://hexahedra.net/server_list.json"))
     , logo_img_(images("menu_logo") ? *images("menu_logo") : sf::Texture())
     , logo_(logo_img_)
-    , copyright_("Copyright (C) 2013, Nocte", font_, 14)
+    , copyright_("Copyright (C) 2014, Nocte", font_, 14)
     , time_(0)
     , active_menu_(0)
     , exit_(false)
@@ -240,7 +240,7 @@ void main_menu::switch_menu(int i)
     process_event(ev);
 }
 
-void main_menu::process_event (const event& ev)
+bool main_menu::process_event(const event& ev)
 {
     switch (ev.type)
     {
@@ -255,6 +255,8 @@ void main_menu::process_event (const event& ev)
 
     for (auto& btn : menus_[active_menu_])
         btn.process_event(ev);
+
+    return true;
 }
 
 game_state::transition main_menu::next_state() const

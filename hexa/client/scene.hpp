@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   client/scene.hpp
-/// \brief  Manages the 3-D scene around the player.
+/// \file   hexa/client/scene.hpp
+/// \brief  Manages the scene around the camera.
 //
 // This file is part of Hexahedra.
 //
@@ -17,159 +17,178 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-#include <deque>
 #include <list>
-#include <tuple>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
-#include <boost/thread/mutex.hpp>
-#include <boost/optional.hpp>
-#include <boost/utility.hpp>
 
 #include <hexa/basic_types.hpp>
-#include <hexa/storage_i.hpp>
+#include <hexa/distance_sorted_map.hpp>
+#include <hexa/threadpool.hpp>
 
 #include "terrain_mesher_i.hpp"
 #include "occlusion_query.hpp"
-#include "visibility_test.hpp"
 
 namespace hexa {
 
 class main_game;
+class surface_data;
+class light_data;
 
-struct finished_chunk_mesh
+class scene
 {
-    chunk_coordinates                   pos;
-    std::unique_ptr<terrain_mesher_i>   opaque_mesh;
-    std::unique_ptr<terrain_mesher_i>   transparent_mesh;
-};
+private:
+    // Every entry in \a dsmap has a VBO for the opaque and transparent
+    // chunk mesh, and an occlusion query.  Note that the VBOs and the OQ
+    // start out undefined.
+    struct chunk_data
+    {
+        gl::vbo             opaque;
+        gl::vbo             transparent;
+        gl::occlusion_query occ_qry;
 
-class scene : boost::noncopyable
-{
+#if defined(_MSC_VER)
+        chunk_data() { }
+        chunk_data(gl::vbo&& o, gl::vbo&& t, gl::occlusion_query& q) :opaque(std::move(o)), transparent(std::move(t)), occ_qry(std::move(q)) { }
+        chunk_data(chunk_data&& m) : opaque(std::move(m.opaque)), transparent(std::move(m.transparent)), occ_qry(std::move(occ_qry)) { }
+        chunk_data& operator=(chunk_data&& m) { if (&m != this) { opaque = std::move(m.opaque); transparent = std::move(m.transparent); occ_qry = std::move(occ_qry); } return *this; }
+#endif
+    };
+
+    typedef distance_sorted_map<chunk_data> dsmap;
+
 public:
-    mutable boost::mutex                lock;
+    mutable std::mutex lock;
 
 public:
     scene(main_game& g);
-
     ~scene();
 
-    void    view_distance(unsigned int distance);
+    void
+    view_distance (size_t distance);
 
-    size_t  view_distance() const { return view_dist_; }
+    size_t
+    view_distance () const
+    {
+        return terrain_.view_radius();
+    }
 
-    void    on_pre_render_loop();
+    void
+    move_camera_to (chunk_coordinates pos);
 
-    void    on_move(chunk_coordinates pos);
+    void
+    set (chunk_coordinates pos, const surface_data& surface, const light_data& light);
 
-    void    on_update_chunk(chunk_coordinates pos);
+    void
+    set_coarse_height (map_coordinates pos, chunk_height h, chunk_height old_height);
 
-    void    on_update_height(map_coordinates pos, chunk_height z,
-                             chunk_height old_z);
+    void
+    pre_render();
 
-    void    send_visibility_requests (chunk_coordinates pos);
-
-    chunk_coordinates
-            player_pos() const { return player_pos_; }
-
-    void    make_chunk_visible(chunk_coordinates pos);
-
-private:
-    bool    is_in_view(chunk_coordinates pos,
-                       chunk_coordinates plr) const;
-
-    bool    is_in_view(chunk_coordinates pos) const
-                { return is_in_view(pos, player_pos_); }
-
-    void    build_mesh(chunk_coordinates pos);
+    void
+    post_render();
 
 public:
-    std::vector<chunk_coordinates> to_be_deleted;
-    std::vector<chunk_coordinates> new_occlusion_queries;
-
-private:
-    struct chunk
+    template <typename func>
+    void
+    for_each_opaque_vbo (func op) const
     {
-        enum state_t
+        terrain_.for_each([&](const dsmap::value_type& info)
         {
-            unknown, pending_query, visible, occluded
-        };
-
-        chunk()
-            : status                (unknown)
-            , chunk_request_pending (false)
-            , has_meshes            (false)
-        { }
-
-        state_t             status;
-        bool                chunk_request_pending;
-        bool                has_meshes;
-    };
-
-
-    void consistency_check() const;
-
-private:
-    typedef std::unordered_map<chunk_coordinates, chunk> terrain_map;
-
-private:
-    storage_i& map();
-
-    void remove_faraway_terrain();
-
-    void send_visibility_request (chunk_coordinates pos);
-
-    void request_chunk (chunk_coordinates pos);
-
-    typedef enum
-    {
-        waiting, busy, finished, inactive
+            if (info.second.opaque)
+                op(info.first, info.second.opaque);
+        });
     }
-    query_state;
 
-    struct query : public occlusion_query
+    template <typename func>
+    void
+    for_each_transparent_vbo (func op) const
     {
-        size_t                      occluded_count;
-        size_t                      timer;
-        uint8_t                     sides;
-        query_state                 state;
-
-        query(uint8_t s = 0)
-            : occluded_count(0), timer(0), sides(s), state(waiting)
-        { }
-
-        bool was_occluded()
+        terrain_.for_each_reverse([&](const dsmap::value_type& info)
         {
-            assert(state == finished);
-            bool flag (result() == 0);
+            if (info.second.transparent)
+                op(info.first, info.second.transparent);
+        });
+    }
 
-            if (flag)
-                ++occluded_count;
-
-            return flag;
-        }
-    };
+    template <typename func>
+    void
+    for_each_occlusion_query (func op)
+    {
+        terrain_.for_each([&](dsmap::value_type& info)
+        {
+            if (info.second.occ_qry)
+                op(info.first, info.second.occ_qry);
+        });
+    }
 
 private:
-    main_game&          game_;
+    void
+    chunk_became_visible (chunk_coordinates pos);
 
-    chunk_coordinates   player_pos_;
-    unsigned int        view_dist_;
+    void
+    make_occlusion_query (chunk_coordinates pos);
 
-    terrain_map         terrain_;
-    boost::mutex        terrain_lock_;
+private:
+    struct finished_mesh
+    {
+        chunk_coordinates                   pos;
+        std::unique_ptr<terrain_mesher_i>   opaque;
+        std::unique_ptr<terrain_mesher_i>   transparent;
 
-    std::array<std::vector<world_vector>, 6> edge_of_view_;
+#if defined(_MSC_VER)
+        finished_mesh() { }
 
-    typedef std::pair<chunk_coordinates, query> query_pair;
-    typedef std::list<query_pair> occlist_type;
-    occlist_type           occluded_;
-    occlist_type::iterator occ_step_;
+        finished_mesh(chunk_coordinates p, std::unique_ptr<terrain_mesher_i>&& o, std::unique_ptr<terrain_mesher_i>&& t)
+            : pos(p)
+            , opaque(std::move(o))
+            , transparent(std::move(t))
+        { }
+
+        finished_mesh(finished_mesh&& m)
+            : pos(m.pos)
+            , opaque(std::move(m.opaque))
+            , transparent(std::move(m.transparent))
+        { }
+
+        finished_mesh& operator= (finished_mesh&& m)
+        {
+            if (&m != this)
+            {
+                pos = m.pos;
+                opaque = std::move(m.opaque);
+                transparent = std::move(m.transparent);
+            }
+            return *this;
+        }
+#endif
+    };
+
+    finished_mesh
+    build_mesh (chunk_coordinates pos,
+                const surface_data& surface,
+                const light_data& light) const;
+
+    void
+    place_finished_mesh (const finished_mesh& m);
+
+    void
+    request_chunk_from_server (chunk_coordinates pos) const;
+
+private:
+    main_game&  game_;
+    dsmap       terrain_;
+    threadpool  threads_;
+
+    std::array<std::vector<world_vector>, 6>    edge_of_view_;
+
+    std::mutex                              pending_lock_;
+    std::list<std::future<finished_mesh>>   pending_;
+    std::list<chunk_data>                   awaiting_cleanup_;
 };
 
 } // namespace hexa

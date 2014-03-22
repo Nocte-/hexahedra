@@ -16,30 +16,23 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include <atomic>
 #include <cassert>
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <ctime>
 #include <signal.h>
+#include <thread>
 
 #ifndef _WIN32
 # include <pthread.h>
 #endif
 
-#if HAVE_OPENCL
-# include <CL/cl.h>
-#endif
-
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/chrono.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/thread.hpp>
-#include <boost/enable_shared_from_this.hpp>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -47,26 +40,29 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <hexanoise/generator_context.hpp>
+#include <hexanoise/simple_global_variables.hpp>
+
 #include <hexa/basic_types.hpp>
 #include <hexa/config.hpp>
 #include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/drop_privileges.hpp>
 #include <hexa/voxel_range.hpp>
-#include <hexa/persistence_sqlite.hpp>
 #include <hexa/persistence_leveldb.hpp>
-#include <hexa/memory_cache.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/entity_system_physics.hpp>
 #include <hexa/win32_minidump.hpp>
 #include <hexa/log.hpp>
 
 #include "clock.hpp"
-#include "lua.hpp"
-#include "udp_server.hpp"
-#include "network.hpp"
-#include "server_entity_system.hpp"
 #include "init_terrain_generators.hpp"
+#include "lua.hpp"
+#include "network.hpp"
+#include "opencl.hpp"
+#include "server_entity_system.hpp"
+#include "udp_server.hpp"
+#include "world.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -82,21 +78,22 @@ static std::string default_db_path()
 }
 
 std::atomic<bool> lolquit (false);
-void physics (server_entity_system& s, storage_i& terrain)
+void physics (server_entity_system& s, world& w)
 {
-    using namespace boost::chrono;
+    using namespace std::chrono;
 
     milliseconds tick (50);
     auto last_tick (steady_clock::now());
     while (!lolquit.load())
     {
-        boost::this_thread::sleep_for(tick);
+        std::this_thread::sleep_for(tick);
         auto current_time (steady_clock::now());
         auto delta_tick (current_time - last_tick);
         last_tick = current_time;
         double delta (duration_cast<microseconds>(delta_tick).count() * 1.0e-6);
 
         {
+        auto read_world (w.acquire_read_access());
         auto write_lock (s.acquire_write_lock());
         while (delta > 0)
         {
@@ -119,7 +116,16 @@ void physics (server_entity_system& s, storage_i& terrain)
             system_gravity(s, step);
             system_walk(s, step);
             system_motion(s, step);
-            system_terrain_collision(s, terrain);
+            system_terrain_collision(s,
+                [&](chunk_coordinates c) -> boost::optional<const surface_data&>
+                {
+                    return read_world.get_surface(c);
+                },
+                [&](chunk_coordinates c)
+                {
+                    return read_world.is_air_chunk(c);
+                }
+            );
             system_terrain_friction(s, step);
         }
         }
@@ -139,84 +145,10 @@ BOOL WINAPI win32_signal_handler (DWORD)
 
 #endif
 
-void print_opencl()
-{
-#if HAVE_OPENCL
-    char* value;
-    size_t valueSize;
-    cl_uint platformCount;
-    cl_platform_id* platforms;
-    cl_uint deviceCount;
-    cl_device_id* devices;
-    cl_uint maxComputeUnits;
-
-    // get all platforms
-    if (clGetPlatformIDs(0, NULL, &platformCount) != CL_SUCCESS)
-    {
-        printf("clGetPlatformIDs failed\n");
-        return;
-    }
-    platforms = (cl_platform_id*) malloc(sizeof(cl_platform_id) * platformCount);
-    clGetPlatformIDs(platformCount, platforms, NULL);
-
-    for (cl_uint i = 0; i < platformCount; i++) {
-
-        // get all devices
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, 0, NULL, &deviceCount);
-        devices = (cl_device_id*) malloc(sizeof(cl_device_id) * deviceCount);
-        clGetDeviceIDs(platforms[i], CL_DEVICE_TYPE_ALL, deviceCount, devices, NULL);
-
-        // for each device print critical attributes
-        for (cl_uint j = 0; j < deviceCount; j++) {
-
-            // print device name
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_NAME, valueSize, value, NULL);
-            printf("%d. Device: %s\n", j+1, value);
-            free(value);
-
-            // print hardware device version
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Hardware version: %s\n", j+1, 1, value);
-            free(value);
-
-            // print software driver version
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DRIVER_VERSION, valueSize, value, NULL);
-            printf(" %d.%d Software version: %s\n", j+1, 2, value);
-            free(value);
-
-            // print c version supported by compiler for device
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &valueSize);
-            value = (char*) malloc(valueSize);
-            clGetDeviceInfo(devices[j], CL_DEVICE_OPENCL_C_VERSION, valueSize, value, NULL);
-            printf(" %d.%d OpenCL C version: %s\n", j+1, 3, value);
-            free(value);
-
-            // print parallel compute units
-            clGetDeviceInfo(devices[j], CL_DEVICE_MAX_COMPUTE_UNITS,
-                    sizeof(maxComputeUnits), &maxComputeUnits, NULL);
-            printf(" %d.%d Parallel compute units: %d\n", j+1, 4, maxComputeUnits);
-
-        }
-
-        free(devices);
-
-    }
-
-    free(platforms);
-#endif
-}
-
 int main (int argc, char* argv[])
 {
     setup_minidump("hexahedra-server");
     auto& vm (global_settings);
-    print_opencl();
 
     po::options_description generic("Command line options");
     generic.add_options()
@@ -281,8 +213,15 @@ int main (int argc, char* argv[])
         }
     }
 
-    log_msg("Initializing Enet...");
+    log_msg("Initializing OpenCL...");
+    init_opencl();
+    if (have_opencl())
+        log_msg("OpenCL activated");
+    else
+        log_msg("No OpenCL support, fallback to native implementation");
 
+
+    log_msg("Initializing Enet...");
     if (enet_initialize() != 0)
     {
         log_msg("Could not initialize ENet, exiting");
@@ -340,13 +279,13 @@ int main (int argc, char* argv[])
         log_msg("Server game DB: %1%", db_file.string());
 
         //persistence_sqlite          db_per (io_srv, db_file, datadir / "dbsetup.sql");
-        persistence_leveldb         db_per (io_srv, db_file);
-        memory_cache                storage (db_per);
+        persistence_leveldb         db_per (db_file);
+        //memory_cache                storage (db_per);
         hexa::server_entity_system  entities;
-        hexa::world                 world (storage);
+        hexa::world                 world (db_per);
         hexa::lua                   scripting (entities, world);
         hexa::network               server (vm["port"].as<unsigned int>(), world, entities, scripting);
-        boost::thread               asio_thread ([&]{ io_srv.run(); log_msg("io_service::run() done"); });
+        std::thread                 asio_thread ([&]{ io_srv.run(); log_msg("io_service::run() done"); });
 
         scripting.uglyhack(&server);
 
@@ -375,10 +314,17 @@ int main (int argc, char* argv[])
 
         log_msg("Set up game world from %1%", conf_file.string());
 
+        noise::simple_global_variables glob_vars;
+        noise::generator_context gen_ctx (glob_vars);
+
         boost::property_tree::read_json(conf_str, config);
-        hexa::init_terrain_gen(world, config);
-        boost::thread gameloop ([&]{ server.run(); });
-        boost::thread physics_thread ([&]{ physics(entities, world); });
+        hexa::init_terrain_gen(world, config, gen_ctx);
+
+        log_msg("Read entity database");
+        db_per.retrieve(entities);
+
+        std::thread gameloop ([&]{ server.run(); });
+        std::thread physics_thread ([&]{ physics(entities, world); });
         log_msg("All systems go");
 
 
@@ -417,6 +363,9 @@ int main (int argc, char* argv[])
         io_srv.stop();
         asio_thread.join();
 
+        log_msg("Saving state...");
+        db_per.store(entities);
+
         log_msg("Shutting down...");
     }
     catch (luabind::error& e)
@@ -427,6 +376,11 @@ int main (int argc, char* argv[])
     catch (boost::property_tree::ptree_error& e)
     {
         log_msg("Error in JSON: %1%", e.what());
+        return -1;
+    }
+    catch (std::runtime_error& e)
+    {
+        log_msg("Runtime error: %1%", e.what());
         return -1;
     }
     catch (std::exception& e)

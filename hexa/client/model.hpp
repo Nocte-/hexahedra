@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -36,18 +36,19 @@
 
 namespace hexa {
 
+/** A 3-D model. */
 class model
 {
 public:
     model() {}
-	/*
-    model(const model&) = delete;
-    model& operator= (const model&) = delete;
 
+#ifdef _MSC_VER
+
+#else
     model(model&&) = default;
     model& operator= (model&&) = default;
-	*/
-    //typedef ogl::vertex<vtx_xyz<>, vtx_uv<>, vtx_normal<>> vertex;
+#endif
+
     typedef vertex_5<vtx_xyz<>, vtx_uv<>, vtx_normal<>,
                      vtx_normalized_array<uint8_t, 4>, // blend weights
                      vtx_array<uint8_t, 4>             // blend indices
@@ -102,6 +103,7 @@ public:
     std::string             name;
 };
 
+/** Animation for a 3-D model. */
 class animation : boost::noncopyable
 {
 public:

@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "entity_system.hpp"
 
 #include "basic_types.hpp"
@@ -31,6 +31,8 @@ entity_system::entity_system()
                   "world_coordinates does not have a flat memory layout");
     static_assert(es::is_flat<vector>::value,
                   "vector does not have a flat memory layout");
+    static_assert(es::is_flat<yaw_pitch>::value,
+                  "yaw_pitch does not have a flat memory layout");
 
     register_component<wfpos>("position");
     register_component<vector>("velocity");
@@ -43,7 +45,10 @@ entity_system::entity_system()
     register_component<std::string>("name");
     register_component<yaw_pitch>("lookat");
     register_component<last_known_phys>("lagcomp");
-    register_component<hotbar>("hotbar");
+    auto check (register_component<hotbar>("hotbar"));
+
+    if (check != c_hotbar)
+        throw std::runtime_error("could not register component hotbar");
 }
 
 } // namespace hexa

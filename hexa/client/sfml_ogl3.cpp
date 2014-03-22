@@ -339,8 +339,8 @@ private:
 
 //---------------------------------------------------------------------------
 
-sfml_ogl3::sfml_ogl3(sf::RenderWindow& win)
-    : sfml(win)
+sfml_ogl3::sfml_ogl3(sf::RenderWindow& win, scene& s)
+    : sfml(win, s)
     , textures_ready_(false)
 {
     terrain_shader_.load(resource_file(res_shader, "terrain_gl3"));
@@ -476,14 +476,10 @@ void sfml_ogl3::prepare(const player& plr)
     sun_color(0.6f * sun_grad(count));
     terrain_shader_.use();
     artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);
-    fog_density_ = 2.2f / (float)(view_dist_ * chunk_size * 6);
+    fog_density_ = 2.2f / (float)(scene_.view_distance() * chunk_size * 20);
     terrain_shader_.stop_using();
 
     sfml::prepare(plr);
-    move_player(plr.chunk_position());
-
-    for(chunk_coordinates c : process_vbo_queue())
-        on_new_vbo(c);
 }
 
 void sfml_ogl3::opaque_pass()
@@ -491,36 +487,28 @@ void sfml_ogl3::opaque_pass()
     if (!texarr_)
         return;
 
-    boost::mutex::scoped_lock l (lock);
-
     glCheck(glActiveTexture(GL_TEXTURE0));
     texarr_.bind();
     terrain_shader_.use();
     enable_vertex_attributes<ogl3_terrain_vertex>();
 
     frustum clip (camera_.mvp_matrix());
-
     const float sphere_diam (16.f * 13.86f);
-    for (const auto& l : opaque_vbos)
+
+    scene_.for_each_opaque_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
-        for (const auto& v : l)
+        vec3f offset (vec3i(pos - chunk_offset_));
+        offset *= 256.f;
+
+        if (clip.is_inside(vec3f(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
         {
-            assert(v.second.id() != 0);
-            assert(v.second.vertex_count() != 0);
-
-            vector3<float> offset (vector3<int>(v.first * chunk_size - world_offset_));
-            offset *= 16.f;
-
-            if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
-            {
-                auto mtx (translate(camera_.model_view_matrix(), offset));
-                glLoadMatrixf(mtx.as_ptr());
-                v.second.bind();
-                bind_attributes<ogl3_terrain_vertex>();
-                v.second.draw();
-            }
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
+            vbo.bind();
+            bind_attributes<ogl3_terrain_vertex>();
+            vbo.draw();
         }
-    }
+    });
 
     disable_vertex_attributes<ogl3_terrain_vertex>();
     terrain_shader_.stop_using();
@@ -545,7 +533,7 @@ void sfml_ogl3::draw_model(const wfpos& p, uint16_t m) const
     glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffusecol));
     glCheck(glLightfv(GL_LIGHT0, GL_POSITION, lightdir));
 
-    vector offset (p.relative_to(world_offset_));
+    vector offset (p.relative_to(chunk_offset_ * chunk_size));
     //trace("%1%", p);
     //trace("%1% -> %2%", world_offset_, offset);
 
@@ -583,8 +571,6 @@ void sfml_ogl3::transparent_pass()
     if (!texarr_)
         return;
 
-    boost::mutex::scoped_lock l (lock);
-
     enable_vertex_attributes<ogl3_terrain_vertex>();
     frustum clip (camera_.mvp_matrix());
 
@@ -594,27 +580,20 @@ void sfml_ogl3::transparent_pass()
     terrain_shader_.use();
     const float sphere_diam (16.f * 13.86f);
 
-    for (const auto& l : transparent_vbos | reversed)
+    scene_.for_each_transparent_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
-        for (const auto& v : l)
+        vec3f offset (vec3i(pos - chunk_offset_));
+        offset *= 256.f;
+
+        if (clip.is_inside(vec3f(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
         {
-            assert(v.second.id() != 0);
-            assert(v.second.vertex_count() != 0);
-
-            vector3<float> offset (vector3<int>(v.first * chunk_size - world_offset_));
-            offset *= 16.f;
-
-            if (v.second.id() && clip.is_inside(vector3<float>(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
-            {
-                auto mtx (translate(camera_.model_view_matrix(), offset));
-                glLoadMatrixf(mtx.as_ptr());
-
-                v.second.bind();
-                bind_attributes<ogl3_terrain_vertex>();
-                v.second.draw();
-            }
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
+            vbo.bind();
+            bind_attributes<ogl3_terrain_vertex>();
+            vbo.draw();
         }
-    }
+    });
 
     glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     disable_vertex_attributes<ogl3_terrain_vertex>();
@@ -628,8 +607,6 @@ bool debug_mode = false;
 
 void sfml_ogl3::handle_occlusion_queries()
 {
-    boost::mutex::scoped_lock l (lock);
-
     glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     glCheck(glDisable(GL_TEXTURE_2D));
 
@@ -643,55 +620,46 @@ void sfml_ogl3::handle_occlusion_queries()
     glCheck(glDisable(GL_CULL_FACE));
     enable_vertex_attributes<occ_cube_vtx>();
 
-	for (oqs_t& l : occlusion_queries)
+    scene_.for_each_occlusion_query([&](const chunk_coordinates& pos, gl::occlusion_query& qry)
     {
-		for (sfml_ogl3::oqs_t::value_type& v : l)
+        vec3f offset (vec3i(pos - chunk_offset_));
+        offset *= 256.f;
+
+        if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
         {
-            vector3<float> offset (vector3<int>(v.first * chunk_size - world_offset_));
-            offset *= 16.f;
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
 
-            if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
+            switch (qry.state())
             {
-                occlusion_query& qry (v.second);
-                auto mtx (translate(camera_.model_view_matrix(), offset));
-                glLoadMatrixf(mtx.as_ptr());
 
-                //glTranslatef(offset.x, offset.y, offset.z);
+            case gl::occlusion_query::inactive:
+                break;
 
-                if (qry.state() == occlusion_query::busy)
-                {
-                    occlusion_block_.bind();
-                    bind_attributes<occ_cube_vtx>();
-                    glColor3f(1.f, 0.f, 0.f);
-                    occlusion_block_.draw();
-                }
-                else if (qry.state() == occlusion_query::visible)
-                {
-                    occlusion_block_.bind();
-                    bind_attributes<occ_cube_vtx>();
-                    glColor3f(0.f, 1.f, 0.f);
-                    occlusion_block_.draw();
-                }
-                else if (qry.state() == occlusion_query::air)
-                {
-                    occlusion_block_.bind();
-                    bind_attributes<occ_cube_vtx>();
-                    glColor3f(0.5f, 0.5f, 0.5f);
-                    occlusion_block_.draw();
-                }
-                else
-                {
-                    qry.begin_query();
-                    occlusion_block_.bind();
-                    bind_attributes<occ_cube_vtx>();
-                    glColor3f(1.f, 1.f, 1.f);
-                    occlusion_block_.draw();
-                    qry.end_query();
-                }
-                //glTranslatef(-offset.x, -offset.y, -offset.z);
+            case gl::occlusion_query::busy:
+                occlusion_block_.bind();
+                bind_attributes<occ_cube_vtx>();
+                glColor3f(1.f, 0.f, 0.f);
+                occlusion_block_.draw();
+                break;
+
+            case gl::occlusion_query::visible:
+                occlusion_block_.bind();
+                bind_attributes<occ_cube_vtx>();
+                glColor3f(0.f, 1.f, 0.f);
+                occlusion_block_.draw();
+                break;
+
+            default:
+                qry.begin_query();
+                occlusion_block_.bind();
+                bind_attributes<occ_cube_vtx>();
+                glColor3f(1.f, 1.f, 1.f);
+                occlusion_block_.draw();
+                qry.end_query();
             }
         }
-    }
+    });
 
     gl::vbo::unbind();
     disable_vertex_attributes<occ_cube_vtx>();

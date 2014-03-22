@@ -17,15 +17,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
-#include <memory>
 #include <vector>
-#include <utility>
 
 #include "basic_types.hpp"
 #include "serialize.hpp"
@@ -35,7 +33,7 @@ namespace hexa {
 /** A flat, 16x16 part of the world's map.
  *  It is used to store things like a detailed height map, or different
  *  kinds of biome info such as temperature or humidity. */
-class area_data : boost::noncopyable
+class area_data
 {
     typedef std::vector<int16_t>  array_t;
     array_t buf_;
@@ -48,10 +46,28 @@ public:
 public:
     area_data() { buf_.resize(chunk_area); }
 
-    area_data(area_data&& m) : buf_ (std::move(m.buf_)) { }
+    area_data(const area_data&) = default;
+    area_data& operator= (const area_data&) = default;
 
-    /** Fill the area with zero. */
-    void clear() { std::fill(begin(), end(), 0); }
+#ifdef _MSC_VER
+    area_data(area_data&& m)
+        : buf_(std::move(m.buf_))
+    { }
+
+    area_data& operator= (area_data&& m)
+    {
+        if (this != &m)
+            buf_ = std::move(m.buf_);
+
+        return *this;
+    }
+#else
+    area_data(area_data&&) = default;
+    area_data& operator= (area_data&&) = default;
+#endif
+
+    /** Fill the area with zeroes (or a given value). */
+    void clear (value_type v = 0) { std::fill(begin(), end(), v); }
 
     /** Copy the contents to another area. */
     void copy(const area_data& other) { buf_ = other.buf_; }
@@ -101,9 +117,6 @@ public:
     archiver& serialize(archiver& ar)
         { return ar.raw_data(buf_, chunk_area); }
 };
-
-/** Reference-counted pointer to area_data. */
-typedef std::shared_ptr<area_data>    area_ptr;
 
 } // namespace hexa
 

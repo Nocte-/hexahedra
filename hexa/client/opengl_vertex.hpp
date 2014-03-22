@@ -17,10 +17,40 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2011, 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
+
+/** Example code:
+ * @code
+
+// Very simple vertex type, only has a position.
+typedef vertex_1<vtx_xyz<float> > simple_vtx;
+
+// Vertex type with a 16-bit position, texture coordinates, and
+// an RGB color.
+typedef vertex_3<vtx_xyz<int16_t>,
+                 vtx_uv<float>,
+                 vtx_rgb<uint8_t>>  vtx;
+
+// Build a model...
+std::vector<vtx> vertices;
+
+// First vertex is at position (1, 2, 3), UV coordinates,  white color...
+vertices.emplace_back({ {1, 2, 3}, { 0.4f, 0.3f }, { 255, 255, 255 } });
+
+// Done, make a VBO.
+auto buffer (gl::make_vbo(vertices));
+
+// Draw the model.
+buffer.bind();
+bind_attributes<vtx>();
+buffer.draw_triangles();
+
+ * @endcode
+ */
+
 
 #include <array>
 #include <initializer_list>
@@ -57,6 +87,7 @@ struct gl_type<float> { GLenum operator()() { return GL_FLOAT; } };
 
 #pragma pack(push, 1)
 
+/** Texture coordinates */
 template <class t = float>
 struct vtx_uv : public vector2<t>
 {
@@ -81,6 +112,7 @@ struct vtx_uv : public vector2<t>
     }
 };
 
+/** Vertex 3D coordinates */
 template <class t = float>
 struct vtx_xyz : public vector3<t>
 {
@@ -105,6 +137,7 @@ struct vtx_xyz : public vector3<t>
     }
 };
 
+/** Vertex normal */
 template <class t = float>
 struct vtx_normal : public vector3<t>
 {
@@ -129,7 +162,7 @@ struct vtx_normal : public vector3<t>
     }
 };
 
-
+/** Vertex color */
 template <class t = uint8_t>
 struct vtx_rgb : public vector3<t>
 {
@@ -153,6 +186,7 @@ struct vtx_rgb : public vector3<t>
     }
 };
 
+/** Scalar value */
 template <class t = float>
 struct vtx_scalar
 {
@@ -176,6 +210,7 @@ struct vtx_scalar
     t value;
 };
 
+/** Array of scalars */
 template <class t, size_t count>
 struct vtx_array : public std::array<t, count>
 {
@@ -208,6 +243,9 @@ struct vtx_array : public std::array<t, count>
     }
 };
 
+/** Array of normalized scalars.
+ *  Normalized scalars are mapped to a 0..1 range.  So if \a t is an
+ *  uint8_t, a value of 128 would be interpreted as 0.5. */
 template <class t, size_t count>
 struct vtx_normalized_array : public std::array<t, count>
 {
@@ -240,6 +278,9 @@ struct vtx_normalized_array : public std::array<t, count>
     }
 };
 
+/** Vertex data padding.
+ *  This can be used to make sure a vertex always ends at a 4 byte
+ *  boundary, as required by most OpenGL drivers. */
 template <size_t count>
 struct vtx_padding : public std::array<char, count>
 {

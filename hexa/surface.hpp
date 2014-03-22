@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <memory>
@@ -64,16 +64,39 @@ typedef std::vector<faces> surface;
 class surface_data
 {
 public:
-    surface opaque;
-    surface transparent;
+    surface     opaque;
+    surface     transparent;
 
 public:
     surface_data () { }
-    surface_data (surface o, surface t) : opaque(o), transparent(t) { }
-	surface_data(surface_data&& m)
-		: opaque(std::move(m.opaque))
-		, transparent(std::move(m.transparent))
-	{ }
+    surface_data (surface&& o, surface&& t)
+        : opaque(std::move(o))
+        , transparent(std::move(t))
+    { }
+
+    surface_data(surface_data&& m)
+        : opaque(std::move(m.opaque))
+        , transparent(std::move(m.transparent))
+    { }
+
+    surface_data(const surface_data& ) = default;
+
+    surface_data& operator= (surface_data&& m)
+    {
+        if (this != &m)
+        {
+            opaque = std::move(m.opaque);
+            transparent = std::move(m.transparent);
+        }
+        return *this;
+    }
+
+    surface_data& operator= (const surface_data& m) = default;
+
+    bool operator== (const surface_data& c) const
+    {
+        return opaque == c.opaque && transparent == c.transparent;
+    }
 
     bool empty() const
         { return opaque.empty() && transparent.empty(); }
@@ -82,53 +105,6 @@ public:
     archive& serialize(archive& ar)
         { return ar(opaque)(transparent); }
 };
-
-typedef std::shared_ptr<surface_data> surface_ptr;
-
-
-template <class t> class neighborhood;
-
-/** Find all potentially visible faces in a chunk.
- *  If two solid blocks are right next to each other, the two touching
- *  faces will never be visible.  This function will only return faces
- *  that can be seen, the ones that are right next to a transparent block
- *  type.  Because the visibility of the faces at the outer edges of the
- *  chunk can only be determined by looking at the blocks in the chunk
- *  right next to it, this function requires a neighborhood<> as its
- *  input.
- * @param terrain  The chunk to determine the surface of, with its
- *                 six immediate neighboring chunks
- * @return The potentially visible surface */
-surface
-extract_surface (const neighborhood<chunk_ptr>& terrain);
-
-/** Find all potentially visible opaque faces in a chunk.
- *  If two solid blocks are right next to each other, the two touching
- *  faces will never be visible.  This function will only return faces
- *  that can be seen, the ones that are right next to a transparent block
- *  type.  Because the visibility of the faces at the outer edges of the
- *  chunk can only be determined by looking at the blocks in the chunk
- *  right next to it, this function requires a neighborhood<> as its
- *  input.
- * @param terrain  The chunk to determine the surface of, with its
- *                 six immediate neighboring chunks
- * @return The potentially visible surface */
-surface
-extract_opaque_surface (const neighborhood<chunk_ptr>& terrain);
-
-/** Find all potentially visible transparent faces in a chunk.
- *  If two solid blocks are right next to each other, the two touching
- *  faces will never be visible.  This function will only return faces
- *  that can be seen, the ones that are right next to a transparent block
- *  type.  Because the visibility of the faces at the outer edges of the
- *  chunk can only be determined by looking at the blocks in the chunk
- *  right next to it, this function requires a neighborhood<> as its
- *  input.
- * @param terrain  The chunk to determine the surface of, with its
- *                 six immediate neighboring chunks
- * @return The potentially visible surface */
-surface
-extract_transparent_surface (const neighborhood<chunk_ptr>& terrain);
 
 /** Count the number of faces in a surface. */
 size_t count_faces (const surface& s);

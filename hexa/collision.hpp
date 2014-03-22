@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/collision.hpp
+/// \file   collision.hpp
 /// \brief  Collision detection and handling.
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <algorithm>

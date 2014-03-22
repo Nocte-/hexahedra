@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   voxel_sprite.hpp
+/// \file   server/voxel_sprite.hpp
 /// \brief  A 3-D sprite that can be used to add features to the terrain.
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <string>
@@ -29,7 +29,7 @@
 
 namespace hexa {
 
-class world;
+class world_write;
 
 /** A voxel sprite is made of elements that combine a block type and a mask. */
 struct voxel_sprite_elem : public block
@@ -91,7 +91,8 @@ private:
  * @param sprite    The sprite.
  * @param pos       Where to place it.  This is the block where the sprite's
  *                  handle will end up. */
-void paste (world& w, const voxel_sprite& sprite, world_coordinates pos);
+void
+paste (world_write& w, const voxel_sprite& sprite, world_coordinates pos);
 
 /** Paste a sprite in a chunk.
  * @param cnk       A single chunk
@@ -99,18 +100,21 @@ void paste (world& w, const voxel_sprite& sprite, world_coordinates pos);
  * @param sprite    The sprite.
  * @param pos       Where to place it.  This is the block where the sprite's
  *                  handle will end up. */
-void paste (chunk& cnk, chunk_coordinates chunk_pos,
-            const voxel_sprite& sprite, world_coordinates pos);
+void
+paste (chunk& cnk, chunk_coordinates chunk_pos, const voxel_sprite& sprite,
+       world_coordinates pos);
 
 /** Deserialize a voxel sprite (for example, from a file)
  * @param data  The serialized data
  * @return The resulting voxel sprite */
-voxel_sprite deserialize (const std::string& data);
+const voxel_sprite
+deserialize(const std::string& data);
 
 /** Deserialize a voxel sprite from human readable text
  * @param data  The description of the sprite
  * @return The resulting voxel sprite */
-voxel_sprite deserialize_text (const std::string& data);
+const voxel_sprite
+deserialize_text (const std::string& data);
 
 } // namespace hexa
 

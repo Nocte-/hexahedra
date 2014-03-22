@@ -18,9 +18,11 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "loading_screen.hpp"
 #include <SFML/Graphics.hpp>
+#include <hexa/trace.hpp>
+#include "event.hpp"
 #include "opengl.hpp"
 #include "sfml_resource_manager.hpp"
 
@@ -44,7 +46,6 @@ void loading_screen::update (double time_delta)
         if (fade_timer_ >= fadeout_seconds_)
             done();
     }
-
     time_ += time_delta;
 }
 
@@ -77,13 +78,30 @@ void loading_screen::render()
     window().popGLStates();
 }
 
-void loading_screen::process_event (const event&)
+bool loading_screen::process_event(const event& ev)
 {
+    switch (ev.type)
+    {
+    case event::key_down:
+        switch (ev.keycode)
+        {
+        case key::esc:
+            done();
+            break;
+
+        default:
+            ;
+        }
+
+    default:
+        ;
+    }
+    return false;
 }
 
 game_state::transition loading_screen::next_state() const
 {
-	return game_state::transition();
+    return game_state::transition();
 }
 
 

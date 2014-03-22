@@ -17,10 +17,12 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
+
+#include <string>
 
 #include "basic_types.hpp"
 #include "block_types.hpp"
@@ -92,10 +94,12 @@ public:
     std::string             server_name;
     /** Public key. */
     std::vector<uint8_t>    public_key;
+    /** Allowed login methods */
+    std::vector<std::string>    login_methods;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(server_name)(public_key); }
+    void serialize(archive& ar) { ar(server_name)(public_key)(login_methods); }
 };
 
 /** Greet the client after it has identified itself. */
@@ -533,11 +537,11 @@ public:
 
     /** The client's protocol version. */
     uint8_t     protocol_version;
-    /** The desired user name. */
-    std::string username;
+    /** The login credentials (JSON) */
+    std::string credentials;
 
     template <class archive>
-    void serialize(archive& ar) { ar(protocol_version)(username); }
+    void serialize(archive& ar) { ar(protocol_version)(credentials); }
 };
 
 /** Logout. */

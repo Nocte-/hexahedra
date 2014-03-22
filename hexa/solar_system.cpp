@@ -18,7 +18,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "solar_system.hpp"
 
 #include <cmath>
@@ -43,7 +43,7 @@ vector orbit::position (double time) const
 
 solar_system::solar_system(double seconds_per_rotation,
                            double gravitational_constant)
-    : home_planet_orbit_ (0, 0, 1.0, k_, 0.0)
+    : home_planet_orbit_ (0, 0, 1.0, gravitational_constant, 0.0)
     , k_(gravitational_constant)
 { }
 

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/chunk_base.hpp
+/// \file   chunk_base.hpp
 /// \brief  A 16x16x16 group of voxels.
 //
 // This file is part of Hexahedra.
@@ -17,15 +17,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <algorithm>
 #include <cassert>
 #include <vector>
-#include <boost/utility.hpp>
 
 #include "basic_types.hpp"
 
@@ -47,7 +46,7 @@ namespace hexa {
  *
  * \endcode */
 template <class type, size_t dim=chunk_size>
-class chunk_base : private std::vector<type>, boost::noncopyable
+class chunk_base : private std::vector<type>
 {
     typedef std::vector<type>      array_t;
 
@@ -74,18 +73,38 @@ public:
         array_t::resize(volume());
     }
 
-    chunk_base(chunk_base&& move)
-        : array_t   (move)
-        , is_dirty  (move.is_dirty)
+
+#ifdef _MSC_VER
+    chunk_base(chunk_base&& m)
+        : array_t (std::move(m))
+        , is_dirty (m.is_dirty)
     {
-        move.is_dirty = false;
-        assert(size() == volume());
+        m.is_dirty = false;
     }
 
-    /** Fill this chunk with zeroes/air. */
-    void clear(value_type zero)
+    chunk_base& operator= (chunk_base&& m)
     {
-        std::fill(begin(), end(), zero);
+        if (&m != this)
+        {
+            is_dirty = m.is_dirty;
+            m.is_dirty = false;
+            array_t::operator=(std::move(m));
+        }
+        return *this;
+    }
+#else
+    chunk_base(const chunk_base&) = default;
+    chunk_base& operator= (const chunk_base&) = default;
+
+    chunk_base(chunk_base&&) = default;
+    chunk_base& operator= (chunk_base&&) = default;
+#endif
+
+
+    /** Fill this chunk with zeroes/air. */
+    void clear(value_type v = 0)
+    {
+        std::fill(begin(), end(), v);
         is_dirty = true;
     }
 
@@ -173,7 +192,7 @@ public:
     {
         for (auto& blk : *this)
         {
-            if (blk.type != 0)
+            if (!blk.is_air())
                 return false;
         }
         return true;

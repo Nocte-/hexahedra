@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "../basic_types.hpp"
@@ -30,7 +30,7 @@ namespace clock {
 void init();
 
 /// Synchronize the clock
-// \param time  Server's estimated time
+// @param time  Server's estimated time
 void sync(gameclock_t time);
 
 clientclock_t time();

@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -27,6 +27,7 @@
 #include <iostream>
 
 #include "aabb.hpp"
+#include "basic_types.hpp"
 
 namespace hexa {
 
@@ -285,6 +286,17 @@ range<chunk_coordinates> to_chunk_range (range<world_coordinates> in)
 {
     auto temp (--in / chunk_size);
     return ++temp;
+}
+
+
+/** Change a block range to a range in chunk coordinates. */
+inline
+range<world_vector> to_chunk_range (range<world_vector> in)
+{
+    auto last (in.last());
+    --last;
+    range<world_vector> tmp (in.first() >> cnkshift, last >> cnkshift);
+    return ++tmp;
 }
 
 /** Predefined range for iterating over every block in a \a chunk. */

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   client/game.hpp
-/// \brief  Base class for an actual game
+/// \file   client/main_game.hpp
+/// \brief  The main game state, where the player is actually playing a game.
 //
 // This file is part of Hexahedra.
 //
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <atomic>
@@ -30,12 +30,12 @@
 #include <boost/thread/mutex.hpp>
 
 #include <hexa/entity_system.hpp>
-#include <hexa/storage_i.hpp>
 #include <hexa/persistent_storage_i.hpp>
 #include <hexa/packet.hpp>
 #include <hexa/process.hpp>
 #include <hexa/serialize.hpp>
 
+#include "chunk_cache.hpp"
 #include "game_state.hpp"
 #include "hud.hpp"
 #include "udp_client.hpp"
@@ -47,6 +47,7 @@ namespace hexa {
 
 class packet;
 
+/** The main game state, where the player is actually playing a game. */
 class main_game : public game_state, public udp_client
 {
 public:
@@ -60,7 +61,9 @@ public:
 
     player&     get_player();
 
-    storage_i&  world()     { return *world_; }
+    chunk_cache&
+                map()  { return *map_; }
+
     renderer_i& renderer()  { return *renderer_; }
 
     std::unique_ptr<terrain_mesher_i>
@@ -70,8 +73,8 @@ public:
     std::string name() const override { return "main game"; }
     void update(double time_delta) override;
     void render() override;
-    void process_event(const event&) override;
-    void process_event (const sf::Event&) override;
+    bool process_event(const event&) override;
+    bool process_event(const sf::Event&) override;
     void resize(unsigned int x, unsigned int y) override;
 
     transition next_state() const override;
@@ -117,10 +120,15 @@ private:
     void global_config(deserializer<packet>& p);
 
 private:
-    boost::asio::io_service     io_;
-    std::unique_ptr<persistent_storage_i>  aux_;
-    std::unique_ptr<storage_i>  world_;
-    std::unique_ptr<renderer_i> renderer_;
+    boost::asio::io_service                io_;
+
+    /** Persistent storage for chunk surfaces and the coarse height map. */
+    std::unique_ptr<persistent_storage_i>  storage_;
+    /** A memory cache for the persistent storage. */
+    std::unique_ptr<chunk_cache>           map_;
+    /** It is determined at run time what kind of renderer will be used,
+     ** depending on the OpenGL capabilities of the client. */
+    std::unique_ptr<renderer_i>            renderer_;
 
     player              player_;
     hud                 hud_;

@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -34,6 +34,9 @@ namespace hexa {
 /** The size of a \ref hexa::chunk "chunk" (that is, the length of one of
  ** the edges). */
 constexpr uint16_t chunk_size   = 16;
+
+/** Arithmetic shift for converting between chunk and world coordinates. */
+constexpr uint16_t cnkshift = 4; // == std::log2(chunk_size)
 
 /** The area of a side of a \ref hexa::chunk "chunk". */
 constexpr uint16_t chunk_area   = chunk_size * chunk_size;
@@ -102,8 +105,21 @@ typedef vector3<int8_t>         block_vector;
 typedef vector3<int32_t>        world_vector;
 
 /** Yaw and pitch angles, in radians.
- *  Yaw is positive clockwise from north. Pitch is up from horizontal. */
+ *  Yaw is positive clockwise from north. Pitch is down from zenith. */
 typedef vector2<float>          yaw_pitch;
+
+
+typedef vector2<float>          vec2f;
+typedef vector2<int8_t>         vec2b;
+typedef vector2<int16_t>        vec2s;
+typedef vector2<int32_t>        vec2i;
+typedef vector3<float>          vec3f;
+typedef vector3<int8_t>         vec3b;
+typedef vector3<int16_t>        vec3s;
+typedef vector3<int32_t>        vec3i;
+
+//---------------------------------------------------------------------------
+
 
 /** The six cardinal directions. */
 enum direction_type : uint8_t
@@ -116,6 +132,9 @@ enum direction_type : uint8_t
 /** Unit vectors in the \ref hexa::direction_type "six directions". */
 extern const block_vector dir_vector[6];
 
+/** A block at (0,0,0), and its six neighbors. */
+extern const block_vector neumann_neighborhood[7];
+
 /** Data type used for the coarse heightmap.
  *  Note that this height does not span the usual 2^32 range; it is measured
  *  in chunks, so the max value is 2^28. */
@@ -125,15 +144,9 @@ typedef uint32_t chunk_height;
 constexpr chunk_height
     undefined_height = 0xffffffff;
 
-/** The water level of the oceans, in block units
- *  This is the last block that has water; the block at water_level+1 is
- *  air. */
-constexpr uint32_t
-    water_level = 2147483648u;
-
 /** The center of the world, in block coordinates. */
 const world_coordinates
-    world_center = world_coordinates( 2147483648u, 2147483648u, water_level );
+    world_center = world_coordinates( 2147483648u );
 
 /** The center of the world, in chunk coordinates. */
 const chunk_coordinates
@@ -194,7 +207,7 @@ adjust_chunk_height (const chunk_coordinates& p, chunk_height h)
 inline int16_t
 convert_height_16bit (uint32_t h)
 {
-    return static_cast<int16_t>(static_cast<int32_t>(h - water_level));
+    return static_cast<int16_t>(static_cast<int32_t>(h - world_center.z));
 }
 
 } // namespace hexa

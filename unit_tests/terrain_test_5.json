@@ -1,0 +1,15 @@
+{
+"areas": [
+    {
+        "name": "heightmap",
+        "def": "x:div(2):sub(0.49)"
+    }
+],
+
+"terrain": [
+    {
+        "module": "heightmap_terrain"
+    }
+]
+}
+
