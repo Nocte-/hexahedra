@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include <cassert>
 #include <iostream>
 #include <signal.h>
@@ -51,10 +51,7 @@
 #include <hexa/log.hpp>
 #include <hexa/os.hpp>
 #include <hexa/packet.hpp>
-#include <hexa/persistence_sqlite.hpp>
-#include <hexa/persistence_null.hpp>
 #include <hexa/protocol.hpp>
-#include <hexa/memory_cache.hpp>
 #include <hexa/voxel_range.hpp>
 #include <hexa/win32_minidump.hpp>
 
@@ -177,11 +174,7 @@ int main (int argc, char* argv[])
     try
     {
         hexa::game game_states ("Hexahedra", 1200, 800);
-
         game_states.run(game_states.make_state<hexa::main_menu>());
-        //game_states.run(game_states.make_state<hexa::main_game>("localhost", 15556, global_settings["viewdist"].as<unsigned int>()));
-        //game_states.run(game_states.make_state<hexa::main_game>("hexahedra.net", 15556));
-
         log_msg("Shut down...");
     }
     catch (std::exception& e)

@@ -1,0 +1,9 @@
+{
+"terrain": [
+    {
+        "module" : "flat",
+        "name"   : "test"
+    }
+]
+}
+

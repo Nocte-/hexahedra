@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <GL/glew.h>
@@ -48,7 +48,7 @@ class sfml_ogl2 : public sfml
 {
 public:
     /** Constructor. */
-    sfml_ogl2(sf::RenderWindow& win);
+    sfml_ogl2(sf::RenderWindow& win, scene& s);
     ~sfml_ogl2();
 
     std::unique_ptr<terrain_mesher_i>

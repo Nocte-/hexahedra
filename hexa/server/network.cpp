@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "network.hpp"
 
 #include <chrono>
@@ -31,6 +31,8 @@
 #include <boost/thread.hpp>
 #include <boost/chrono.hpp>
 #include <boost/program_options.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <hexa/compression.hpp>
 #include <hexa/entity_system.hpp>
@@ -51,6 +53,7 @@
 using boost::format;
 using namespace boost::math::constants;
 using namespace boost::chrono;
+using namespace boost::property_tree;
 namespace po = boost::program_options;
 
 namespace hexa {
@@ -80,6 +83,20 @@ network::network(uint16_t port, world& w, server_entity_system& entities,
     , lua_      (scripting)
     , running_  (false)
 {
+    world_.on_update_surface.connect([&](chunk_coordinates pos)
+    {
+        on_update_surface(pos);
+    });
+
+    world_.on_update_coarse_height.connect([&](chunk_coordinates pos)
+    {
+        send_coarse_height(pos);
+    });
+}
+
+network::~network()
+{
+    //world_.store(es_);
 }
 
 void network::run()
@@ -101,6 +118,7 @@ void network::run()
         auto total_passed (current_time - started);
         auto total_seconds (duration_cast<microseconds>(total_passed).count() * 1.0e-6);
 */
+        /*
         {
             boost::lock_guard<boost::mutex> lock(world_.changeset_lock);
             for (chunk_coordinates c : world_.changeset)
@@ -116,7 +134,7 @@ void network::run()
 
             world_.height_changeset.clear();
         }
-
+*/
         // Send changes in the entity system
         ++count;
         //count = total_seconds * 20;
@@ -130,10 +148,11 @@ void network::run()
             es_.for_each<wfpos, vector>(entity_system::c_position,
                                         entity_system::c_velocity,
                 [&](es::storage::iterator i,
-                    es::storage::var_ref<wfpos> p_,
-                    es::storage::var_ref<vector> v_)
+                    wfpos& p_,
+                    vector& v_)
             {
                 msg.updates.emplace_back(i->first, p_, v_);
+                return false;
             });
 
             auto n (clock::now());
@@ -149,13 +168,17 @@ void network::run()
             auto lock (es_.acquire_read_lock());
             for (auto i (es_.begin()); i != es_.end(); ++i)
             {
-                if (es_.check_dirty_flag_and_clear(i, entity_system::c_hotbar))
+                if (es_.check_dirty(i))
                 {
                     msg::entity_update upd_msg;
-                    auto hb (es_.get<hotbar>(i, entity_system::c_hotbar));
-                    binary_data blob (serialize(hb));
-                    msg::entity_update::value val (i->first, (uint16_t)entity_system::c_hotbar, std::move(blob));
-                    upd_msg.updates.emplace_back(std::move(val));
+
+                    if (es_.entity_has_component(i, entity_system::c_hotbar))
+                    {
+                        auto hb (es_.get<hotbar>(i, entity_system::c_hotbar));
+                        binary_data blob (serialize(hb));
+                        msg::entity_update::value val (i->first, (uint16_t)entity_system::c_hotbar, std::move(blob));
+                        upd_msg.updates.emplace_back(std::move(val));
+                    }
                     auto conn (connections_.find(i->first));
                     if (conn != connections_.end())
                         send(conn->first, serialize_packet(upd_msg), upd_msg.method());
@@ -185,19 +208,7 @@ void network::run()
                 break;
 
             case job::surface_and_lightmap:
-                {
-                if (!world_.is_surface_available(job.pos))
-                {
-                    trace("cannot send surface %1%, data not available",
-                          world_rel_coordinates(job.pos - world_chunk_center));
-                    break;
-                }
-                auto conn (connections_.find(job.dest));
-                if (conn == connections_.end())
-                    break;
-
-                send_surface(job.pos, conn->second);
-                }
+                send_surface(job.pos, job.dest);
                 break;
 
             case job::entity_info:
@@ -211,7 +222,7 @@ void network::run()
 
 void network::stop()
 {
-    jobs.push({ job::quit, chunk_coordinates(), 0 });
+    jobs.push({ job::quit, chunk_coordinates(), nullptr });
     while (running_.load())
         boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
 }
@@ -223,19 +234,36 @@ void network::on_connect (ENetPeer* c)
         trace("Player already connected wtf lol");
         return;
     }
+    log_msg("New player connected.");
 
-    trace("on_connect()");
+
+    /*
+    ip_address player_addr (c->address.host);
+    trace("on_connect() %1%", std::to_string(player_addr));
     {
     auto write_lock (es_.acquire_write_lock());
 
-    auto player_id (es_.new_entity());
+    uint32_t player_id (0xffffffff);
+
+    es_.for_each<ip_address>(server_entity_system::c_ip_addr, [&](es::storage::iterator i, const ip_address& ip)
+    {
+       if (ip == player_addr)
+           player_id = i->first;
+
+       return false;
+    });
+
+    if (player_id == 0xffffffff)
+        player_id = es_.new_entity();
+
     entities_[c] = player_id;
     connections_[player_id] = c;
 
-    es_.set(player_id, server_entity_system::c_ip_addr, ip_address(c->address.host));
+    es_.set(player_id, server_entity_system::c_ip_addr, player_addr);
 
     log_msg("Player #%1% connected.", player_id);
     }
+*/
 
     // Greet the new player with the server name and our public key.
     msg::handshake m;
@@ -285,35 +313,34 @@ void network::on_disconnect (ENetPeer* c)
     auto entity_id (e->second);
     log_msg("disconnecting player %1%", entity_id);
 
+    /*
     {
     auto write_lock (es_.acquire_write_lock());
     es_.delete_entity(entity_id);
     }
+*/
 
     connections_.erase(entity_id);
     entities_.erase(e);
 
+    /*
     msg::entity_delete msg;
     msg.entity_id = entity_id;
     for (auto& conn : connections_)
         send(conn.second, serialize_packet(msg), msg.method());
+        */
 }
 
 void network::on_receive (ENetPeer* c, const packet& p)
 {
+    es::entity ent (0);
     auto found (entities_.find(c));
-
-    if (found == entities_.end())
-    {
-        // Ooo-kay this is spooky.  The player does not exist.  Drop the
-        // connection straight away.
-        ///\todo drop connection
-        return;
-    }
+    if (found != entities_.end())
+        ent = found->second;
 
     try
     {
-        packet_info info { found->second, c, p };
+        packet_info info { ent, c, p };
 
         switch(p.message_type())
         {
@@ -337,7 +364,7 @@ void network::on_receive (ENetPeer* c, const packet& p)
     }
     catch (std::exception& e)
     {
-        log_msg("Could not handle packet: %1%", e.what());
+        log_msg("Could not handle packet type %1%: %2%", (int)p.message_type(), e.what());
     }
 }
 
@@ -392,14 +419,12 @@ void network::change_block(const world_coordinates& pos, const std::string& mate
 void network::send_surface(const chunk_coordinates& cpos)
 {
     trace("broadcast surface %1%", world_vector(cpos - world_chunk_center));
+    auto proxy (world_.acquire_read_access());
 
     msg::surface_update reply;
     reply.position = cpos;
-    reply.terrain  = world_.get_compressed_surface(cpos);
-    reply.light    = world_.get_compressed_lightmap(cpos);
-
-    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).opaque) == world_.get_lightmap(cpos)->opaque.size());
-    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).transparent) == world_.get_lightmap(cpos)->transparent.size());
+    reply.terrain  = proxy.get_compressed_surface(cpos);
+    reply.light    = proxy.get_compressed_lightmap(cpos);
 
     for (auto& conn : connections_)
     {
@@ -410,7 +435,7 @@ void network::send_surface(const chunk_coordinates& cpos)
     }
 }
 
-void network::send_surface(const chunk_coordinates& cpos, uint32_t dest)
+void network::send_surface_queue(const chunk_coordinates& cpos, ENetPeer* dest)
 {
     trace("new job: surface %1%", world_vector(cpos - world_chunk_center));
     jobs.push({ job::surface_and_lightmap, cpos, dest });
@@ -419,43 +444,34 @@ void network::send_surface(const chunk_coordinates& cpos, uint32_t dest)
 void network::send_surface(const chunk_coordinates& cpos, ENetPeer* dest)
 {
     trace("send surface %1%", world_vector(cpos - world_chunk_center));
+    auto proxy (world_.acquire_read_access());
 
     msg::surface_update reply;
     reply.position = cpos;
-    reply.terrain  = world_.get_compressed_surface(cpos);
-    reply.light    = world_.get_compressed_lightmap(cpos);
-
-    assert(deserialize_as<surface_data>(decompress(reply.terrain)).opaque == world_.get_surface(cpos)->opaque);
-    assert(world_.get_lightmap(cpos) != nullptr);
-    assert(deserialize_as<light_data>(decompress(reply.light)).opaque == world_.get_lightmap(cpos)->opaque);
-    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).opaque) == world_.get_lightmap(cpos)->opaque.size());
-    assert(deserialize_as<surface_data>(decompress(reply.terrain)).transparent == world_.get_surface(cpos)->transparent);
-    assert(count_faces(deserialize_as<surface_data>(decompress(reply.terrain)).transparent) == world_.get_lightmap(cpos)->transparent.size());
+    reply.terrain  = proxy.get_compressed_surface(cpos);
+    reply.light    = proxy.get_compressed_lightmap(cpos);
 
     send(dest, serialize_packet(reply), reply.method());
+    trace("send surface %1% done", world_vector(cpos - world_chunk_center));
 }
 
-void network::send_coarse_height(const map_coordinates& mpos)
+void network::send_coarse_height(chunk_coordinates pos)
 {
-    auto height (world_.get_coarse_height(mpos));
-    if (height == undefined_height)
-        return;
-
-    trace("broadcast heightmap %1%", map_rel_coordinates(mpos - map_chunk_center));
+    trace("broadcast heightmap %1%", map_rel_coordinates(pos - map_chunk_center));
 
     msg::heightmap_update heights;
-    heights.data.emplace_back(mpos, height);
+    heights.data.emplace_back(pos, pos.z);
 
     for (auto& conn : connections_)
     {
         send(conn.second, serialize_packet(heights), heights.method());
     }
-    trace("broadcast heightmap %1% done", map_rel_coordinates(mpos - map_chunk_center));
+    trace("broadcast heightmap %1% done", map_rel_coordinates(pos - map_chunk_center));
 }
 
 void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
 {
-    auto height (world_.get_coarse_height(cpos));
+    auto height (coarse_height(world_, cpos));
     if (height == undefined_height)
         return;
 
@@ -465,24 +481,42 @@ void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
     send(dest, serialize_packet(heights), heights.method());
 }
 
-void network::login (const packet_info& info)
+void network::login (packet_info& info)
 {
     auto msg (make<msg::login>(info.p));
 
-    log_msg("player %1% login", info.plr);
     world_coordinates start_pos (world_center);
+
+    // Figure out the login info
+    ptree tree;
+    std::stringstream str (msg.credentials);
+    read_json(str, tree);
+    auto login_method (tree.get<std::string>("method", "singleplayer"));
+    auto player_name  (tree.get<std::string>("player_name", "Player"));
+
+    if (login_method == "singleplayer")
+    {
+        info.plr = 0;
+    }
+
+    entities_[info.conn] = info.plr;
+    connections_[info.plr] = info.conn;
+
+    log_msg("player %1% (%2%) login", info.plr, player_name);
 
     // Move the spawn point to the lowlands.
     int hm (world_.find_area_generator("heightmap"));
     if (hm != -1)
     {
+        size_t count (0);
+        auto proxy (world_.acquire_read_access());
         for(;;)
         {
-            area_ptr ap (world_.get_area_data(start_pos / chunk_size, hm));
-            int16_t local_height((*ap)(8, 8));
-            if (   local_height > 10 && local_height < 400)
+            auto& ap (proxy.get_area_data(start_pos / chunk_size, hm));
+            int16_t local_height(ap(8, 8));
+            if (++count > 100 || (local_height > 10 && local_height < 200))
             {
-                start_pos.z = local_height + water_level + 4;
+                start_pos.z = local_height + world_center.z + 4;
                 break;
             }
             else
@@ -493,24 +527,26 @@ void network::login (const packet_info& info)
     }
     else
     {
-        auto ch (world_.get_coarse_height(start_pos / chunk_size));
-        if (ch != undefined_height)
+        auto ch (coarse_height(world_, start_pos / chunk_size));
+        if (ch != undefined_height && ch < chunk_world_limit.z)
             start_pos.z = ch * chunk_size;
         else
-            start_pos.z = water_level + 400;
+            start_pos.z = world_center.z + 40;
     }
 
     trace("Going to spawn player near %1%", world_rel_coordinates(start_pos - world_center));
 
     // Move the spawn point to the surface.
-    if (world_.get_block(start_pos + dir_vector[dir_down]) == type::air)
+    if (false){
+    auto proxy (world_.acquire_read_access());
+    if (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air)
     {
         do
         {
             trace("Moving down...");
             start_pos.z -=2;
         }
-        while (world_.get_block(start_pos + dir_vector[dir_down]) == type::air);
+        while (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air);
     }
     else
     {
@@ -519,16 +555,20 @@ void network::login (const packet_info& info)
             trace("Moving up...");
             start_pos.z += 2;
         }
-        while (world_.get_block(start_pos) != type::air) ;
+        while (proxy.get_block(start_pos) != type::air) ;
+    }
     }
 
-    start_pos.z += 6;
+    start_pos.z += 26;
     log_msg("Spawning new player at %1%", start_pos);
+    trace("Final position: %1%", world_rel_coordinates(start_pos - world_center));
+
     wfpos start_pos_sub (start_pos, vector(0.5, 0.5, 0.5));
     {
     auto write_lock (es_.acquire_write_lock());
 
-    es_.set(info.plr, server_entity_system::c_name, msg.username);
+    es_.make(info.plr);
+    es_.set(info.plr, server_entity_system::c_name, player_name);
     es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
     es_.set(info.plr, server_entity_system::c_velocity, vector(0,0,0));
     es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.73f));
@@ -561,7 +601,7 @@ void network::login (const packet_info& info)
         for (uint32_t x (pcp.x - hmr); x <= pcp.x + hmr; ++x)
         {
             map_coordinates mc (x, y);
-            auto height (world_.get_coarse_height(mc));
+            auto height (coarse_height(world_, mc));
             if (height != undefined_height)
                 heights.data.emplace_back(mc, height);
         }
@@ -575,14 +615,13 @@ void network::login (const packet_info& info)
     // If the player starts high above ground, send the first normal
     // terrain chunk below instead.
     //
-    auto ch (world_.get_coarse_height(pcp));
+    auto ch (coarse_height(world_, pcp));
     if (is_air_chunk(pcp, ch))
         pcp.z = ch - 1;
 
     trace("Request terrain %1% for player", pcp);
-    world_.requests.push({ world::request::surface_and_lightmap, pcp,
-                           [=]{ send_surface(pcp, info.plr); }
-                           });
+    workers_.enqueue([=]{ prepare_for_player(world_, pcp);
+                          send_surface_queue(pcp, info.conn); });
 
 /*
     try
@@ -647,10 +686,10 @@ void network::login (const packet_info& info)
 
     es_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
-            es::storage::var_ref<wfpos> p_)
+            wfpos& p_)
     {
         if (info.plr == i->first)
-            return;
+            return false;
 
         log_msg("inform player %1% of player %2%", info.plr, i->first);
         rec.entity_id = i->first;
@@ -663,6 +702,8 @@ void network::login (const packet_info& info)
         rec.component_id = entity_system::c_velocity;
         rec.data = serialize_c(vector(0, 0, 0));
         posmsg.updates.push_back(rec);
+
+        return false;
     });
     }
 
@@ -717,12 +758,12 @@ void network::req_heights (const packet_info& info)
         {
             trace("requesting height at %1%", req.position);
 
-            auto height (world_.get_coarse_height(req.position));
+            auto height (coarse_height(world_, req.position));
             if (height != undefined_height)
                 answer.data.emplace_back(req.position, height);
         }
         catch (std::exception& e)
-        { 
+        {
             (void) e;
             trace("cannot provide height at %1%, because: %2%",
                   req.position, std::string(e.what()));
@@ -741,15 +782,21 @@ void network::req_chunks (const packet_info& info)
         trace("request for surface %1%", world_rel_coordinates(req.position - world_chunk_center));
         try
         {
-            if (is_air_chunk(req.position, world_.get_coarse_height(req.position)))
+            if (is_air_chunk(req.position, coarse_height(world_, req.position)))
             {
                 trace("air chunk, sending coarse height");
                 send_height(req.position, info.conn);
                 continue;
             }
 
-            bool chunk_ok (world_.is_chunk_available(req.position));
-            bool light_ok (world_.is_lightmap_available(req.position));
+            bool chunk_ok;
+            bool light_ok;
+
+            {
+            auto proxy (world_.acquire_read_access());
+            chunk_ok = proxy.is_chunk_available(req.position);
+            light_ok = proxy.is_lightmap_available(req.position);
+            }
 
             // If all the data we need is available, send it immediately.
             // Otherwise, send a job down the queue and ask the terrain
@@ -760,21 +807,13 @@ void network::req_chunks (const packet_info& info)
                 trace("sending surface right away");
                 send_surface(req.position, info.conn);
             }
-            else if (chunk_ok && !light_ok)
-            {
-                trace("have surface, generate lightmap");
-                world_.requests.push({ world::request::lightmap,
-                                       req.position,
-                                       [=]{ send_surface(req.position, info.plr); }
-                                       });
-            }
             else
             {
                 trace("generate surface and lightmap");
-                world_.requests.push({ world::request::surface_and_lightmap,
-                                       req.position,
-                                       [=]{ send_surface(req.position, info.plr); }
-                                       });
+                workers_.enqueue( [=]{
+                    prepare_for_player(world_, req.position);
+                    send_surface_queue(req.position, info.conn);
+                });
             }
         }
         catch (std::exception& e)
@@ -797,7 +836,7 @@ void network::motion (const packet_info& info)
 
     trace("player %1% moves in direction %2%", info.plr, move);
     auto write_lock (es_.acquire_write_lock());
-    es_.set(info.plr, entity_system::c_walk, move * magnitude);
+    es_.set_walk(info.plr, move * magnitude);
 
     constexpr float lag (0.05f);
     auto p (es_.get<wfpos>(info.plr, entity_system::c_position));
@@ -809,37 +848,32 @@ void network::motion (const packet_info& info)
     // hack
     p = msg.position;
 
-    es_.set(info.plr, entity_system::c_position, p);
-    es_.set(info.plr, entity_system::c_velocity, v);
+    es_.set_position(info.plr, p);
+    es_.set_velocity(info.plr, v);
 }
 
 void network::look_at (const packet_info& info)
 {
-    auto write_lock (es_.acquire_write_lock());
     auto msg (make<msg::look_at>(info.p));
-    es_.set(info.plr, entity_system::c_lookat, msg.look);
+    auto write_lock (es_.acquire_write_lock());
+    es_.set_lookat(info.plr, msg.look);
 }
 
 void network::button_press (const packet_info& info)
 {
     auto msg (make<msg::button_press>(info.p));
-    //es_.set(info.plr, entity_system::c_position, msg.pos);
-    //es_.set(info.plr, entity_system::c_lookat, msg.look);
-    auto write_lock (es_.acquire_write_lock());
     lua_.start_action(info.plr, msg.button, msg.slot, msg.look, msg.pos);
 }
 
 void network::button_release (const packet_info& info)
 {
     auto msg (make<msg::button_release>(info.p));
-    auto write_lock (es_.acquire_write_lock());
     lua_.stop_action(info.plr, msg.button);
 }
 
 void network::console (const packet_info& info)
 {
     auto msg (make<msg::console>(info.p));
-    auto write_lock (es_.acquire_write_lock());
     lua_.console(info.plr, msg.text);
 }
 
@@ -944,6 +978,12 @@ void network::tick()
         }
     }
     */
+}
+
+void network::on_update_surface (const chunk_coordinates& pos)
+{
+    for (auto& conn : connections_)
+        send_surface_queue(pos, conn.second);
 }
 
 } // namespace hexa

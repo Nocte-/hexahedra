@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <hexa/basic_types.hpp>
@@ -29,10 +29,19 @@
 
 namespace hexa {
 
-/** */
+/** Manage the model/view/projection matrix of a camera. */
 class camera
 {
 public:
+    /** Initialize the camera
+     * @param pos       World  position
+     * @param look_dir  Look direction
+     * @param roll      Roll angle, in radians
+     * @param fov       Field of view angle, in radians
+     * @param aspect_ratio   Pixel aspect ratio
+     * @param near      Near plane distance
+     * @param far       Far plane distance
+     */
     camera (vector pos = vector(0, 0, 0),
             yaw_pitch look_dir = yaw_pitch(0, 0),
             float roll = 0.0f,
@@ -44,18 +53,23 @@ public:
     float fov() const                               { return fov_; }
     float aspect_ratio() const                      { return aspect_ratio_; }
 
-    float nexar() const
-        { return near_; }
-
-    float fxar() const
-        { return far_; }
-
+    /** Move the camera by a given offset. */
     void move (const vector& motion);
+
+    /** Move the camera to a given position. */
     void move_to (const vector& position);
 
+    /** Rotate the camera.
+     * @param angle  Rotation angle, in radians
+     * @param axis   Rotate around this axis
+     * @pre axis != {0, 0, 0}
+     */
     void rotate (double angle, const vector& axis);
+
     void rotate (const quaternion<float>& rotation);
 
+    /** Point the camera at a given point.
+     * @pre point != position() */
     void look_at (const vector& point);
 
 
@@ -65,6 +79,7 @@ public:
     const matrix4<float>& projection_matrix () const
         { return projection_matrix_; }
 
+    /** Get the combined model-view-projection matrix. */
     const matrix4<float>& mvp_matrix () const
         { return mvp_matrix_; }
 

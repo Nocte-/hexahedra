@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <stdexcept>
@@ -83,21 +83,21 @@ public:
         is_available (data_type type, chunk_coordinates xyz) = 0;
 
     virtual bool
-        is_available (data_type type, map_coordinates xy) = 0;
+        is_available (map_coordinates xy) = 0;
 
 
 
     virtual void
-        store (const entity_system& es) = 0;
+        store (const es::storage& es) = 0;
 
     virtual void
-        store (const entity_system& es, es::entity entity_id) = 0;
+        store (const es::storage& es, es::storage::iterator entity_id) = 0;
 
     virtual void
-        retrieve (entity_system& es) = 0;
+        retrieve (es::storage& es) = 0;
 
     virtual void
-        retrieve (entity_system& es, es::entity entity_id) = 0;
+        retrieve (es::storage& es, es::entity entity_id) = 0;
 
     virtual bool
         is_available (es::entity entity_id) = 0;

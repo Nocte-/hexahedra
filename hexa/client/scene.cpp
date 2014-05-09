@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// client/scene.cpp
+// hexa/client/scene.cpp
 //
 // This file is part of Hexahedra.
 //
@@ -16,93 +16,183 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "scene.hpp"
 
-#include <iomanip>
-#include <boost/bind.hpp>
-#include <boost/format.hpp>
-#include <boost/range/algorithm.hpp>
-#include <boost/threadpool.hpp>
+#include <set>
 
 #include <hexa/algorithm.hpp>
 #include <hexa/block_types.hpp>
+#include <hexa/lightmap.hpp>
 #include <hexa/voxel_range.hpp>
 #include <hexa/surface.hpp>
 #include <hexa/trace.hpp>
 
+#include "chunk_cache.hpp"
 #include "main_game.hpp"
-#include "player.hpp"
 #include "types.hpp"
 
 
-typedef boost::threadpool::prio_task_func  task;
-
-using namespace boost;
-using namespace boost::range;
-
 namespace hexa {
 
-extern boost::threadpool::prio_pool pool; // Import from main.cpp
-
-namespace {
-
-static light_data full_bright;
-
-}
-
-template <class type>
-direction_type
-from_to (const vector3<type>& from, const vector3<type>& to)
+scene::scene (main_game& g)
+    : game_     (g)
+    , threads_  (4)
 {
-    assert(manhattan_distance(from, to) == 1);
-
-    const vector3<type> diff (to - from);
-    if (diff == vector3<type>( 1, 0, 0))  return dir_east;
-    if (diff == vector3<type>(-1, 0, 0))  return dir_west;
-    if (diff == vector3<type>( 0, 1, 0))  return dir_north;
-    if (diff == vector3<type>( 0,-1, 0))  return dir_south;
-    if (diff == vector3<type>( 0, 0, 1))  return dir_up;
-    if (diff == vector3<type>( 0, 0,-1))  return dir_down;
-
-    throw std::domain_error("from_to: positions are not next to eachother.");
-}
-
-/////////////////////////////////////////////////////////////////////////////
-
-scene::scene(main_game& g)
-    : game_             (g)
-    , player_pos_       (0, 0, 0)
-    , view_dist_        (1)
-    , occ_step_         (occluded_.end())
-{
-    light full;
-    full.sunlight = 15;
-    full.ambient = 15;
-    full.artificial = 15;
-
-    for (int i (0); i < chunk_volume * 6; ++i)
+    terrain_.on_before_update.connect([&](chunk_coordinates, chunk_data& d)
     {
-        full_bright.opaque.push_back(full);
-        full_bright.transparent.push_back(full);
-    }
+        awaiting_cleanup_.emplace_back(std::move(d));
+    });
+
+    terrain_.on_remove.connect([&](chunk_coordinates, chunk_data& d)
+    {
+        awaiting_cleanup_.emplace_back(std::move(d));
+    });
 }
 
 scene::~scene()
 {
 }
 
-void scene::remove_faraway_terrain()
+void
+scene::view_distance (size_t distance)
 {
-    boost::mutex::scoped_lock lock (terrain_lock_);
-    for (auto i (std::begin(terrain_)); i != std::end(terrain_); )
+    auto old_distance (terrain_.view_radius());
+    terrain_.view_radius(distance);
+
+    if (old_distance < distance)
     {
-        if (!is_in_view(i->first))
+        ///\todo
+    }
+
+    // Determine which chunks come into view as the camera moves.
+    auto o (terrain_.center());
+    for (int i (0); i < 6; ++i)
+    {
+        auto& v(edge_of_view_[i]);
+        v.clear();
+
+        for (auto offset : cube_range<world_vector>(distance))
         {
-            to_be_deleted.push_back(i->first);
-            i = terrain_.erase(i);
+            if (    terrain_.is_inside(offset + o)
+                && !terrain_.is_inside(offset + o + dir_vector[i]))
+            {
+                v.push_back(offset);
+            }
+        }
+    }
+}
+
+void
+scene::move_camera_to (chunk_coordinates pos)
+{
+    std::unique_lock<std::mutex> locked (lock);
+
+    auto old_pos (terrain_.center());
+    if (old_pos == pos)
+        return;
+
+    terrain_.center(pos);
+
+    // The area around the camera's chunk is always visible.
+    for (chunk_coordinates c : surroundings(pos, 1))
+        chunk_became_visible(c);
+
+    if (manhattan_distance(old_pos, pos) < 5)
+    {
+        // Sometimes, the camera moves more than one chunk at the time,
+        // especially during fps drops.  To make sure everything is still
+        // processed in an orderly fashion, we move to the new position
+        // step by step.
+        //
+        auto step (old_pos);
+        while (step != pos)
+        {
+            int direction (-1);
+            if (step.x < pos.x)        { ++step.x; direction = 0; }
+            else if (step.x > pos.x)   { --step.x; direction = 1; }
+            else if (step.y < pos.y)   { ++step.y; direction = 2; }
+            else if (step.y > pos.y)   { --step.y; direction = 3; }
+            else if (step.z < pos.z)   { ++step.z; direction = 4; }
+            else if (step.z > pos.z)   { --step.z; direction = 5; }
+            assert(direction != -1);
+
+            for (world_vector p : edge_of_view_[direction])
+            {
+                chunk_coordinates abs_pos (step + p);
+
+                // Check the six surrounding chunks
+                for (int i (0); i < 6; ++i)
+                {
+                    chunk_coordinates cmp (abs_pos + dir_vector[i]);
+                    if (terrain_.has(cmp))
+                    {
+                        auto& info (terrain_.get(cmp));
+
+                        // If one of the neighbors was visible, check this
+                        // one for visibility too.
+                        if (info.opaque || info.transparent)
+                            make_occlusion_query(cmp);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void
+scene::set (chunk_coordinates pos, const surface_data& surface,
+            const light_data& light)
+{
+    if (!terrain_.is_inside(pos))
+        return;
+
+    std::unique_lock<std::mutex> locked (pending_lock_);
+    pending_.emplace_back(threads_.enqueue([=]{ return build_mesh(pos, surface, light); }));
+}
+
+void
+scene::set_coarse_height (map_coordinates pos,
+                          chunk_height h, chunk_height old_height)
+{
+    std::unique_lock<std::mutex> locked (lock);
+
+    if (old_height == undefined_height)
+    {
+        // First time the height map is set; query the topmost chunk.
+        make_occlusion_query(chunk_coordinates(pos.x, pos.y, h - 1));
+    }
+    else if (h > old_height)
+    {
+        // The terrain got higher, query the first and last chunk of the
+        // new part of the column.
+        make_occlusion_query(chunk_coordinates(pos.x, pos.y, old_height));
+        make_occlusion_query(chunk_coordinates(pos.x, pos.y, h - 1));
+    }
+    else if (h < old_height)
+    {
+        // Terrain is now lower than before, remove chunks.
+        for (auto i (old_height - 1); i >= h; --i)
+            terrain_.remove(chunk_coordinates(pos.x, pos.y, i));
+    }
+}
+
+void
+scene::pre_render()
+{
+    std::unique_lock<std::mutex> locked1 (pending_lock_);
+    std::unique_lock<std::mutex> locked2 (lock);
+
+    awaiting_cleanup_.clear();
+
+    for (auto i (std::begin(pending_)); i != std::end(pending_); )
+    {
+        if (is_ready(*i))
+        {
+            place_finished_mesh(i->get());
+            i = pending_.erase(i);
         }
         else
         {
@@ -111,206 +201,84 @@ void scene::remove_faraway_terrain()
     }
 }
 
-void scene::view_distance(unsigned int distance)
+void
+scene::place_finished_mesh (const finished_mesh& mesh)
 {
-    view_dist_ = distance;
-    remove_faraway_terrain();
-
-    // Determine which chunks come into view as the player moves.
-    // This is a bit complicated, since we can't know the exact shape of
-    // the view range.
-    world_vector o (world_chunk_center);
-    for (int i (0); i < 6; ++i)
+    // Generate the VBOs, and throw out the old occlusion query object.
+    if (!terrain_.set(mesh.pos,
+                      { mesh.opaque->make_buffer(),
+                        mesh.transparent->make_buffer(),
+                        gl::occlusion_query(false) }))
     {
-        auto& v(edge_of_view_[i]);
-        v.clear();
-
-        for (auto offset : cube_range<world_vector>(distance))
+        trace("WARNING: set() returned false");
+    }
+    else
+    {
+        // Set up occlusion queries for the surrounding chunks
+        for (auto& p : dir_vector)
         {
-            if (   is_in_view(offset + o,  o)
-                && !is_in_view(offset + o + dir_vector[i], o))
-            {
-                v.push_back(offset);
-            }
+            chunk_coordinates pos (mesh.pos + p);
+
+            // If this happens to be an air chunk, we make a request for the
+            // topmost chunk of that column.
+            auto ch (game_.map().get_coarse_height(pos));
+            if (ch != undefined_height)
+                pos.z = std::min(pos.z, ch - 1);
+
+            if (terrain_.is_inside(pos) && !terrain_.has(pos))
+                make_occlusion_query(pos);
         }
     }
 }
 
-void scene::on_move(chunk_coordinates pos)
+void
+scene::post_render()
 {
-    if (player_pos_ == pos)
-        return;
-
-    auto old_pos (player_pos_);
-    player_pos_ = pos;
-    remove_faraway_terrain();
-
-    // The area around the current chunk is always visible.
-    for (chunk_coordinates c : surroundings(pos, 1))
-        make_chunk_visible(c);
-
-    if (manhattan_distance(old_pos, pos) < 5)
+    std::unique_lock<std::mutex> locked (lock);
+    terrain_.for_each([&](distance_sorted_map<chunk_data>::value_type& p)
     {
-        pos = old_pos;
-
-        // Sometimes, the player moves more than one chunk at the time,
-        // especially during fps drops.  To make sure everything is still
-        // processed in an orderly fashion, we move to the new position
-        // step by step.
-        //
-        while (pos != player_pos_)
+        auto& qry (p.second.occ_qry);
+        if (qry.is_result_available())
         {
-            if (pos.x < player_pos_.x)
-                ++pos.x;
-            else if (pos.x > player_pos_.x)
-                --pos.x;
-            else if (pos.y < player_pos_.y)
-                ++pos.y;
-            else if (pos.y > player_pos_.y)
-                --pos.y;
-            else if (pos.z < player_pos_.z)
-                ++pos.z;
-            else if (pos.z > player_pos_.z)
-                --pos.z;
-
-            // Send out the new occlusion queries for the chunks that just
-            // came into the viewing range.
-            int direction (from_to(old_pos, pos));
-
-            boost::mutex::scoped_lock lock (terrain_lock_);
-            for (world_vector p : edge_of_view_[direction])
+            if (qry.result() > 4)
             {
-                chunk_coordinates abs_pos (p + player_pos_);
-
-                // If this is the topmost part of the terrain, we send out
-                // a visibility request.  This helps to make terrain visible
-                // earlier when a player walks over a hilltop.
-                //
-                if (abs_pos.z + 1 == map().get_coarse_height(abs_pos))
-                {
-                    send_visibility_request(abs_pos);
-                    continue;
-                }
-
-                // Check the six surrounding chunks
-                for (int i (0); i < 6; ++i)
-                {
-                    world_vector cmp (abs_pos + dir_vector[i]);
-                    auto m (terrain_.find(cmp));
-
-                    // If one of the neighbors was visible, check this
-                    // one for visibility too.
-                    if (   m != terrain_.end()
-                        && m->second.status == scene::chunk::visible)
-                    {
-                        send_visibility_request(abs_pos);
-                        break;
-                    }
-                }
+                qry.set_state(gl::occlusion_query::visible);
+                chunk_became_visible(p.first);
             }
-
-            old_pos = pos;
+            else
+            {
+                qry.set_state(gl::occlusion_query::idle);
+            }
         }
-    }
+    });
 }
 
-void scene::on_pre_render_loop()
+void
+scene::request_chunk_from_server (chunk_coordinates pos) const
 {
+    game_.request_chunk(pos);
 }
 
-void scene::on_update_chunk(chunk_coordinates pos)
+
+scene::finished_mesh
+scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
+                   const light_data& lm) const
 {
-    if (!is_in_view(pos))
-    {
-        trace("chunk %1% is not in view", world_rel_coordinates(pos - world_chunk_center));
-        return;
-    }
-
-    if (is_air_chunk(pos, map().get_coarse_height(pos)))
-    {
-        trace("chunk %1% is air", world_rel_coordinates(pos - world_chunk_center));
-
-        // Tell the renderer this chunk is empty.
-        game_.renderer().queue_meshes(pos, game_.make_terrain_mesher(),
-                                           game_.make_terrain_mesher());
-        return;
-    }
-
-    boost::mutex::scoped_lock lock (terrain_lock_);
-    if (!map().is_surface_available(pos))
-        std::cout << "   On chunk update without a surface" << std::endl;
-
-    auto m (terrain_.find(pos));
-    if (m != terrain_.end() && m->second.status == scene::chunk::visible)
-    {
-        trace("scheduling build_mesh for chunk %1%", world_rel_coordinates(pos - world_chunk_center));
-        pool.schedule(task(8, [=]{ build_mesh(pos); }));
-    }
-}
-
-void scene::on_update_height(map_coordinates pos, chunk_height z,
-                             chunk_height old_z)
-{
-    if (old_z != undefined_height && z > old_z)
-        send_visibility_request(chunk_coordinates(pos, old_z));
-}
-
-void scene::build_mesh(chunk_coordinates pos)
-{
-    if (!is_in_view(pos))
-    {
-        //trace((format("chunk %1% not in view") % world_rel_coordinates(pos - world_chunk_center)).str());
-        return;
-    }
-
-    auto cnk_height (map().get_coarse_height(pos));
-    if (is_air_chunk(pos, cnk_height))
-    {
-        //trace((format("chunk %1% is air") % world_rel_coordinates(pos - world_chunk_center)).str());
-        return;
-    }
-
-    light_data*  plm (nullptr);
-    lightmap_ptr gcplm;
-    surface_ptr  surfaces;
-
-    //assert(map_.is_surface_available(pos));
-    surfaces = map().get_surface(pos);
-    if (!surfaces)
-    {
-        //trace((format("chunk %1% has no surface") % world_rel_coordinates(pos - world_chunk_center)).str());
-        return;
-    }
-
-    gcplm = map().get_lightmap(pos);
-    if (gcplm)
-        plm = gcplm.get();
-    else if (!surfaces->empty())
-    {
-        //trace((format("chunk %1% has no light map") % world_rel_coordinates(pos - world_chunk_center)).str());
-        return;
-    }
-
-    {
-    boost::mutex::scoped_lock lock (terrain_lock_);
-    terrain_[pos].has_meshes = true;
-    }
-
-    if (plm == nullptr)
-        return;
-
-    auto opaque_mesh (game_.make_terrain_mesher());
+    // Request two mesher objects from the renderer.
+    auto opaque_mesh      (game_.make_terrain_mesher());
     auto transparent_mesh (game_.make_terrain_mesher());
 
-    assert(plm->opaque.size() == count_faces(surfaces->opaque));
-    assert(plm->transparent.size() == count_faces(surfaces->transparent));
+    // Sanity check, light map should be the same size as the surface.
+    assert(lm.opaque.size() == count_faces(surfaces.opaque));
+    assert(lm.transparent.size() == count_faces(surfaces.transparent));
 
+    // Pass the opaque surfaces and light intensities to the mesher.
     {
-    auto lmi (plm->opaque.begin());
-    auto check (surfaces->opaque.size()); (void)check;
-    for(const faces& f : surfaces->opaque)
+    auto lmi (lm.opaque.begin());
+    auto check (surfaces.opaque.size()); (void)check;
+    for(const faces& f : surfaces.opaque)
     {
-        assert(surfaces->opaque.size() == check);
+        assert(surfaces.opaque.size() == check);
         auto pos (f.pos);
         const material& m (material_prop[f.type]);
 
@@ -320,10 +288,11 @@ void scene::build_mesh(chunk_coordinates pos)
             std::vector<light> intensities (6);
             for (int d (0); d < 6; ++d)
             {
-                if (lmi == plm->opaque.end())
+                if (lmi == lm.opaque.end())
                 {
+                    // Light map data is inconsistent with surface data
                     assert(false);
-                    lmi = plm->opaque.begin();
+                    lmi = lm.opaque.begin();
                 }
                 intensities[d] = *lmi++;
             }
@@ -338,23 +307,25 @@ void scene::build_mesh(chunk_coordinates pos)
 
                 uint16_t tex (m.textures[d]);
 
-                if (lmi == plm->opaque.end())
+                if (lmi == lm.opaque.end())
                 {
+                    // Light map data is inconsistent with surface data
                     assert(false);
-                    lmi = plm->opaque.begin();
+                    lmi = lm.opaque.begin();
                 }
-                assert(lmi != plm->opaque.end());
+                assert(lmi != lm.opaque.end());
                 opaque_mesh->add_face(pos, (direction_type)d, tex, *lmi);
                 ++lmi;
             }
         }
     }
-    assert(lmi == plm->opaque.end());
+    assert(lmi == lm.opaque.end());
     }
 
+    // Same for the transparent parts.
     {
-    auto lmi (plm->transparent.begin());
-    for(const faces& f : surfaces->transparent)
+    auto lmi (lm.transparent.begin());
+    for(const faces& f : surfaces.transparent)
     {
         auto pos (f.pos);
         const material& m (material_prop[f.type]);
@@ -364,180 +335,52 @@ void scene::build_mesh(chunk_coordinates pos)
                 continue;
 
             uint16_t tex (m.textures[d]);
-            assert(lmi != plm->transparent.end());
+            assert(lmi != lm.transparent.end());
             transparent_mesh->add_face(pos, (direction_type)d, tex, *lmi);
             ++lmi;
         }
     }
-    assert(lmi == plm->transparent.end());
+    assert(lmi == lm.transparent.end());
     }
-
-    // Because the chunks are built in the background, and we're not hogging
-    // the mutex, it is possible the player has moved out of range already
-    // by the time we're done.  In that case, don't create the meshes.
-    //
-    if (is_in_view(pos))
-    {
-        //trace((format("chunk %1% ready and queued") % world_rel_coordinates(pos - world_chunk_center)).str());
-        game_.renderer().queue_meshes(pos, std::move(opaque_mesh),
-                                           std::move(transparent_mesh));
-    }
+    // Return the results as a std::future, so the render loop can pick
+    // it up at the next round.
+    return { pos, std::move(opaque_mesh), std::move(transparent_mesh) };
 }
 
-bool scene::is_in_view(chunk_coordinates pos,
-                       chunk_coordinates plr) const
+void
+scene::chunk_became_visible (chunk_coordinates pos)
 {
-    unsigned int m_dist (distance(pos, plr)); // Sphere
-    //unsigned int m_dist (manhattan_distance(pos, plr)); // Octahedron
-    //unsigned int c_dist (cube_distance(pos, plr)); // Cube
-
-    return m_dist < view_distance();
-}
-
-void scene::send_visibility_requests (chunk_coordinates pos)
-{
-    //trace((format("send visibility requests for the area around %1%") % world_rel_coordinates(pos - world_chunk_center)).str());
-
-    boost::mutex::scoped_lock lock (terrain_lock_);
-    for (block_vector d : dir_vector)
-    {
-        send_visibility_request(pos + d);
-    }
-}
-
-void scene::send_visibility_request (chunk_coordinates pos)
-{
-    //trace((format("send visibility request for %1%") % world_rel_coordinates(pos - world_chunk_center)).str());
-
-    if (!is_in_view(pos))
-    {
-        //trace("  skipped, not in view");
+    if (!terrain_.is_inside(pos))
         return;
+
+    if (terrain_.has(pos))
+    {
+        // Make sure the chunk wasn't already visible.
+        auto& info (terrain_.get(pos));
+        if (info.opaque || info.transparent)
+        {
+            return;
+        }
     }
 
-    auto cnk_height (map().get_coarse_height(pos));
-    if (is_air_chunk(pos, cnk_height))
+    // If we have the surface in storage, use it.
+    auto& m (game_.map());
+    if (   m.is_surface_available(pos)
+        && m.is_lightmap_available(pos))
     {
-        //trace("  skipped, air chunk");
-        return;
-    }
-
-    auto m (terrain_.find(pos));
-    if (m != terrain_.end())
-    {
-        if (m->second.status == scene::chunk::pending_query)
-        {
-            //trace("  skipped, already pending");
-            return;
-        }
-
-        if (m->second.status == scene::chunk::visible)
-        {
-            //trace("  skipped, already visible");
-            return;
-        }
-
-        if (m->second.has_meshes)
-        {
-            //trace("  skipped, already meshed");
-            return;
-        }
-
-        m->second.status = scene::chunk::pending_query;
+        set(pos, m.get_surface(pos), m.get_lightmap(pos));
     }
     else
     {
-        terrain_[pos].status = scene::chunk::pending_query;
-    }
-
-    //trace("queued new OQ for %1%", world_rel_coordinates(pos - world_chunk_center));
-    new_occlusion_queries.push_back(pos);
-}
-
-void scene::make_chunk_visible (chunk_coordinates pos)
-{
-    if (!is_in_view(pos))
-    {
-        //trace("%1% is outside view, schedule for delete", world_rel_coordinates(pos - world_chunk_center));
-        to_be_deleted.push_back(pos);
-        return;
-    }
-
-    if (is_air_chunk(pos, map().get_coarse_height(pos)))
-    {
-        // Tell the renderer we're not going to put anything here
-        //trace("%1% is air, queue empty mesh", world_rel_coordinates(pos - world_chunk_center));
-        game_.renderer().queue_meshes(pos, game_.make_terrain_mesher(),
-                                           game_.make_terrain_mesher());
-        return;
-    }
-
-    {
-    boost::mutex::scoped_lock lock (terrain_lock_);
-    chunk& cnk (terrain_[pos]);
-    if (cnk.status == scene::chunk::visible)
-    {
-        //trace("%1% is already visible, cancel OQ", world_rel_coordinates(pos - world_chunk_center));
-        game_.renderer().cancel_occlusion_query(pos);
-        return;
-    }
-
-    if (cnk.has_meshes)
-    {
-        //trace("%1% already has a mesh", world_rel_coordinates(pos - world_chunk_center));
-        return;
-    }
-
-    //trace((format("chunk %1% is now visible") % world_rel_coordinates(pos - world_chunk_center)).str());
-    cnk.status = scene::chunk::visible;
-    }
-
-    if (map().is_surface_available(pos))
-    {
-        //trace("   scheduling build mesh");
-        pool.schedule(task(8, [=]{ build_mesh(pos); }));
-    }
-    else
-    {
-        //trace("  no surface, send request to server");
-        game_.request_chunk(pos);
+        // Otherwise, we'll have to ask the server for the data.
+        request_chunk_from_server(pos);
     }
 }
 
-void scene::request_chunk (chunk_coordinates pos)
+void
+scene::make_occlusion_query (chunk_coordinates pos)
 {
-    if (!is_in_view(pos))
-        return;
-
-    auto cnk_height (map().get_coarse_height(pos));
-    if (is_air_chunk(pos, cnk_height))
-    {
-        // Take a shortcut: since this chunk consists only of air, don't
-        // bother asking the server, waiting for the answer, and tesselating
-        // it.  Go straight to the visibility requests.
-        send_visibility_requests(pos);
-        return;
-    }
-
-    game_.request_chunk(pos);
-}
-
-void scene::consistency_check() const
-{
-    for (auto i (std::begin(terrain_)); i != std::end(terrain_); ++i)
-    {
-        if (!is_in_view(i->first))
-        {
-            std::cout << "ERROR: terrain " << world_vector(i->first - player_pos_) << " " << i->first << std::endl;
-        }
-    }
-    std::cout << "---" << std::endl;
-}
-
-storage_i& scene::map()
-{
-    return game_.world();
+    terrain_.set(pos, {gl::vbo(), gl::vbo(), gl::occlusion_query(true)});
 }
 
 } // namespace hexa
-

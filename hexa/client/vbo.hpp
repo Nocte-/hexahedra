@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   client/vbo.hpp
+/// \file   hexa/client/vbo.hpp
 /// \brief  An OpenGL vertex buffer object
 //
 // This file is part of Hexahedra.
@@ -17,14 +17,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <stdexcept>
 #include <vector>
-#include <boost/utility.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <hexa/compiler_fix.hpp>
@@ -33,7 +32,7 @@ namespace hexa {
 namespace gl {
 
 /** An OpenGL VBO. */
-class vbo : boost::noncopyable
+class vbo
 {
 public:
     /** Create an empty placeholder. */
@@ -51,25 +50,29 @@ public:
         : vbo(&init[0], init.size(), sizeof(vtx))
     { }
 
-    /// \todo Figure out what's up with gcc 4.7 demanding a copy constructor
-    vbo(const vbo&)
-    {
-        throw std::runtime_error("vbo cannot be copied");
-    }
+    vbo(const vbo&) = delete;
 
-    vbo(vbo&& move) noexcept
+    vbo(vbo&& move)
         : id_ (move.id_), count_ (move.count_)
     {
         move.id_ = 0;
-		move.count_ = 0;
+        move.count_ = 0;
     }
 
     vbo& operator= (vbo&& move) noexcept;
 
     ~vbo();
 
+    /** Get the OpenGL buffer object name. */
     GLuint id() const { return id_; }
+
+    /** Count the number of vertices in this buffer. */
     size_t vertex_count() const { return count_; }
+
+    /** Check if this buffer has been defined.
+     *  A buffer that was created with the default constructor is
+     *  undefined, and this function will return false in that case. */
+    operator bool() const { return id_ != 0; }
 
     /** Bind this VBO.
      *  This function must be called before specifying the vertex data

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/aabb.hpp
+/// \file   aabb.hpp
 /// \brief  Axis-aligned bounding box.
 //
 // This file is part of Hexahedra.
@@ -17,12 +17,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 #include <cstdint>
 #include <iostream>
 #include <sstream>
@@ -30,7 +31,29 @@
 
 namespace hexa {
 
-/** Axis-aligned bounding box. */
+/** Axis-aligned bounding box.
+ * Quick example:
+ * @code
+#include <hexa/aabb.hpp>
+#include <hexa/basic_types.hpp> // For vec3i
+
+// Create a 10 x 10 x 10 box with one corner at (2, 3, 4)
+aabb<vec3i> my_box ({2, 3, 4}, 10);
+
+assert(my_box.is_correct());
+assert(width(my_box) == 10);
+assert(volume(my_box) == 1000);
+
+// Create another box that has the same shape, but shifted 2 blocks right.
+auto other_box (my_box + vec3i(2, 0, 0));
+
+// These two boxes still overlap
+assert(are_overlapping(my_box, other_box));
+
+// Clip the two boxes and print the result to stdout:
+auto clipped_box (intersect(my_box, other_box));
+std::cout << clipped_box << std::endl;
+ * @endcode */
 template <typename t>
 class aabb
 {
@@ -77,18 +100,23 @@ public:
         : first (first_), second (second_)
     { }
 
-    /** Create a bounding box given two corners.
-     * \param first_  Lower corner (closed boundary)
-     * \param second_ Upper corner (open boundary) */
+    /** Create a bounding box given two corners. */
     aabb (coordinate_type ax, coordinate_type ay, coordinate_type az,
           coordinate_type bx, coordinate_type by, coordinate_type bz)
         : first (ax, ay, az), second (bx, by, bz)
     { }
 
+    /** Create an initial version for determining a bounding box. */
+    static aabb<t> initial()
+    {
+        return aabb<t>(t(std::numeric_limits<coordinate_type>::max()),
+                       t(std::numeric_limits<coordinate_type>::lowest()));
+    }
+
     /** Check whether the two corners are set up correctly.
      * For an AABB to work properly, each coordinate in the first corner
      * should be smaller than the corresponding coordinate in the second. */
-    bool is_correct() const
+    const bool is_correct() const
     {
         return first.x < second.x && first.y < second.y && first.z < second.z;
     }
@@ -102,8 +130,8 @@ public:
         if (first.z > second.z) std::swap(first.z, second.z);
     }
 
-    /** Get the length, width, and height of the bounding box. */
-    value_type size() const
+    /** Get the width, depth, and height of the bounding box. */
+    const value_type size() const
     {
         assert(is_correct());
         return second - first;
@@ -191,6 +219,12 @@ aabb<t> operator/ (aabb<t> lhs, s rhs)
     return lhs /= rhs;
 }
 
+template <typename t>
+aabb<t> operator>> (const aabb<t>& lhs, int sh)
+{
+    return { lhs.first >> sh, ((lhs.second - t(1)) >> sh) + t(1) };
+}
+
 //---------------------------------------------------------------------------
 
 /** Check whether two AABBs overlap. */
@@ -208,6 +242,7 @@ bool are_overlapping(const aabb<t>& lhs, const aabb<t>& rhs)
 template <class vtx>
 bool is_inside(const vtx& p, const aabb<vtx>& box)
 {
+    assert(box.is_correct());
     return    p.x >= box.first.x && p.x < box.second.x
            && p.y >= box.first.y && p.y < box.second.y
            && p.z >= box.first.z && p.z < box.second.z;
@@ -219,9 +254,6 @@ bool is_inside(const vtx& p, const aabb<vtx>& box)
 template <typename t>
 aabb<t> intersection(const aabb<t>& lhs, const aabb<t>& rhs)
 {
-    assert(lhs.is_correct());
-    assert(rhs.is_correct());
-
     return aabb<t>(std::max(lhs.first.x,  rhs.first.x),
                    std::max(lhs.first.y,  rhs.first.y),
                    std::max(lhs.first.z,  rhs.first.z),
@@ -234,9 +266,6 @@ aabb<t> intersection(const aabb<t>& lhs, const aabb<t>& rhs)
 template <typename t>
 aabb<t> bounding_aabb(const aabb<t>& lhs, const aabb<t>& rhs)
 {
-    assert(lhs.is_correct());
-    assert(rhs.is_correct());
-
     return aabb<t>(std::min(lhs.first.x,  rhs.first.x),
                    std::min(lhs.first.y,  rhs.first.y),
                    std::min(lhs.first.z,  rhs.first.z),
@@ -246,9 +275,9 @@ aabb<t> bounding_aabb(const aabb<t>& lhs, const aabb<t>& rhs)
 }
 
 /** Make a separating axis intersection.
- * \param stat  The static hit box
- * \param mob   The mobile hit box
- * \return The translation distances */
+ * @param stat  The static hit box
+ * @param mob   The mobile hit box
+ * @return The translation distances */
 template <typename t>
 aabb<t> sa_intersection(const aabb<t>& stat, const aabb<t>& mob)
 {
@@ -273,23 +302,67 @@ typename t::value_type sa_length (const aabb<t>& sabb, uint8_t dir)
     return (((dir & 1) == 0) ? sabb.second : sabb.first)[dir / 2];
 }
 
+/** Calculate the center point of a box. */
 template <typename t>
-typename aabb<t>::value_type center(aabb<t> box)
+typename aabb<t>::value_type center(const aabb<t>& box)
 {
     return halfway(box.first, box.second);
 }
 
+/** Cast a box to a different vertex type.
+ * @code
+aabb<vec3i> int_box (1, 2, 3, 8, 8, 8);
+
+auto float_box (cast_to<vec3f>(int_box));
+ * @endcode */
 template <typename t, typename s>
-aabb<t> cast_to (aabb<s> box)
+aabb<t> cast_to (const aabb<s>& box)
 {
-    return aabb<t>(floor(box.first), ceil(box.second));
+    return aabb<t>(floor(box.first), floor(box.second) + t(1,1,1));
 }
 
+/** Make a box bigger by moving one corner, and moving the opposite
+ ** corner by the same amount in the other direction. */
+template <typename t>
+aabb<t> inflate (const aabb<t>& box, const t& amount)
+{
+    return aabb<t>(box.first - amount, box.second + amount);
+}
+
+/** Make a box bigger by moving one corner, and moving the opposite
+ ** corner by the same amount in the other direction. */
 template <typename t>
 aabb<t> inflate (const aabb<t>& box, typename t::value_type amount)
 {
-    t nudge (amount, amount, amount);
-    return aabb<t>(box.first - nudge, box.second + nudge);
+    return inflate(box, t(amount, amount, amount));
+}
+
+/** Get the width of a box, or the size along the x axis. */
+template <typename t>
+typename aabb<t>::coordinate_type  width (const aabb<t>& box)
+{
+    return box.second.x - box.first.x;
+}
+
+/** Get the depth of a box, or the size along the y axis. */
+template <typename t>
+typename aabb<t>::coordinate_type  depth (const aabb<t>& box)
+{
+    return box.second.y - box.first.y;
+}
+
+/** Get the height of a box, or the size along the z axis. */
+template <typename t>
+typename aabb<t>::coordinate_type  height (const aabb<t>& box)
+{
+    return box.second.z - box.first.z;
+}
+
+/** Calculate the volume of a box. */
+template <typename t>
+typename aabb<t>::coordinate_type  volume (const aabb<t>& box)
+{
+    return prod(box.second - box.first);
 }
 
 } // namespace hexa

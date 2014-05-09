@@ -2,23 +2,20 @@ Hexahedra documentation {#mainpage}
 =======================
 
 Hexahedra is a C++ framework for creating "blocky sandbox" or "sandvox" games.
-The distinctive feature of such games is that the world is constructed from
-a grid of cubes, or voxels.  Often, the player(s) can place or destroy cubes
-freely.
+The distinctive feature of such games is that the world is basically a grid of
+cubes, or voxels.  Often, the player(s) can place or destroy cubes freely.
 
 
 Definitions and conventions
 ---------------------------
 
-These are used consistently throughout the framework, so it is a good idea
-to read this section first.
 
-- *Block*
+- Block
 
   A block is an atomic element in the game world.  In memory, a block is just
-  a 16-bit word in an array.  This number determines the material type.
+  a 16-bit number in an array.  This number determines the material type.
 
-- *Material*
+- Material
 
   Determines what a block looks like and how it behaves.  Material zero is
   empty air, by definition.  Most materials consists of six textures (one for
@@ -26,19 +23,19 @@ to read this section first.
   transparency, what kind of item it drops), extra storage (for chests or
   cabinets), or even a custom 3-D model.
 
-- *Chunk*
+- Chunk
 
   A chunk is a 16x16x16 cube of blocks.  For efficiency reasons, all game world
   data is stored, transmitted, and processed in chunks.
 
-- *Game world*
+- Game world
 
   The game world is virtually infinite (2^32 blocks in every direction).  In a
   particular game, the size of the world could be limited for gameplay
   reasons (e.g. an arena for a first person shooter, or a last man standing
   survival game).
 
-- *Direction*
+- Direction
 
   Hexahedra uses a right-hand coordinate system:
 
@@ -51,8 +48,9 @@ to read this section first.
   Up        | +Z   | 4     | 0x08
   Down      | -Z   | 5     | 0x10
 
-- *Surface*
+- Surface
 
-  The visible faces of a chunk.
+  The visible faces of a chunk.  Instead of sending complete chunks to the
+  client, the server only sends the surfaces. 
 
 

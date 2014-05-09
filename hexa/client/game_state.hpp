@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <string>
@@ -42,12 +42,36 @@ struct event;
 class game_state
 {
 public:
+    /** A game state can pass this struct to the game object to transition
+     ** to a different state.
+     * @sa game_state::transition() */
     struct transition
     {
-		transition() : state(nullptr), replace_current(false) { }
-		transition(transition&& m) : state(std::move(m.state)), replace_current(m.replace_current) { }
-		transition(std::unique_ptr<game_state>&& s, bool r) : state(std::move(s)), replace_current(r) { }
-		transition(const transition&) = delete;
+        /** The default transition is just to return to the previously
+         ** active game state. */
+        transition()
+            : state(nullptr)
+            , replace_current(false)
+        { }
+
+        /** Transition to a new state.
+         * @param s  The new game state
+         * @param r  Set this to true if the new state has to replace the
+         *           current one.  Otherwise, the current state will remain
+         *           on the stack and the new state will be pushed on top.
+         */
+        transition(std::unique_ptr<game_state>&& s, bool r)
+            : state(std::move(s))
+            , replace_current(r)
+        { }
+
+#ifdef _MSC_VER
+        transition(transition&& m) : state(std::move(m.state)), replace_current(m.replace_current) { }
+#else
+        transition(transition&&) = default;
+#endif
+
+        transition(const transition&) = delete;
 
         std::unique_ptr<game_state>     state;
         bool                            replace_current;
@@ -60,17 +84,38 @@ public:
 
     virtual std::string name() const = 0;
 
+    /** Gets called every frame.
+     * @param time_delta  Time difference between this frame and the previous
+     *                    one, in seconds */
     virtual void update(double time_delta) = 0;
-    virtual void render() = 0;
-    virtual void process_event (const event&) = 0;
-    virtual void process_event (const sf::Event&) { }
 
+    /** Implement the render code here. */
+    virtual void render() = 0;
+
+    /** Process an event, such as a mouse move or a keypress.
+     * @return True if the event was processed, false if the event should
+     *         be passed on to the next game state in the stack. */
+    virtual bool process_event (const event&) = 0;
+
+    virtual bool process_event (const sf::Event&) { return false; }
+
+    /** Gets called when the window was resized. */
     virtual void resize (unsigned int x, unsigned int y) { }
+
+    /** Another game state finished, and this state gets exposed as
+     ** a consequence. */
     virtual void expose() { is_done_ = false; }
 
+    /** Override this to return true if the game state is transparent.
+     *  A good example of a transparent state is a 'paused' screen, or
+     *  an important notification. */
     virtual bool is_transparent() const { return false; }
+
+    /** Return true if this game state is finished. */
     bool         is_done() const { return is_done_; }
 
+    /** After is_done() has returned true, the game object will call this
+     ** function to determine how to transition into the next state. */
     virtual transition next_state() const = 0;
 
 public: // Some convenience functions

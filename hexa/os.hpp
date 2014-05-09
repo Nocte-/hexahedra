@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 // Defines taken from Boost.  Unfortunately, the way Boost sets up the
@@ -46,7 +46,7 @@ namespace hexa {
 /** Return the user directory for this application.
  *  This is where we'll store configuration files and cache game assets.
  *  Linux: ~/.hexahedra/
- *  Windows: %LOCALAPPDATA%\Hexahedra
+ *  Windows: %LOCALAPPDATA%\\Hexahedra
  *  OSX: ~/Libraries/Application Support/Hexahedra */
 boost::filesystem::path app_user_dir();
 

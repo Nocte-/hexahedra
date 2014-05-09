@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   interpolated_map.hpp
+/// \file   hexa/interpolated_map.hpp
 /// \brief  Adds linear interpolated lookups to a sorted associative container
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -32,11 +32,6 @@ namespace hexa {
 
 /** An adapter that adds linear interpolation to a sorted associative
  ** container.
- *
- *  The default sits on top of boost::flat_map, because this is the most
- *  efficient container in the majority of cases where you need to do a
- *  lerped lookup.  It works just fine with std::map as well, in case you
- *  need efficient insertion/deletion, or stable iterators.
  *
  *  For a map that has the keys {a0, a1, ..., an }, the valid lookups are in
  *  the range  [a0, an).
@@ -87,6 +82,18 @@ public:
     interpolated_map() {}
     interpolated_map(std::initializer_list<value_type> i) : map_(i) {}
 
+    interpolated_map(interpolated_map&& m)
+        : map_(std::move(m.map_))
+    { }
+
+    interpolated_map& operator= (interpolated_map&& m)
+    {
+        if (this != &m)
+            map_ = std::move(m.map_);
+
+        return *this;
+    }
+
 public:
     /** The result of a lookup is the two boundaries, and the relative
      ** interpolation between them. */
@@ -129,9 +136,7 @@ public:
     }
 
     mapped_type operator() (key_type value) const
-    {
-        return lookup(value);
-    }
+        { return lookup(value); }
 
 public:
     bool            empty() const   { return map_.empty(); }
@@ -141,7 +146,8 @@ public:
     iterator        end()           { return map_.end();   }
     const_iterator  end() const     { return map_.end();   }
 
-    mapped_type& operator[] (key_type index) { return map_[index]; }
+    mapped_type& operator[] (key_type index)
+        { return map_[index]; }
 
     iterator erase(iterator pos)
         { return map_.erase(pos); }

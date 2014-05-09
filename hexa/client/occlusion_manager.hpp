@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <unordered_map>
@@ -38,7 +38,7 @@ public:
     }
     query_state;
 
-    struct query : public occlusion_query
+    struct query : public gl::occlusion_query
     {
         size_t                      occluded_count;
         size_t                      timer;
@@ -98,7 +98,7 @@ public:
                 case finished: std::cout << "finished"; break;
                 case inactive: std::cout << "inactive"; break;
             }
-            std::cout << "  " << i->second.occluded_count << " " << 
+            std::cout << "  " << i->second.occluded_count << " " <<
                         i->second.timer << std::endl;
         }
     }

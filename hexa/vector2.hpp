@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -166,9 +166,20 @@ public:
         return *this;
     }
 
+    /** Modulo operator, only works for power-of-two modulos.
+     *  The resulting values are always positive. */
     self& operator%= (int mod)
     {
-        x %= mod; y %= mod;
+        --mod;
+        x &= mod; y &= mod;
+        return *this;
+    }
+
+    /** Modulo function, always returns a positive result. */
+    self& mod (int mod)
+    {
+        x = (x%mod+mod)%mod;
+        y = (y%mod+mod)%mod;
         return *this;
     }
 
@@ -215,6 +226,30 @@ template <typename t, typename div_t>
 const vector2<t> operator/ (vector2<t> p, div_t div)
 {
     return p /= div;
+}
+
+template <typename div_t>
+const vector2<int8_t> operator/ (vector2<int8_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div)};
+}
+
+template <typename div_t>
+const vector2<int16_t> operator/ (vector2<int16_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div)};
+}
+
+template <typename div_t>
+const vector2<int32_t> operator/ (vector2<int32_t> p, div_t div)
+{
+    return {divd(p.x, div), divd(p.y, div)};
+}
+
+template <typename t>
+const vector2<t> operator>> (vector2<t> p, int sh)
+{
+    return {p.x >> sh, p.y >> sh};
 }
 
 template <typename t>
@@ -278,12 +313,12 @@ struct hash <hexa::vector2<type>>
 
 template <>
 struct hash <hexa::vector2<uint8_t>>
-	: public std::unary_function<hexa::vector2<uint8_t>, size_t>
+    : public std::unary_function<hexa::vector2<uint8_t>, size_t>
 {
-	size_t operator() (const hexa::vector2<uint8_t>& v) const
-	{
-		return v.x + (uint16_t(v.y) << 8);
-	}
+    size_t operator() (const hexa::vector2<uint8_t>& v) const
+    {
+        return v.x + (uint16_t(v.y) << 8);
+    }
 };
 
 

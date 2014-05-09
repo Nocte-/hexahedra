@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "aabb.hpp"
@@ -87,7 +87,7 @@ public:
 
     value_type& operator[] (world_coordinates o)
     {
-        return get_chunk(o / chunk_size)[o % chunk_size];
+        return get_chunk(o >> cnkshift)[o % chunk_size];
     }
 
     value_type& operator() (uint32_t x, uint32_t y, uint32_t z)
@@ -97,7 +97,7 @@ public:
 
     const value_type& operator[] (world_coordinates o) const
     {
-        return get_chunk(o / chunk_size)[o % chunk_size];
+        return get_chunk(o >> cnkshift)[o % chunk_size];
     }
 
     const value_type& operator() (uint32_t x, uint32_t y, uint32_t z) const

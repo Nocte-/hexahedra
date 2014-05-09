@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------
-/// @file   hexa/client/render_surface.hpp
+/// \file   client/render_surface.hpp
+/// \brief  Combined object of surface and light data, ready for rendering.
 //
 // This file is part of Hexahedra.
 //
@@ -18,13 +19,14 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
 #include <functional>
 #include <boost/range/algorithm.hpp>
-#include <boost/container/flat_map.hpp>
+//#include <boost/container/flat_map.hpp>
+#include <hexa/flat_map.hpp>
 #include <hexa/area_data.hpp>
 #include <hexa/basic_types.hpp>
 #include <hexa/matrix.hpp>
@@ -87,6 +89,11 @@ public:
         { return chunk_area; }
 };
 
+/** An intermediate representation of a chunk surface.
+ *  This is a combination of a surface and a light map, with the textures
+ *  already looked up in the client's table.  If supported by the renderer,
+ *  this object can be further processed into an \a optimized_render_surface.
+ */
 class render_surface
 {
 public:
@@ -119,11 +126,15 @@ public:
     }
 
     typedef slice<element> layer;
-    //typedef std::array<layer, chunk_size> layers;
-    typedef boost::container::flat_map<uint8_t, layer> layers;
+    //typedef boost::container::flat_map<uint8_t, layer> layers;
+    typedef flat_map<uint8_t, layer> layers;
     std::array<layers, 6> dirs;
 };
 
+/** A render surface with similiar faces merged into larger rectangles.
+ *  If the client supports 3D texture arrays, we can make good use of this
+ *  by merging faces with the same texture and light levels into larger
+ *  rectangles. */
 class optimized_render_surface
 {
 public:
@@ -146,12 +157,14 @@ public:
     };
 
     typedef std::unordered_map<map_index, element> layer;
-    typedef boost::container::flat_map<uint8_t, layer> layers;
+    //typedef boost::container::flat_map<uint8_t, layer> layers;
+    typedef flat_map<uint8_t, layer> layers;
 
     std::array<layers, 6> dirs;
 };
 
-
+/** Merge similar faces of a render_surface into rectangles using a greedy
+ ** algorithm. */
 optimized_render_surface
 optimize_greedy (const render_surface& in);
 

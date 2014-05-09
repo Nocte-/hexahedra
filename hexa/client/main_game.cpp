@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "main_game.hpp"
 
 #include <iomanip>
@@ -59,9 +59,7 @@
 #include "sfml_ogl2.hpp"
 #include "sfml_ogl3.hpp"
 #include "../persistence_null.hpp"
-#include "../persistence_sqlite.hpp"
 #include "../persistence_leveldb.hpp"
-#include "../memory_cache.hpp"
 #include "../entity_system.hpp"
 #include "../entity_system_physics.hpp"
 
@@ -112,21 +110,20 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
                     e.what());
         }
     }
-	
+
     //hud_.console_message(u8"Testing UTF-8 text... \u00A9 \u00C6 \u0270 \u03C1");
     //hud_.time_tick(1);
     //hud_.console_message(u8"это русский текст");
     //hud_.time_tick(1);
     //hud_.console_message(u8"Español Straße Türkçe ελληνικά");
-	
+
     game_.relative_mouse(true);
     setup_renderer();
     setup_world(host, port);
     scene_.view_distance(vd);
-    renderer().view_distance(vd * 3);
 
-    renderer().on_new_vbo.connect([&](chunk_coordinates pos)
-        { scene_.send_visibility_requests(pos); });
+    //renderer().on_new_vbo.connect([&](chunk_coordinates pos)
+    //    { scene_.send_visibility_requests(pos); });
 
     log_msg("Trying to connect to %1%:%2% ...", host, port);
     int tries (0);
@@ -153,14 +150,15 @@ main_game::~main_game()
     clock_.join();
 
     if (singleplayer_)
+    {
         terminate_process(server_process_);
+    }
 }
 
 void main_game::setup_world (const std::string& host, uint16_t port)
 {
     fs::path user_dir (global_settings["userdir"].as<std::string>());
     fs::path data_dir (global_settings["datadir"].as<std::string>());
-    fs::path db_setup (data_dir / "dbsetup.sql");
 
     fs::path gameroot (user_dir / "games");
     std::string host_id ((format("%1%.%2%") % host % port).str());
@@ -172,17 +170,8 @@ void main_game::setup_world (const std::string& host, uint16_t port)
         throw std::runtime_error((format("error: cannot create directory '%1%'") % gamepath.string()).str());
     }
 
-    fs::path db (gamepath / "world.leveldb");
-
-    if (singleplayer_)
-        aux_ = std::make_unique<persistence_leveldb>(io_, gamepath / "local.leveldb");
-        //aux_ = std::make_unique<persistence_sqlite>(io_, gamepath / "local.db", db_setup);
-        //aux_ = make_unique<persistence_null>();
-    else
-        aux_ = std::make_unique<persistence_leveldb>(io_, gamepath / "local.leveldb");
-        //aux_ = std::make_unique<persistence_sqlite>(io_, db, db_setup);
-
-    world_ = std::make_unique<memory_cache>(*aux_);
+    storage_ = std::make_unique<persistence_leveldb>(gamepath / "world.leveldb");
+    map_     = std::make_unique<chunk_cache>(*storage_);
 }
 
 void main_game::setup_renderer()
@@ -203,23 +192,23 @@ void main_game::setup_renderer()
         || global_settings.count("ogl2"))
     {
         // OpenGL 1.5 or 2.x
-        renderer_ = std::make_unique<sfml_ogl2>(window());
+        renderer_ = std::make_unique<sfml_ogl2>(window(), scene_);
     }
     else
     {
         // OpenGL 3 or newer
-        renderer_ = std::make_unique<sfml_ogl3>(window());
+        renderer_ = std::make_unique<sfml_ogl3>(window(), scene_);
     }
 }
 
 void main_game::set_view_distance(unsigned int d)
 {
     scene_.view_distance(d);
-    renderer().view_distance(d * 3);
 }
 
 void main_game::resize (unsigned int w, unsigned int h)
 {
+    trace("window resize %1%x%2%", w, h);
     renderer().resize(w, h);
 }
 
@@ -311,7 +300,20 @@ void main_game::update(double time_delta)
             system_gravity(entities_, step);
             system_walk(entities_, step);
             system_motion(entities_, step);
-            system_terrain_collision(entities_, world());
+            system_terrain_collision(entities_,
+                [&](chunk_coordinates c) -> boost::optional<const surface_data&>
+                {
+                    if (!map_->is_surface_available(c))
+                        return boost::optional<const surface_data&>();
+
+                    return map_->get_surface(c);
+                },
+                [&](chunk_coordinates c)
+                {
+                    return is_air_chunk(c, map_->get_coarse_height(c));
+                }
+            );
+
             system_terrain_friction(entities_, step);
         }
     }
@@ -320,6 +322,7 @@ void main_game::update(double time_delta)
     player_controls();
     player_motion();
 
+    /*
     {
     mutex::scoped_lock lock2 (scene_.lock);
     renderer().remove_chunks(scene_.to_be_deleted);
@@ -333,6 +336,7 @@ void main_game::update(double time_delta)
     for (chunk_coordinates pos : renderer().get_visible_queries())
         scene_.make_chunk_visible(pos);
     } // scoped  lock
+    */
 }
 
 void main_game::render()
@@ -347,14 +351,18 @@ void main_game::render()
             player_.move_to(pp);
             player_.velocity = entities_.get<vector>(player_entity_, entity_system::c_velocity);
             player_.is_airborne = (entities_.get<vector>(player_entity_, entity_system::c_impact).z == 0);
-            hud_.local_height = world().get_coarse_height(pp.int_pos() / chunk_size);
+            hud_.local_height = map().get_coarse_height(pp.int_pos() / chunk_size);
         }
         catch(...)
         {
         }
     }
 
-    scene_.on_pre_render_loop();
+    scene_.pre_render();
+
+    {
+    std::unique_lock<std::mutex> scene_lock (scene_.lock);
+
     renderer().prepare(player_);
     renderer().opaque_pass();
     {
@@ -362,15 +370,17 @@ void main_game::render()
 
     entities_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
-            es::storage::var_ref<wfpos> pos)
+            wfpos& p)
     {
-        wfpos p (pos);
         p.normalize();
         renderer().draw_model(p, 0);
+        return false;
     });
     }
     renderer().handle_occlusion_queries();
     renderer().transparent_pass();
+
+    } // scene_.lock
 
     if (show_ui_)
     {
@@ -383,21 +393,23 @@ void main_game::render()
     origin.z += 1.7f; // Dirty hack to get to the eye level, TODO
 
     auto line (voxel_raycast(origin, origin + from_spherical(player_.head_angle()) * 20.f));
-    auto lock (world_->acquire_read_lock());
     for (auto i (std::next(line.begin())); i != line.end(); ++i)
     {
         world_coordinates block_pos (*i + offset);
-        auto surf (world_->get_surface(block_pos / chunk_size));
-        if (surf == nullptr)
+        auto cpos (block_pos / chunk_size);
+
+        if (!map().is_surface_available(cpos))
             continue;
+
+        auto& surf (map().get_surface(cpos));
 
         // Look for the current block in both the transparent and opaque
         // surfaces.
-        auto found (boost::range::find(surf->opaque, block_pos % chunk_size));
-        if (found == surf->opaque.end())
+        auto found (boost::range::find(surf.opaque, block_pos % chunk_size));
+        if (found == surf.opaque.end())
         {
-            found = boost::range::find(surf->transparent, block_pos % chunk_size);
-            if (found == surf->transparent.end())
+            found = boost::range::find(surf.transparent, block_pos % chunk_size);
+            if (found == surf.transparent.end())
                 continue;
         }
 
@@ -440,20 +452,26 @@ void main_game::render()
         player_.hotbar_needs_update = false;
         hud_.hotbar_needs_update = false;
     }
+
+    scene_.post_render();
 }
 
-void main_game::process_event (const event& ev)
+bool main_game::process_event(const event& ev)
 {
     if (game_.mouse_is_relative())
         process_event_captured(ev);
     else
         process_event_uncaptured(ev);
+
+    return true;
 }
 
-void main_game::process_event (const sf::Event& ev)
+bool main_game::process_event (const sf::Event& ev)
 {
     if (!game_.mouse_is_relative())
         renderer().process(ev);
+
+    return true;
 }
 
 void main_game::process_event_captured (const event& ev)
@@ -507,7 +525,6 @@ void main_game::process_event_captured (const event& ev)
             {
                 --vd;
                 scene_.view_distance(vd);
-                renderer().view_distance(vd * 3);
                 hud_.console_message((format("View distance decreased to %1%.") % (vd * chunk_size)).str());
             }
             }
@@ -520,7 +537,6 @@ void main_game::process_event_captured (const event& ev)
             {
                 ++vd;
                 scene_.view_distance(vd);
-                renderer().view_distance(vd * 3);
                 hud_.console_message((format("View distance increased to %1%.") % (vd * chunk_size)).str());
             }
             }
@@ -563,13 +579,13 @@ void main_game::process_event_captured (const event& ev)
         if (ev.delta > 0)
         {
             hud_.active_slot++;
-            if (hud_.active_slot >= hud_.hotbar.size())
+            if (hud_.active_slot >= hud_.bar.size())
                 hud_.active_slot = 0;
         }
         else
         {
             if (hud_.active_slot == 0)
-                hud_.active_slot = hud_.hotbar.size() - 1;
+                hud_.active_slot = hud_.bar.size() - 1;
             else
                 hud_.active_slot--;
         }
@@ -636,17 +652,15 @@ game_state::transition main_game::next_state() const
         loading_screen_ = true;
         return game_state::transition(game_.make_state<loading_screen>(waiting_for_data_), false);
     }
-
+    assert(stop_);
     return game_state::transition();
 }
 
 void main_game::player_motion()
 {
     if (old_chunk_pos_ != player_.chunk_position())
-    {
-        boost::mutex::scoped_lock lock (scene_.lock);
-        scene_.on_move(player_.chunk_position());
-    }
+        scene_.move_camera_to(player_.chunk_position());
+
     old_chunk_pos_ = player_.position() / chunk_size;
 }
 
@@ -657,7 +671,7 @@ void main_game::login()
     msg::login m;
 
     m.protocol_version = 1;
-    m.username = "Griefy McGriefenstein";
+    m.credentials = "{\"name\":\"Griefy McGriefenstein\", \"method\":\"singleplayer\"}";
 
     send(serialize_packet(m), m.method());
 }
@@ -694,7 +708,7 @@ void main_game::walk(float dir, float speed)
 
 void main_game::action(uint8_t code)
 {
-    msg::button_press msg (code, player_.active_slot, player_.head_angle(), player_.get_wfpos());
+    msg::button_press msg (code, hud_.active_slot, player_.head_angle(), player_.get_wfpos());
     send(serialize_packet(msg), msg.method());
 
     if (code == 0 && player_entity_ != 0xffffffff)
@@ -720,7 +734,6 @@ void main_game::receive (const packet& p)
     auto archive (make_deserializer(p));
 
     unsigned int mt (p.message_type());
-    trace("Receive packet type %1%", mt);
 
     try
     {
@@ -780,7 +793,7 @@ void main_game::greeting (deserializer<packet>& p)
 
     player_entity_ = mesg.entity_id;
 
-    renderer().set_offset(mesg.position);
+    renderer().offset(mesg.position >> cnkshift);
     player_.move_to(mesg.position, vector3<float>(.5f, .5f, 5.f));
 
     log_msg("MOTD: %1%", mesg.motd);
@@ -833,7 +846,7 @@ void main_game::entity_update (deserializer<packet>& p)
         switch (upd.component_id)
         {
         case entity_system::c_position:
-            entities_.set(e, upd.component_id, deserialize_as<wfpos>(upd.data));
+            entities_.set_position(e, deserialize_as<wfpos>(upd.data));
             break;
 
         case entity_system::c_velocity:
@@ -844,26 +857,21 @@ void main_game::entity_update (deserializer<packet>& p)
             break;
 
         case entity_system::c_orientation:
-            entities_.set(e, upd.component_id,
-                          deserialize_as<float>(upd.data));
+            entities_.set_orientation(e, deserialize_as<float>(upd.data));
             break;
 
         case entity_system::c_model:
-            entities_.set(e, upd.component_id,
-                          deserialize_as<uint16_t>(upd.data));
+            entities_.set_model(e, deserialize_as<uint16_t>(upd.data));
             break;
 
         case entity_system::c_name:
-            entities_.set(e, upd.component_id,
-                          deserialize_as<std::string>(upd.data));
+            entities_.set_name(e, deserialize_as<std::string>(upd.data));
             break;
 
         case entity_system::c_hotbar:
-            std::cout << "Hotbar set"<<std::endl;
-            entities_.set(e, upd.component_id,
-                          deserialize_as<hotbar>(upd.data));
+            entities_.set_hotbar(e, deserialize_as<hotbar>(upd.data));
 
-            hud_.hotbar = deserialize_as<hotbar>(upd.data);
+            hud_.bar = deserialize_as<hotbar>(upd.data);
             hud_.hotbar_needs_update = true;
 
             break;
@@ -881,7 +889,7 @@ void main_game::entity_update_physics (deserializer<packet>& p)
     msg::entity_update_physics msg;
     msg.serialize(p);
 
-    trace("Update entity physics");
+    //trace("Update entity physics");
     int32_t lag_msec (clock::time() - msg.timestamp);
     float   lag (lag_msec * 0.001f);
 
@@ -892,8 +900,8 @@ void main_game::entity_update_physics (deserializer<packet>& p)
         auto e (entities_.make(upd.entity_id));
         auto newpos (upd.pos + upd.velocity * lag);
 
-        trace("Set entity %1% to position %2%", upd.entity_id, upd.pos);
-        trace("  velocity %1%, lag %2%", upd.velocity, lag);
+        //trace("Set entity %1% to position %2%", upd.entity_id, upd.pos);
+        //trace("  velocity %1%, lag %2%", upd.velocity, lag);
 
         if (   entities_.entity_has_component(e, entity_system::c_position)
             && entities_.entity_has_component(e, entity_system::c_velocity))
@@ -903,8 +911,8 @@ void main_game::entity_update_physics (deserializer<packet>& p)
         }
         else
         {
-            entities_.set(e, entity_system::c_position, newpos);
-            entities_.set(e, entity_system::c_velocity, upd.velocity);
+            entities_.set_position(e, newpos);
+            entities_.set_velocity(e, upd.velocity);
         }
     }
 }
@@ -926,30 +934,20 @@ void main_game::surface_update (deserializer<packet>& p)
     msg::surface_update msg;
     msg.serialize(p);
 
-    auto temp (decompress(msg.terrain));
-    surface_ptr s (new surface_data(deserialize_as<surface_data>(temp)));
-
     trace("receive surface %1%", msg.position);
 
-    if (is_air_chunk(msg.position, world().get_coarse_height(msg.position)))
+    map().store_surface(msg.position, msg.terrain);
+    if (msg.light.unpacked_len > 0)
     {
-        trace("WARNING: %1% is registered as an air chunk", msg.position);
+        map().store_lightmap(msg.position, msg.light);
+        scene_.set(msg.position,
+                   map().get_surface(msg.position),
+                   map().get_lightmap(msg.position));
     }
-
-    world().store(msg.position, s);
-    lightmap_ptr lm (world().get_lightmap(msg.position));
-    if (lm == nullptr)
-        lm.reset(new light_data);
-
-    auto tmpl (decompress(msg.light));
-    (*lm) = deserialize_as<light_data>(tmpl);
-    world().store(msg.position, lm);
-
-    assert(count_faces(s->opaque) == lm->opaque.size());
-    assert(count_faces(s->transparent) == lm->transparent.size());
-
-    boost::mutex::scoped_lock lock (scene_.lock);
-    scene_.on_update_chunk(msg.position);
+    else
+    {
+        assert(false);
+    }
 }
 
 void main_game::lightmap_update (deserializer<packet>& p)
@@ -959,27 +957,11 @@ void main_game::lightmap_update (deserializer<packet>& p)
 
     trace("Lightmap update for %1%", msg.position);
 
-    if (!world().is_surface_available(msg.position))
-    {
-        log_msg("Error: light map update without surface %1%", msg.position);
-        return;
-    }
+    map().store_lightmap(msg.position, msg.data);
 
-    if (msg.data.unpacked_len == 0)
-        return;
-
-    lightmap_ptr lm (world().get_lightmap(msg.position));
-    if (lm == nullptr)
-        lm.reset(new light_data);
-
-    auto tmpl (decompress(msg.data));
-    (*lm) = deserialize_as<light_data>(tmpl);
-    world().store(msg.position, lm);
-
-    {
-    boost::mutex::scoped_lock lock (scene_.lock);
-    scene_.on_update_chunk(msg.position);
-    }
+    scene_.set(msg.position,
+               map().get_surface(msg.position),
+               map().get_lightmap(msg.position));
 }
 
 void main_game::heightmap_update (deserializer<packet>& p)
@@ -987,15 +969,14 @@ void main_game::heightmap_update (deserializer<packet>& p)
     msg::heightmap_update msg;
     msg.serialize(p);
 
-    boost::mutex::scoped_lock lock (scene_.lock);
     for (auto& r : msg.data)
     {
-        trace("height at %1%: %2%", r.pos, r.height);
-        auto old_height (world().get_coarse_height(r.pos));
-        world().store(r.pos, r.height);
-        scene_.on_update_height(r.pos, r.height, old_height);
-        renderer().on_update_height(r.pos, r.height, old_height);
-        trace("height at %1% done", r.pos);
+        auto old_height (map().get_coarse_height(r.pos));
+        if (r.height != old_height)
+        {
+            map().store_coarse_height(r.pos, r.height);
+            scene_.set_coarse_height(r.pos, r.height, old_height);
+        }
     }
 }
 
@@ -1026,7 +1007,7 @@ void main_game::bg_thread()
         // Every 2 seconds, see if we can get flush some chunks from memory.
         if (count % 2000 == 0)
         {
-            world().cleanup();
+            map().cleanup();
         }
 
         boost::mutex::scoped_lock lock (requests_lock_);
@@ -1046,21 +1027,19 @@ void main_game::bg_thread()
                 }
 
                 auto& pos (*i);
-                if (!world().is_coarse_height_available(pos))
+                if (!map().is_coarse_height_available(pos))
                 {
                     missing_height.insert(pos);
                     req.requests.emplace_back(pos, 0);
                 }
-                else if (!is_air_chunk(pos, world().get_coarse_height(pos)))
+                else if (!is_air_chunk(pos, map().get_coarse_height(pos)))
                 {
                     req.requests.emplace_back(pos, 0);
                 }
                 else
                 {
                     trace("Tried to send request for air chunk");
-                    scene_.on_update_chunk(pos);
                 }
-
                 i = requests_.erase(i);
             }
 

@@ -1,0 +1,17 @@
+{
+"areas": [
+    {
+        "name": "distance_test",
+        "def": "distance"
+    },
+    {
+        "name": "distance_div",
+        "def": "@distance_test:div(10)"
+    },
+    {
+        "name": "global_test",
+        "def": "$two"
+    }
+]
+}
+

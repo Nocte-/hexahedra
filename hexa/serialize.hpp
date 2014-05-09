@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -42,6 +42,10 @@
 #include "vector2.hpp"
 #include "vector3.hpp"
 #include "wfpos.hpp"
+
+// Turn off Clang++ warnings about the register keyword in the system headers
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
 
 namespace hexa {
 
@@ -89,7 +93,7 @@ public:
     serializer(obj& o) : write_ (o) {}
 
     template <class t>
-    void write (t val)
+    void write (const t val)
     {
         size_type pos (write_.size());
         write_.resize(pos + sizeof(t));
@@ -97,60 +101,60 @@ public:
         std::copy(ptr, ptr + sizeof(t), write_.begin() + pos);
     }
 
-    self& operator() (bool val)
+    self& operator() (const bool val)
     {
         write_.push_back(uint8_t(val ? 1 : 0));
         return *this;
     }
 
-    self& operator() (char val)
+    self& operator() (const char val)
     {
         write_.push_back(val);
         return *this;
     }
 
-    self& operator() (uint8_t val)
+    self& operator() (const uint8_t val)
     {
         write_.push_back(val);
         return *this;
     }
 
-    self& operator() (int8_t val)
+    self& operator() (const int8_t val)
     {
         write_.push_back(val);
         return *this;
     }
 
-    self& operator() (direction_type val)
+    self& operator() (const direction_type val)
     {
         return operator()(static_cast<uint8_t>(val));
     }
 
-    self& operator() (uint16_t val)
+    self& operator() (const uint16_t val)
     {
         write(htons(val));
         return *this;
     }
 
-    self& operator() (int16_t val)
+    self& operator() (const int16_t val)
     {
         write(htons(val));
         return *this;
     }
 
-    self& operator() (uint32_t val)
+    self& operator() (const uint32_t val)
     {
         write(htonl(val));
         return *this;
     }
 
-    self& operator() (int32_t val)
+    self& operator() (const int32_t val)
     {
         write(htonl(val));
         return *this;
     }
 
-    self& operator() (float val)
+    self& operator() (const float val)
     {
         conversion c;
         c.real = val;
@@ -158,13 +162,13 @@ public:
         return *this;
     }
 
-    self& operator() (uint64_t val)
+    self& operator() (const uint64_t val)
     {
         write(htonll(val));
         return *this;
     }
 
-    self& operator() (double val)
+    self& operator() (const double val)
     {
         conversion_dbl c;
         c.real = val;
@@ -172,10 +176,9 @@ public:
         return *this;
     }
 
-    template <class char_t>
-    self& operator() (std::basic_string<char_t>& val)
+    self& operator() (const std::basic_string<char>& val)
     {
-        if (val.size() * sizeof(char_t) > 65535)
+        if (val.size() * sizeof(char) > 65535)
             throw std::runtime_error("string too long");
 
         uint16_t byte_size (val.size() * sizeof(char));
@@ -190,7 +193,7 @@ public:
         return *this;
     }
 
-    self& operator() (std::vector<char>& val)
+    self& operator() (const std::vector<char>& val)
     {
         if (val.size() > 65535)
             throw std::runtime_error("array too long");
@@ -198,17 +201,6 @@ public:
         uint16_t byte_size (val.size());
         write(htons(byte_size));
         write_.insert(write_.end(), val.begin(), val.end());
-
-        return *this;
-    }
-
-    template <class t>
-    self& operator() (std::vector<t>& val)
-    {
-        uint16_t array_size (val.size());
-        write(htons(array_size));
-        for (uint16_t i (0); i < array_size; ++i)
-             (*this)(val[i]);
 
         return *this;
     }
@@ -234,12 +226,12 @@ public:
     }
 
     template <class t>
-    self& operator() (vector2<t>& val)
+    self& operator() (const vector2<t>& val)
     {
         return (*this)(val.x)(val.y);
     }
 
-    self& operator() (vector3<int8_t>& val)
+    self& operator() (const vector3<int8_t>& val)
     {
         return (*this)(uint16_t(val.x + chunk_size * val.y + chunk_area * val.z));
     }
@@ -250,37 +242,27 @@ public:
         return (*this)(val.x)(val.y)(val.z);
     }
 
-    template <class t>
-    self& operator() (vector3<t>& val)
-    {
-        return (*this)(val.x)(val.y)(val.z);
-    }
-
-    self& operator() (wfpos& val)
-    {
-        return (*this)(val.pos)(val.frac);
-    }
-
     self& operator() (const wfpos& val)
     {
         return (*this)(val.pos)(val.frac);
     }
 
     template <typename t>
-    self& operator() (aabb<t>& val)
+    self& operator() (const aabb<t>& val)
     {
         return (*this)(val.first)(val.second);
     }
 
     template <class t>
-    self& operator() (t& val)
+    self& operator() (const t& val)
     {
-        val.serialize(*this);
+        t& ncval (*const_cast<t*>(&val));
+        ncval.serialize(*this);
         return *this;
     }
 
     template <class t>
-    self& raw_data(t& val, size_t elements)
+    self& raw_data(const t& val, size_t elements)
     {
         // The 'elements' parameter seems useless here, but it's used in
         // the deserializer.
@@ -328,14 +310,17 @@ binary_data serialize_c (obj o)
 //---------------------------------------------------------------------------
 
 /// Deserializes common data types from a binary representation
-template <class obj>
+template <typename obj>
 class deserializer
 {
-    const obj&  read_; ///< The binary representation
+    //const obj&  read_; ///< The binary representation
 
-    typedef deserializer<obj>       self;
-    typename obj::const_iterator    cursor_;
+    typedef deserializer<obj>   self;
+    typedef const char*         ptr_t;
 
+    ptr_t   first_;
+    ptr_t   last_;
+    ptr_t   cursor_;
 
     /// This union is used to convert integers to floats.
     typedef union
@@ -347,17 +332,28 @@ class deserializer
 
     inline void boundary_check(int size)
     {
-        assert(std::distance(cursor_, read_.end()) >= size);
+        assert(std::distance(cursor_, last_) >= size);
     }
 
 public:
-    deserializer(const obj& o) : read_ (o), cursor_ (o.begin()) { }
+    deserializer (const obj& o)
+        : first_  (reinterpret_cast<ptr_t>(&*o.begin()))
+        , last_   (reinterpret_cast<ptr_t>(&*o.end()))
+        , cursor_ (first_)
+    { }
+
+    template <typename iter>
+    deserializer(iter first, iter last)
+        : first_    (reinterpret_cast<ptr_t>(&*first))
+        , last_     (reinterpret_cast<ptr_t>(&*last))
+        , cursor_   (first_)
+    { }
 
     size_t bytes_read() const
-        { return std::distance(read_.begin(), cursor_); }
+        { return std::distance(first_, cursor_); }
 
     size_t bytes_left() const
-        { return std::distance(cursor_, read_.end()); }
+        { return std::distance(cursor_, last_); }
 
     self& operator() (bool& val)
     {
@@ -397,7 +393,7 @@ public:
     self& operator() (uint16_t& val)
     {
         boundary_check(2);
-        val = ntohs(*reinterpret_cast<const uint16_t*>(&*cursor_));
+        val = ntohs(*reinterpret_cast<const uint16_t*>(cursor_));
         std::advance(cursor_, 2);
         return *this;
     }
@@ -405,7 +401,7 @@ public:
     self& operator() (int16_t& val)
     {
         boundary_check(2);
-        val = ntohs(*reinterpret_cast<const int16_t*>(&*cursor_));
+        val = ntohs(*reinterpret_cast<const int16_t*>(cursor_));
         std::advance(cursor_, 2);
         return *this;
     }
@@ -413,7 +409,7 @@ public:
     self& operator() (uint32_t& val)
     {
         boundary_check(4);
-        val = ntohl(*reinterpret_cast<const uint32_t*>(&*cursor_));
+        val = ntohl(*reinterpret_cast<const uint32_t*>(cursor_));
         std::advance(cursor_, 4);
         return *this;
     }
@@ -421,7 +417,7 @@ public:
     self& operator() (int32_t& val)
     {
         boundary_check(4);
-        val = ntohl(*reinterpret_cast<const int32_t*>(&*cursor_));
+        val = ntohl(*reinterpret_cast<const int32_t*>(cursor_));
         std::advance(cursor_, 4);
         return *this;
     }
@@ -430,7 +426,7 @@ public:
     {
         boundary_check(4);
         conversion c;
-        c.integer = ntohl(*reinterpret_cast<const uint32_t*>(&*cursor_));
+        c.integer = ntohl(*reinterpret_cast<const uint32_t*>(cursor_));
         val = c.real;
         std::advance(cursor_, 4);
         return *this;
@@ -439,7 +435,7 @@ public:
     self& operator() (uint64_t& val)
     {
         boundary_check(8);
-        val = ntohll(*reinterpret_cast<const uint64_t*>(&*cursor_));
+        val = ntohll(*reinterpret_cast<const uint64_t*>(cursor_));
         std::advance(cursor_, 8);
         return *this;
     }
@@ -447,7 +443,7 @@ public:
     self& operator() (double& val)
     {
         boundary_check(8);
-        uint64_t temp (ntohll(*reinterpret_cast<const uint64_t*>(&*cursor_)));
+        uint64_t temp (ntohll(*reinterpret_cast<const uint64_t*>(cursor_)));
         val = *reinterpret_cast<double*>(temp);
         std::advance(cursor_, 8);
         return *this;
@@ -460,7 +456,7 @@ public:
         if (len == 0)
             return *this;
 
-        if (std::distance(cursor_, read_.end()) < len)
+        if (bytes_left() < len)
         {
             assert(false);
             throw std::runtime_error("end of string reached");
@@ -480,7 +476,7 @@ public:
         if (len == 0)
             return *this;
 
-        if ((unsigned)std::distance(cursor_, read_.end()) < len)
+        if (bytes_left() < len)
             throw std::runtime_error("end of array reached");
 
         val.resize(len);
@@ -564,7 +560,7 @@ public:
             return *this;
 
         size_t bytes(elements * sizeof(typename t::value_type));
-        if ((unsigned)std::distance(cursor_, read_.end()) < bytes)
+        if (bytes_left() < bytes)
             throw std::runtime_error("end of array reached");
 
         val.resize(elements);
@@ -598,9 +594,17 @@ public:
 // @param src       Data will be deserialized from this object
 // @return A deserializer object for \a dest
 template <typename obj>
-deserializer<obj> make_deserializer (const obj& src)
+deserializer<obj>
+make_deserializer (const obj& src)
 {
     return deserializer<obj>(src);
+}
+
+template <typename iter_t>
+deserializer<std::vector<char>>
+make_deserializer (iter_t first, iter_t last)
+{
+    return deserializer<std::vector<char>>(first, last);
 }
 
 template <typename obj, typename buf_t>
@@ -614,3 +618,4 @@ obj deserialize_as (const buf_t& buffer, obj result = obj())
 
 } // namespace hexa
 
+#pragma clang diagnostic pop

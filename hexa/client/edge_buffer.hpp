@@ -19,13 +19,12 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <stdexcept>
 #include <vector>
 
-#include <boost/utility.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
 
@@ -36,7 +35,7 @@ namespace gl {
 
 /** An OpenGL edge buffer. */
 template <typename t>
-class edge_buffer : boost::noncopyable
+class edge_buffer
 {
 public:
     typedef t   value_type;
@@ -45,9 +44,9 @@ public:
     /** Create an empty placeholder. */
     edge_buffer() : id_(0), count_(0) { }
 
-    /** Create a VBO.
-     * @param buffer   Pointer to the vertex data.
-     * @param count  The number of triangles in the buffer.*/
+    /** Constructor
+     * @param buffer Pointer to the edge data
+     * @param count  The number of triangles in the buffer */
     edge_buffer(const void* buffer, size_t count)
         : id_(0), count_ (count)
     {
@@ -69,11 +68,8 @@ public:
         : edge_buffer(&buf[0], buf.size())
     { }
 
-    /// \todo Figure out what's up with gcc 4.7 demanding a copy constructor
-    edge_buffer(const edge_buffer&)
-    {
-        throw std::runtime_error("triangle buffer cannot be copied");
-    }
+    edge_buffer(const edge_buffer&) = delete;
+    edge_buffer& operator=(const edge_buffer&) = delete;
 
     edge_buffer(edge_buffer&& move) noexcept
         : id_ (move.id_), count_ (move.count_)

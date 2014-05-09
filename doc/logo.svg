@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="390.99359"
+   height="300.64941"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.4 r9939"
+   sodipodi:docname="logo.svg.2014_04_11_21_16_50.0.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="3.0334335"
+     inkscape:cx="195.4968"
+     inkscape:cy="158.4247"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:window-width="1871"
+     inkscape:window-height="1056"
+     inkscape:window-x="49"
+     inkscape:window-y="24"
+     inkscape:window-maximized="1"
+     showguides="true"
+     inkscape:guide-bbox="true"
+     inkscape:snap-global="true"
+     inkscape:snap-grids="true"
+     fit-margin-top="0.5"
+     fit-margin-left="0.5"
+     fit-margin-bottom="0.5"
+     fit-margin-right="0.5">
+    <inkscape:grid
+       type="axonomgrid"
+       id="grid2985"
+       units="mm"
+       empspacing="5"
+       visible="true"
+       enabled="false"
+       snapvisiblegridlinesonly="true"
+       originx="-40.196487mm"
+       originy="-111.52908mm" />
+    <inkscape:grid
+       type="xygrid"
+       id="grid4489"
+       empspacing="5"
+       visible="true"
+       enabled="false"
+       snapvisiblegridlinesonly="true"
+       originx="-142.4285px"
+       originy="-395.18176px" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-142.4285,-356.53101)">
+    <rect
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none"
+       id="rect3806"
+       width="389.99359"
+       height="186.43042"
+       x="142.9285"
+       y="357.03101"
+       ry="0.80015349" />
+    <g
+       transform="translate(-107.24413,-79.616603)"
+       id="g3808"
+       style="fill:#eeebe4;fill-opacity:1;stroke:none"
+       inkscape:export-filename="/home/unicorn/hexalogo3.png"
+       inkscape:export-xdpi="523.28998"
+       inkscape:export-ydpi="523.28998">
+      <path
+         id="path3810"
+         style="fill:#eeebe4;fill-opacity:1;stroke:none"
+         d="m 340.61393,522.63777 0,6.68675 8.64607,-11.66975 z m -3.0686,15.94489 0,-17.71654 15.34297,-8.85827 3.0686,1.77166 z"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="ccccccccc" />
+      <path
+         inkscape:connector-curvature="0"
+         style="fill:#eeebe4;fill-opacity:1;stroke:none"
+         d="m 368.21875,520.875 -30.6875,17.71875 15.34375,8.84375 15.34375,-8.84375 0,-17.71875 z m -3.0625,5.3125 0,10.625 -12.28125,7.09375 -9.1875,-5.3125 21.46875,-12.40625 z"
+         id="path3812" />
+    </g>
+    <text
+       sodipodi:linespacing="125%"
+       id="text3814"
+       y="458.84482"
+       x="289.37427"
+       style="font-size:24.55684471px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:3.7299974px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#eeebe4;fill-opacity:1;stroke:none;font-family:Aller;-inkscape-font-specification:Aller"
+       xml:space="preserve"
+       inkscape:export-filename="/home/unicorn/hexalogo3.png"
+       inkscape:export-xdpi="523.28998"
+       inkscape:export-ydpi="523.28998"><tspan
+         sodipodi:role="line"
+         id="tspan3822"
+         x="289.37427"
+         y="458.84482">HEXAHED</tspan></text>
+    <g
+       style="fill:#000000;fill-opacity:1;stroke:none"
+       id="g3828"
+       transform="translate(42.122286,60.816912)">
+      <path
+         sodipodi:nodetypes="ccccccccc"
+         inkscape:connector-curvature="0"
+         d="m 340.61393,522.63777 0,6.68675 8.64607,-11.66975 z m -3.0686,15.94489 0,-17.71654 15.34297,-8.85827 3.0686,1.77166 z"
+         style="fill:#000000;fill-opacity:1;stroke:none"
+         id="path3830" />
+      <path
+         id="path3832"
+         d="m 368.21875,520.875 -30.6875,17.71875 15.34375,8.84375 15.34375,-8.84375 0,-17.71875 z m -3.0625,5.3125 0,10.625 -12.28125,7.09375 -9.1875,-5.3125 21.46875,-12.40625 z"
+         style="fill:#000000;fill-opacity:1;stroke:none"
+         inkscape:connector-curvature="0" />
+    </g>
+    <text
+       xml:space="preserve"
+       style="font-size:24.55684471px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;text-align:start;line-height:125%;letter-spacing:3.7299974px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#eeebe4;fill-opacity:1;stroke:none;font-family:Aller;-inkscape-font-specification:Aller"
+       x="420.91953"
+       y="458.84482"
+       id="text3842"
+       sodipodi:linespacing="125%"
+       inkscape:export-filename="/home/unicorn/hexalogo3.png"
+       inkscape:export-xdpi="523.28998"
+       inkscape:export-ydpi="523.28998"><tspan
+         y="458.84482"
+         x="420.91953"
+         id="tspan3844"
+         sodipodi:role="line">RA</tspan></text>
+    <rect
+       ry="0"
+       y="559.70532"
+       x="260.84784"
+       height="61.371887"
+       width="61.371887"
+       id="rect4491"
+       style="fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none" />
+    <g
+       transform="translate(-61.197845,60.52713)"
+       id="g4493"
+       style="fill:#eeebe4;fill-opacity:1;stroke:none"
+       inkscape:export-filename="/home/unicorn/hexalogo3.png"
+       inkscape:export-xdpi="523.28998"
+       inkscape:export-ydpi="523.28998">
+      <path
+         id="path4495"
+         style="fill:#eeebe4;fill-opacity:1;stroke:none"
+         d="m 340.61393,522.63777 0,6.68675 8.64607,-11.66975 z m -3.0686,15.94489 0,-17.71654 15.34297,-8.85827 3.0686,1.77166 z"
+         inkscape:connector-curvature="0"
+         sodipodi:nodetypes="ccccccccc" />
+      <path
+         inkscape:connector-curvature="0"
+         style="fill:#eeebe4;fill-opacity:1;stroke:none"
+         d="m 368.21875,520.875 -30.6875,17.71875 15.34375,8.84375 15.34375,-8.84375 0,-17.71875 z m -3.0625,5.3125 0,10.625 -12.28125,7.09375 -9.1875,-5.3125 21.46875,-12.40625 z"
+         id="path4497" />
+    </g>
+  </g>
+</svg>

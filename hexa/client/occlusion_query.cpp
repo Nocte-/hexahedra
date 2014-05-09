@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-// client/occlusion_query.cpp
+// hexa/client/occlusion_query.cpp
 //
 // This file is part of Hexahedra.
 //
@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "occlusion_query.hpp"
 
 #include <cassert>
@@ -30,10 +30,11 @@
 #include <hexa/log.hpp>
 
 namespace hexa {
+namespace gl {
 
-occlusion_query::occlusion_query()
+occlusion_query::occlusion_query(bool activate)
     : id_ (0)
-    , state_ (idle)
+    , state_ (activate ? idle : inactive)
 {
 }
 
@@ -53,7 +54,7 @@ occlusion_query& occlusion_query::operator=(occlusion_query&& move) noexcept
         id_ = move.id_;
         state_ = move.state_;
         move.id_ = 0;
-        move.state_ = idle;
+        move.state_ = inactive;
     }
     return *this;
 }
@@ -71,6 +72,7 @@ bool occlusion_query::is_result_available() const
 
 unsigned int occlusion_query::result()
 {
+    assert(state_ != inactive);
     assert(id_ != 0);
     GLuint count (0);
     glCheck(glGetQueryObjectuiv(id_, GL_QUERY_RESULT, &count));
@@ -80,6 +82,9 @@ unsigned int occlusion_query::result()
 
 void occlusion_query::begin_query()
 {
+    if (state_ == inactive)
+        return;
+
     state_ = busy;
     if (id_ == 0)
         glCheck(glGenQueries(1, &id_));
@@ -89,8 +94,21 @@ void occlusion_query::begin_query()
 
 void occlusion_query::end_query() const
 {
+    if (state_ == inactive)
+        return;
+
     glCheck(glEndQuery(GL_SAMPLES_PASSED));
 }
 
-} // namespace hexa
+void occlusion_query::dispose()
+{
+    if (id_ != 0)
+    {
+        state_ = disposed;
+        glCheck(glDeleteQueries(1, &id_));
+        id_ = 0;
+    }
+}
+
+}} // namespace hexa::gl
 

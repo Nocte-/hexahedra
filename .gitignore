@@ -20,3 +20,8 @@ tags
 /install/hexahedra-server.rc
 /install/hexahedra-client.rc
 /win32/
+
+.excludes
+hexahedra.json
+manifest.json
+

@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -46,7 +46,7 @@
 #include "occlusion_query.hpp"
 #include "opengl_vertex.hpp"
 #include "player.hpp"
-#include "renderer_chunk_management.hpp"
+#include "renderer_i.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "visibility_test.hpp"
@@ -57,17 +57,17 @@ class game;
 class scene;
 class hud;
 
-class sfml : public renderer_chunk_management
+class sfml : public renderer_i //public renderer_chunk_management
 {
 public:
     /** Constructor. */
-    sfml(sf::RenderWindow& win);
+    sfml(sf::RenderWindow& win, scene& s);
     virtual ~sfml();
 
     virtual void prepare(const player& plr);
     void draw_ui(double elapsed_time, const hud& info);
     void display();
-    visibility_tests get_finished_queries();
+
     virtual void resize(unsigned int w, unsigned int h);
     void waiting_screen() const;
     void process (const event& ev);
@@ -83,18 +83,7 @@ public:
 protected:
     void draw_chunk_cube(const chunk_coordinates& pos);
     void draw_chunk_face(const chunk_coordinates& pos, direction_type dir);
-
-    struct query : public occlusion_query, public visibility_test
-    {
-        query(const chunk_coordinates& pos, direction_type d)
-            : visibility_test(pos, d, pending_query)
-        { }
-
-        query(const visibility_test& t) : visibility_test (t) {}
-    };
-
     void draw_bar(float x, float y, int index, int width, double ratio);
-
     void draw_hotbar (const hud &h);
 
 protected:
@@ -107,12 +96,9 @@ protected:
 
     sf::RenderWindow& app_;
 
-    std::list<query>    waiting_queries;
-    std::list<query>    active_queries;
-
     std::array<sf::Sprite, 256>  ui_elem_;
-
     std::shared_ptr<sf::Texture> ui_img_;
+
     texture sun_;
     texture moon_;
     texture star_;
@@ -120,7 +106,6 @@ protected:
     std::shared_ptr<sf::Font> ui_font_;
 
     sf::RenderTexture hotbar_;
-
 
 //    Gwen::Renderer::SFML2   GwenRenderer;
 //    Gwen::Input::SFML       GwenInput;

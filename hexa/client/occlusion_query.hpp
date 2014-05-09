@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   client/occlusion_query.hpp
+/// \file   hexa/client/occlusion_query.hpp
 /// \brief  OpenGL hardware occlusion query.
 //
 // This file is part of Hexahedra.
@@ -17,38 +17,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <stdexcept>
 #include <cstdint>
-#include <boost/utility.hpp>
 #include <hexa/compiler_fix.hpp>
 
 namespace hexa {
+namespace gl {
 
-/// An OpenGL occlusion query
-class occlusion_query : boost::noncopyable
+/** An OpenGL occlusion query. */
+class occlusion_query
 {
 public:
     enum state_t : uint8_t
-        { idle, busy, occluded, visible, cancelled, air };
+        { inactive, idle, busy, occluded, visible, cancelled, disposed };
 
 public:
-    occlusion_query();
+    occlusion_query(bool activate = false);
 
-    /// \todo Figure out what's up with gcc 4.7 demanding a copy constructor
-    occlusion_query(const occlusion_query&)
-    {
-        throw std::runtime_error("occlusion queries cannot be copied");
-    }
+    occlusion_query(const occlusion_query&) = delete;
 
     occlusion_query(occlusion_query&& move) noexcept
         : id_(move.id_)
         , state_(move.state_)
     {
+        move.state_ = inactive;
         move.id_ = 0;
     }
 
@@ -56,26 +53,30 @@ public:
 
     ~occlusion_query();
 
-    /// Check if the result of the query is already available.
-    /// This should be checked before calling \a result()
+    /** Check if the result of the query is already available.
+     *  This should be checked before calling \a result() */
     bool is_result_available() const;
 
-    /// Get the number of drawn pixels.
-    /// If this returns zero, the object was invisible.
+    /** Get the number of drawn pixels.
+     ** If this returns zero, the object was invisible. */
     unsigned int result();
 
-    /// All OpenGL drawing calls after this are part of the query.
+    /** All OpenGL drawing calls after this are part of the query. */
     void begin_query();
 
-    /// End drawing, start the actual query.
+    /** End drawing, start the actual query. */
     void end_query() const;
 
-    /// Get the ID assigned to this query by the OpenGL driver.
+    /** Get the OpenGL query object name. */
     unsigned int id() const { return id_; }
+
+    operator bool () const { return state_ == idle || id_ != 0; }
 
     state_t state() const { return state_; }
 
     void cancel() { state_ = cancelled; }
+
+    void dispose();
 
     void set_state(state_t s) { state_ = s; }
 
@@ -84,5 +85,5 @@ private:
     state_t      state_;
 };
 
-} // namespace hexa
+}} // namespace hexa::gl
 

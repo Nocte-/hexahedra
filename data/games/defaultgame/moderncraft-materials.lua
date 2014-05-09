@@ -365,10 +365,10 @@ for i=0,8 do
 end
 
 --
-mc( 61,  2, { name = "furnace", texture = {"furnace_side", "furnace_side", "furnace_front", "furnace_side", "cobblestone", "cobblestone"} } )
-mc( 61,  3, { name = "furnace", texture = {"furnace_side", "furnace_side", "furnace_side", "furnace_front", "cobblestone", "cobblestone"} } )
-mc( 61,  4, { name = "furnace", texture = {"furnace_side", "furnace_front", "furnace_side", "furnace_side", "cobblestone", "cobblestone"} } )
-mc( 61,  5, { name = "furnace", texture = {"furnace_front", "furnace_side", "furnace_side", "furnace_side", "cobblestone", "cobblestone"} } )
+mc( 61,  2, { name = "furnace.n", texture = {"furnace_side", "furnace_side", "furnace_front", "furnace_side", "cobblestone", "cobblestone"} } )
+mc( 61,  3, { name = "furnace.e", texture = {"furnace_side", "furnace_side", "furnace_side", "furnace_front", "cobblestone", "cobblestone"} } )
+mc( 61,  4, { name = "furnace.s", texture = {"furnace_side", "furnace_front", "furnace_side", "furnace_side", "cobblestone", "cobblestone"} } )
+mc( 61,  5, { name = "furnace.w", texture = {"furnace_front", "furnace_side", "furnace_side", "furnace_side", "cobblestone", "cobblestone"} } )
 
 mc( 62,  2, { name = "burning furnace", texture = {"furnace_side", "furnace_side", "furnace_front.burning", "furnace_side", "cobblestone", "cobblestone"} } )
 mc( 62,  3, { name = "burning furnace", texture = {"furnace_side", "furnace_side", "furnace_side", "furnace_front.burning", "cobblestone", "cobblestone"} } )

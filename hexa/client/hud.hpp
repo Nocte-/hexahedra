@@ -34,7 +34,7 @@ class hud
 {
 public:
     typedef hotbar_slot slot;
-    std::vector<slot>       hotbar;
+    hotbar                  bar;
     bool                    hotbar_needs_update;
     unsigned int            active_slot;
     bool                    show_debug_info;

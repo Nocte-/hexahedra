@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "basic_types.hpp"
 
 namespace hexa {
@@ -30,6 +30,15 @@ const block_vector dir_vector[] =
       block_vector( 0,-1, 0),
       block_vector( 0, 0, 1),
       block_vector( 0, 0,-1) };
+
+const block_vector neumann_neighborhood[] =
+    { block_vector(-1, 0, 0),
+      block_vector( 0,-1, 0),
+      block_vector( 0, 0,-1),
+      block_vector( 0, 0, 0),
+      block_vector( 0, 0, 1),
+      block_vector( 0, 1, 0),
+      block_vector( 1, 0, 0) };
 
 }
 

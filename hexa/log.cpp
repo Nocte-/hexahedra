@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "log.hpp"
 
 #include <boost/thread/mutex.hpp>
@@ -44,6 +44,10 @@ void log_msg (const std::string& msg)
 
     boost::lock_guard<boost::mutex> lock (log_mutex);
     *out_ << msg << std::endl;
+
+#ifndef NDEBUG
+    //std::cout << msg << std::endl;
+#endif
 }
 
 } // namespace hexa

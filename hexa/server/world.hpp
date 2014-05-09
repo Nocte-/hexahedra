@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
 /// \file   hexa/server/world.hpp
-/// \brief  The game world.
+/// \brief  The game world
 //
 // This file is part of Hexahedra.
 //
@@ -17,178 +17,219 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <memory>
-#include <map>
+#include <mutex>
 #include <set>
 #include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-#include <boost/thread.hpp>
-#include <boost/thread/mutex.hpp>
-
-#include <es/storage.hpp>
+#include <boost/signals2.hpp>
 
 #include <hexa/basic_types.hpp>
 #include <hexa/chunk.hpp>
-#include <hexa/concurrent_queue.hpp>
-#include <hexa/height_chunk.hpp>
-#include <hexa/locked_subsection.hpp>
+#include <hexa/compression.hpp>
+#include <hexa/container_uptr.hpp>
 #include <hexa/lightmap.hpp>
-#include <hexa/storage_i.hpp>
-#include <hexa/world_subsection.hpp>
-#include <hexa/voxel_range.hpp>
+#include <hexa/lru_cache.hpp>
+#include <hexa/persistent_storage_i.hpp>
+#include <hexa/read_write_lockable.hpp>
+#include <hexa/surface.hpp>
 
-#include "area_generator_i.hpp"
-#include "terrain_generator_i.hpp"
-#include "lightmap_generator_i.hpp"
+#include "area/area_generator_i.hpp"
+#include "lightmap/lightmap_generator_i.hpp"
+#include "terrain/terrain_generator_i.hpp"
+
+#include "world_read.hpp"
+#include "world_write.hpp"
 
 namespace hexa {
 
-class world : public storage_i
+class world_lightmap_access;
+class world_terraingen_access;
+
+/** The game world.
+ *  This class takes care of several things:
+ *  - Keeping chunk data (and the associated surfaces, light maps, and
+ *    compressed data) in a memory cache.
+ *  - Writing the cached data to disk on changes.
+ *  - Calling the terrain generators when new chunks are accessed.
+ *  - Providing mutexed read and write access to the rest of the application.
+ */
+class world
 {
-public:
-    typedef enum
-    {
-        normal_chunk, air_chunk, unknown_chunk
-    }
-    chunk_type;
-
-    struct request
-    {
-        enum type_t
-        {
-            chunk, surface, lightmap, surface_and_lightmap, quit
-        };
-
-        type_t                  type;
-        chunk_coordinates       pos;
-        std::function<void()>   answer;
-    };
-
-    concurrent_queue<request> requests;
-
-protected:
-
+    friend class world_read;
+    friend class world_write;
+    friend class world_terraingen_access;
+    friend class world_lightmap_access;
 
 public:
-    world(storage_i& storage);
-    virtual ~world();
+    boost::signals2::signal<void(chunk_coordinates)> on_update_coarse_height;
+    boost::signals2::signal<void(chunk_coordinates)> on_update_surface;
 
-    void        add_area_generator(std::unique_ptr<area_generator_i>&& gen);
-    void        add_terrain_generator(std::unique_ptr<terrain_generator_i>&& gen);
-    void        add_lightmap_generator(std::unique_ptr<lightmap_generator_i>&& gen);
+public:
+    world(persistent_storage_i& storage);
 
-    area_ptr    get_area_data(map_coordinates pos, uint16_t index);
-    bool        is_area_data_available(map_coordinates pos, uint16_t index);
-    void        store(map_coordinates pos, uint16_t index, area_ptr data);
+    world(const world&) = delete;
+    //world(world&&) = default;
+    //world& operator=(world&&) = default;
 
-    /** Retrieve a fully generated chunk, or a nullptr for an air chunk. */
-    chunk_ptr   get_chunk(chunk_coordinates pos);
-    bool        is_chunk_available(chunk_coordinates pos);
-    void        store(chunk_coordinates pos, chunk_ptr data);
+    /** Get read access to a given position. */
+    world_read  acquire_read_access ();
 
-    lightmap_ptr    get_lightmap(chunk_coordinates pos);
-    bool            is_lightmap_available(chunk_coordinates pos);
-    void            store(chunk_coordinates pos, lightmap_ptr data);
+    /** Get write access to a given chunk. */
+    world_write acquire_write_access (const chunk_coordinates& pos);
 
-    surface_ptr     get_surface(chunk_coordinates pos);
-    bool            is_surface_available(chunk_coordinates pos);
-    void            store(chunk_coordinates pos, surface_ptr data);
+    /** Terrain generation seed. */
+    uint32_t    seed() const { return seed_; }
 
-    chunk_height    get_coarse_height(map_coordinates pos);
-    bool            is_coarse_height_available(map_coordinates pos);
-    void            store(map_coordinates pos, chunk_height data);
+public:
+    /** Add an area generator. */
+    void add_area_generator(std::unique_ptr<area_generator_i>&& gen);
 
-    void            store(const locked_subsection& region) { }
+    size_t  nr_of_registered_area_generators() const
+        { return areagen_.size(); }
 
-    compressed_data
-    get_compressed_lightmap (chunk_coordinates xyz);
+    /** Look up an area generator by name.
+     * @param name  The name to look for
+     * @return The index of the area generator, or -1 if it doesn't exist. */
+    int  find_area_generator(const std::string& name) const;
 
-    compressed_data
-    get_compressed_surface (chunk_coordinates xyz);
+    /** Add a terrain generator.
+     *  The order in which terrain generators are added is important.  For
+     *  example, if you add a cave system after the trees have already been
+     *  planted, it will dig the caves through the trees as well. */
+    void add_terrain_generator(std::unique_ptr<terrain_generator_i>&& gen);
 
-    chunk_type  get_type(chunk_coordinates xyz) const;
+    /** Add a lightmap generator. */
+    void add_lightmap_generator(std::unique_ptr<lightmap_generator_i>&& gen);
 
-    int         find_area_generator(const std::string& name) const;
+    /** Flush data from memory to disk. */
+    void cleanup();
 
-    bool        is_air (chunk_coordinates xyz);
+protected: // Only available through world_read and world_write
 
-    std::tuple<world_coordinates, world_coordinates>
-                raycast(const wfpos& origin, const yaw_pitch& direction,
-                        float distance);
+    /** world_read and world_write use this to synchronize */
+    //readers_writer_lock  lock;
+    std::mutex      single_lock;
 
-    void        change_block(world_coordinates pos, uint16_t material);
-    void        change_block(world_coordinates pos, const std::string& material);
-    block       get_block(world_coordinates pos);
+    /** Returns a read-only chunk. */
+    const chunk&    get_chunk (chunk_coordinates pos);
 
-    void        cleanup();
+    /** Returns a chunk that can be written to.
+     *  After the write operation is done, the destructor of the
+     *  world_write object will call commit_write(). */
+    chunk&          get_chunk_writable (chunk_coordinates pos);
 
-    chunk_ptr   get_raw_chunk(chunk_coordinates pos);
+    /** Commit the changes to a chunk.
+     *  This will make sure the database, surfaces, light maps, and
+     *  compressed data will be updated accordingly. */
+    void            commit_write (chunk_coordinates pos);
+
+    const area_data&
+                    get_area_data (map_coordinates pos, uint16_t index);
+
+    area_data&      get_area_data_writable (map_coordinates pos, uint16_t index);
+
+    const surface_data&
+                    get_surface (chunk_coordinates pos);
+
+    const light_data&
+                    get_lightmap (chunk_coordinates pos);
+
+    chunk_height    get_coarse_height (map_coordinates pos);
 
 
+    compressed_data get_compressed_chunk (chunk_coordinates pos);
 
-    std::unordered_set<chunk_coordinates> changeset;
-    boost::mutex                          changeset_lock;
-    std::unordered_set<map_coordinates>   height_changeset;
-    boost::mutex                          height_changeset_lock;
+    compressed_data get_compressed_surface(chunk_coordinates pos);
 
-protected:
-    locked_subsection  lock_chunks (const std::set<chunk_coordinates>& r);
+    compressed_data get_compressed_lightmap (chunk_coordinates pos);
 
-    block get_block_nolocking(world_coordinates pos);
-    void  refine_lightmap (chunk_coordinates pos, int phase);
 
-    /** Get an existing chunk, or if it doesn't exist yet, create an
-     ** empty one.
-     *  If needed, the coarse height map is also adjusted. */
-    chunk_ptr       get_or_create_chunk(chunk_coordinates pos);
-    lightmap_ptr    get_or_create_lightmap(chunk_coordinates pos);
-    surface_ptr     get_or_create_surface(chunk_coordinates pos);
+    bool    is_area_available (map_coordinates pos, uint16_t idx) const;
 
-    /** Get an existing chunk, or if it doesn't exist yet, create one.
-     *  If needed, the coarse height map is also adjusted.  The chunk is
-     *  created in such a way that the terrain generators up to \a phase
-     *  have been invoked.  If phase is zero, this is equivalent to
-     *  get_or_create_chunk. */
-    //chunk_ptr       get_or_generate_chunk(chunk_coordinates pos, int phase, bool adjust_height = true);
+    /** Check if a chunk is available for use by the rest of the engine.
+     *  This means that the chunk is completely finished, and it is
+     *  either loaded in memory or can be fetched from file.  If this
+     *  returns false, a subsequent call to get_compressed_chunk() will
+     *  trigger terrain generation. */
+    bool    is_chunk_available (chunk_coordinates pos) const;
 
-    /** Regenerate surface and lightmap data. */
-    void  update (chunk_coordinates pos);
+    /** Check if a surface is available for use.
+     *  This may return false even though the chunk is finished.  If this
+     *  is the case, a subsequent call to get_compressed_surface() might
+     *  trigger terrain generation for pos, and its six neighbors. */
+    bool    is_surface_available (chunk_coordinates pos) const;
 
-    void worker(int id);
-
-    void set_coarse_height(chunk_coordinates pos, chunk_height h);
-
-    void generate_terrain (chunk_coordinates pos, const chunk_ptr& chunk);
-    void generate_terrain (chunk_coordinates pos, const chunk_ptr& chunk, int phase);
-
-    unsigned int find_generator(const terrain_generator_i& requester) const;
-
-protected:
-    //es::storage  entities_;
-    //boost::mutex entities_mutex_;
+    bool    is_lightmap_available (chunk_coordinates pos) const;
 
 private:
-    std::vector<std::unique_ptr<area_generator_i>>      areagen_;
-    std::vector<std::unique_ptr<terrain_generator_i>>   terraingen_;
-    std::vector<std::unique_ptr<lightmap_generator_i>>  lightgen_;
+    /** Generate the terrain of a given chunk. */
+    chunk  generate_chunk (chunk_coordinates pos);
 
-    storage_i& storage_;
+    /** Generate the lightmap of a given chunk. */
+    light_data& generate_lightmap (chunk_coordinates pos);
 
-    std::map<world_vector, unsigned int> phases_;
+    chunk_height generate_coarse_height (map_coordinates pos);
 
-    std::vector<boost::thread>  workers_;
-    boost::mutex                generator_lock_;
+    chunk_height set_coarse_height (chunk_coordinates pos);
 
-    boost::mutex check_lock_;
-    std::unordered_set<chunk_coordinates> check_;
+    void adjust_coarse_height (chunk_coordinates pos);
+
+    /** Build a new surface at the given location. */
+    surface_data build_surface (chunk_coordinates pos);
+
+private:
+    persistent_storage_i& storage_;
+
+    vector_uptr<area_generator_i>       areagen_;
+    vector_uptr<terrain_generator_i>    terraingen_;
+    vector_uptr<lightmap_generator_i>   lightgen_;
+
+    template<typename t> using cache_map = lru_cache<chunk_coordinates, t>;
+
+    cache_map<area_data>        area_data_;
+    cache_map<chunk>            chunks_;
+    cache_map<surface_data>     surfaces_;
+    cache_map<light_data>       lightmaps_;
+
+    lru_cache<map_coordinates, chunk_height> coarse_heights_;
+
+    uint32_t                    seed_;
 };
 
-} // namespace hexa
+//--------------------------------------------------------------------------
 
+/** Convenience function to read a single block. */
+inline uint16_t
+get_block (world& w, world_coordinates pos)
+{
+    return w.acquire_read_access().get_block(pos);
+}
+
+/** Convenience function to read the coarse map height. */
+inline chunk_height
+coarse_height (world& w, map_coordinates pos)
+{
+    return w.acquire_read_access().get_coarse_height(pos);
+}
+
+inline void
+prepare_for_player (world& w, chunk_coordinates pos)
+{
+    auto proxy (w.acquire_read_access());
+    proxy.get_compressed_surface(pos);
+    proxy.get_compressed_lightmap(pos);
+}
+
+/** Cast a ray through the game world and return the first hit. */
+std::tuple<world_coordinates, world_coordinates>
+raycast (world& w, const wfpos& origin, const yaw_pitch& direction,
+         float distance);
+
+} // namespace hexa

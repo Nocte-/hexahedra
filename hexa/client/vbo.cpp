@@ -18,7 +18,7 @@
 //
 // Copyright 2012, 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "vbo.hpp"
 
 #include <cassert>
@@ -64,6 +64,7 @@ vbo& vbo::operator= (vbo&& move) noexcept
     id_ = move.id_;
     count_ = move.count_;
     move.id_ = 0;
+    move.count_ = 0;
 
     return *this;
 }

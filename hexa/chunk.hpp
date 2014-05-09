@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/chunk.hpp
+/// \file   chunk.hpp
 /// \brief  A chunk of the world's terrain.
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -69,56 +69,59 @@ class chunk : public chunk_base<block>
     typedef chunk_base<block>   base;
 
 public:
-    /** The time at which this chunk was last used.
-     *  This time stamp is used to determine which chunks need to be
-     *  flushed from memory first. */
-    gameclock_t     last_used;
-
-    /** How far along this chunk is in the generation process.
-     *  This is only used server side.  If the terrain contains features that
-     *  span several chunks, this may leave some chunks around the edge in
-     *  a half finished state.  This variable keeps track of this. */
-    uint8_t         generation_phase;
-
-private:
-    /** Mutex for multithreaded terrain generation. */
-    std::unique_ptr<boost::mutex>  lock_;
+    /** Chunk version number.
+     *  All chunks start at version 0. Every time a write operation
+     *  finishes, the version number is increased.  Data that depends on
+     *  the chunk status (surfaces, compressed chunks, etc.) use this
+     *  number to check if they need to be updated.  It is also used to
+     *  determine if new data needs to be sent to clients. */
+    uint32_t        version;
 
 public:
     chunk()
-        : last_used(0)
-        , generation_phase(0)
-        , lock_(new boost::mutex)
+        : version(0)
     { }
 
-    chunk(chunk&& move) noexcept
-        : base (std::move(move))
-        , last_used (move.last_used)
-        , generation_phase (move.generation_phase)
-        , lock_ (std::move(move.lock_))
+#ifdef _MSC_VER
+    chunk(chunk&& m)
+        : base(std::move(m))
     { }
 
-    chunk(const chunk&) = delete;
+    chunk(const chunk&) = default;
 
-    boost::mutex& lock() { return *lock_; }
-    const boost::mutex& lock() const { return *lock_; }
+    chunk& operator= (chunk&& m)
+    {
+        if (this != &m)
+        {
+            version = m.version;
+            base::operator=(std::move(m));
+        }
+        return *this;
+    }
 
-    /** */
+    chunk& operator= (const chunk&) = default;
+#else
+
+    chunk(chunk&&) = default;
+    chunk(const chunk&) = default;
+    chunk& operator= (chunk&&) = default;
+    chunk& operator= (const chunk&) = default;
+
+#endif
+
     bool    operator== (const chunk& compare) const
         { return base::operator==(compare); }
 
     template <class archive>
     archive& serialize(archive& ar)
     {
-        return ar.raw_data(*this, chunk_volume)(last_used)(generation_phase);
+        return ar.raw_data(*this, chunk_volume)(version);
     }
 };
 
-/** Reference-counted pointer to a chunk. */
-typedef std::shared_ptr<chunk>        chunk_ptr;
-
-
 } // namespace hexa
+
+//---------------------------------------------------------------------------
 
 namespace std {
 
@@ -128,5 +131,27 @@ ostream& operator<< (ostream& str, hexa::block b)
     return str << b.type;
 }
 
+inline
+ostream& operator<< (ostream& str, const hexa::chunk& cnk)
+{
+    for (int z (0); z < 16; ++z)
+    {
+        str << "Z " << z << std::endl;
+        for (int y (0); y < 16; ++y)
+        {
+            str << y << ": ";
+            for (int x (0); x < 16; ++x)
+                str << cnk(x,y,z) << " ";
+
+            str << std::endl;
+        }
+        str << std::endl;
+    }
+    str << std::endl;
+
+    return str;
+}
+
 } // namespace std
+
 

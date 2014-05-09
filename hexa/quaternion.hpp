@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -33,61 +33,61 @@ namespace hexa {
 template <typename type>
 class quaternion : public vector4<type>
 {
-    typedef vector4<type>       base;
+    typedef vector4<type>       base_t;
 
 public:
     typedef type                value_type;
     typedef quaternion<type>    self;
 
-    using base::x;
-    using base::y;
-    using base::z;
-    using base::w;
+    using base_t::x;
+    using base_t::y;
+    using base_t::z;
+    using base_t::w;
 
-    using base::operator==;
-    using base::operator!=;
-    using base::operator+=;
-    using base::operator-=;
-    using base::operator*=;
-    using base::operator/=;
+    using base_t::operator==;
+    using base_t::operator!=;
+    using base_t::operator+=;
+    using base_t::operator-=;
+    using base_t::operator*=;
+    using base_t::operator/=;
 
 public:
     /** Construct a scalar quaternion. */
     quaternion (type w = 1)
-        : base (0, 0, 0, w)
+        : base_t (0, 0, 0, w)
     { }
 
     /** Construct a unit quaternion from a given vector. */
     quaternion (type x, type y, type z)
-        : base (x, y, z, 0)
+        : base_t (x, y, z, 0)
     {
         normalize_w();
     }
 
     /** Construct a quaternion from the given scalar and vector parts. */
     quaternion (type x, type y, type z, type w)
-        : base (x, y, z, w)
+        : base_t (x, y, z, w)
     { }
 
     /** Construct a unit quaternion from a given vector. */
     quaternion (const vector3<type>& xyz)
-        : base (xyz, 0)
+        : base_t (xyz, 0)
     {
         normalize_w();
     }
 
     /** Construct a quaternion from the given scalar and vector parts. */
     quaternion (const vector3<type>& xyz, type w)
-        : base (xyz, w)
+        : base_t (xyz, w)
     { }
 
     /** Construct a quaternion from a C-style array [x,y,z,w]. */
     explicit quaternion (const value_type* ptr)
-        : base (ptr)
+        : base_t (ptr)
     { }
 
     quaternion (const vector4<type>& xyzw)
-        : base (xyzw)
+        : base_t (xyzw)
     { }
 
     /** Make a quaternion that models a rotation around a given axis.
@@ -136,11 +136,11 @@ public:
     }
 
 public:
-	self& operator= (const self& a)
-	{
-		base::operator=(a);
-		return *this;
-	}
+    self& operator= (const self& a)
+    {
+        base_t::operator=(a);
+        return *this;
+    }
 
     self& operator*= (const self& b)
     {

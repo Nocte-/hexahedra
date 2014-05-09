@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <array>
@@ -33,11 +33,14 @@
 
 namespace hexa {
 
-/** Definition of a custom block shape. */
+/** Definition of a custom block shape.
+ * Custom blocks are defined by one or more textured boxes. Every box is
+ * axis-aligned, and has a resolution of 1/16th of a normal terrain block.
+ */
 struct custom_block_part
 {
     /** Every box is axis-aligned, and has integer coordinates ranging from
-     ** 0 to 16. */
+     ** 0 to 16 (in units of 1/16th of a normal terrain block). */
     aabb<chunk_index>       box;
 
     aabb<vector> bounding_box() const
@@ -60,7 +63,9 @@ struct custom_block_part
 /** Custom block models are defined by one or more textured boxes. */
 typedef std::vector<custom_block_part> custom_block;
 
-/** Definition of a material type. */
+/** Definition of a material type.
+ * Every block in the gane world is a 16-bit value that refers to a material
+ * definition. */
 struct material
 {
     /** Textures for the 6 block faces. */
@@ -69,7 +74,7 @@ struct material
     std::string             name;
     /** 3-D model for fancy custom blocks. */
     custom_block            model;
-    /** Custom bounding box. */
+    /** Bounding box of the custom 3-D model. */
     std::vector<aabb<vector>> bounding_box;
     /** How much light can pass through. */
     uint8_t                 transparency;
@@ -124,8 +129,12 @@ extern std::unordered_map<std::string, uint16_t>        texture_names;
 /** Register a new material by ID and return its record. */
 material& register_new_material (uint16_t type_id);
 
-/** Search for a material ID by name. */
-uint16_t  find_material (const std::string& name);
+/** Search for a material ID by name.
+ * @param name  The name of the material to look for
+ * @param default_material  This value will be returned if \a name is not
+ *                          a registered material */
+uint16_t  find_material (const std::string& name,
+                         uint16_t default_material = 0);
 
 //---------------------------------------------------------------------------
 
@@ -155,3 +164,4 @@ is_solid (uint16_t type)
 }
 
 }} // namespace hexa::type
+

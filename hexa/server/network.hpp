@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <atomic>
@@ -32,16 +32,17 @@
 
 #include <hexa/concurrent_queue.hpp>
 #include <hexa/ray.hpp>
+#include <hexa/threadpool.hpp>
 
 #include "udp_server.hpp"
 #include "player.hpp"
-#include "world.hpp"
 
 namespace hexa {
 
 class packet;
 class server_entity_system;
 class lua;
+class world;
 
 /** Callbacks for handling network events. */
 class network : public udp_server
@@ -59,7 +60,7 @@ public:
 
         type_t                  type;
         chunk_coordinates       pos;
-        uint32_t                dest;
+        ENetPeer*               dest;
     };
 
     concurrent_queue<job>   jobs;
@@ -67,6 +68,8 @@ public:
 public:
     network(uint16_t port, world& storage, server_entity_system& entities,
             lua& scripting);
+
+    ~network();
 
     void run();
     void stop();
@@ -86,7 +89,7 @@ private:
         const packet& p;
     };
 
-    void login          (const packet_info& p);
+    void login          (packet_info& p);
     void logout         (const packet_info& p);
     void timesync       (const packet_info& p);
     void req_heights    (const packet_info& p);
@@ -101,15 +104,18 @@ private:
 private:
     void tick();
     void send_surface (const chunk_coordinates& pos);
-    void send_surface (const chunk_coordinates& pos, uint32_t dest);
+    void send_surface_queue (const chunk_coordinates& pos, ENetPeer* dest);
     void send_surface (const chunk_coordinates& pos, ENetPeer* dest);
-    void send_coarse_height (const map_coordinates& mpos);
+    void send_coarse_height (chunk_coordinates pos);
     void send_height  (const map_coordinates& pos, ENetPeer* dest);
+
+    void on_update_surface (const chunk_coordinates& pos);
 
 private:
     world&                  world_;
     server_entity_system&   es_;
     lua&                    lua_;
+    threadpool              workers_;
 
     std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
     std::unordered_map<ENetPeer*, uint32_t> entities_;

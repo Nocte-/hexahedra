@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "game.hpp"
 
 #include <boost/chrono.hpp>
@@ -33,6 +33,7 @@
 #include <hexa/config.hpp>
 #include <hexa/log.hpp>
 #include <hexa/os.hpp>
+#include <hexa/trace.hpp>
 
 #include "game_state.hpp"
 #include "event.hpp"
@@ -106,10 +107,10 @@ void game::run (std::unique_ptr<game_state> initial_state)
                 (**i).render();
             }
             window_.display();
-
         }
         catch (std::exception& e)
         {
+            trace("Uncaught exception in game state: %1%", std::string(e.what()));
             log_msg("Uncaught exception in game state: %1%", e.what());
 
             states_.pop_back();
@@ -121,7 +122,7 @@ void game::run (std::unique_ptr<game_state> initial_state)
         {
             try
             {
-                auto t (states_.back()->next_state());               
+                auto t (states_.back()->next_state());
                 if (t.state == nullptr)
                 {
                     states_.pop_back();
@@ -135,10 +136,13 @@ void game::run (std::unique_ptr<game_state> initial_state)
                 }
 
                 if (!states_.empty())
+                {
                     states_.back()->expose();
+                }
             }
             catch (std::exception& e)
             {
+                trace("Game state transition failed: %1%", std::string(e.what()));
                 log_msg("Game state transition failed: %1%", e.what());
 
                 if (!states_.empty())
@@ -150,8 +154,6 @@ void game::run (std::unique_ptr<game_state> initial_state)
 
 void game::poll_events()
 {
-    auto& curr (*states_.back());
-
     vector2<float> mouse_move (0.0f, 0.0f);
     sf::Event ev;
 
@@ -160,10 +162,10 @@ void game::poll_events()
         switch (ev.type)
         {
         case sf::Event::Closed:
-            curr.process_event(event::window_close);
+            process_event(event::window_close);
             break;
 
-        case sf::Event::Resized:          
+        case sf::Event::Resized:
             resize(ev.size.width, ev.size.height);
             break;
 
@@ -171,14 +173,14 @@ void game::poll_events()
             {
             uint32_t keycode (ev.key.code);
             key_pressed_[keycode] = true;
-            curr.process_event({event::key_down, keycode});
+            process_event({event::key_down, keycode});
             handle_keypress(keycode);
             }
             break;
 
         case sf::Event::KeyReleased:
             key_pressed_[ev.key.code] = false;
-            curr.process_event({event::key_up, (uint32_t)ev.key.code});
+            process_event({event::key_up, (uint32_t)ev.key.code});
             break;
 
         case sf::Event::MouseMoved:
@@ -195,34 +197,34 @@ void game::poll_events()
                 mouse_pos_.y = ev.mouseMove.y;
 
                 vector2<float> pos (ev.mouseMove.x, ev.mouseMove.y);
-                curr.process_event({event::mouse_move_abs, pos});
+                process_event({event::mouse_move_abs, pos});
             }
             break;
 
         case sf::Event::MouseButtonPressed:
             mouse_btn_pressed_[ev.mouseButton.button] = true;
-            curr.process_event({event::mouse_button_down, ev.mouseButton.button});
+            process_event({event::mouse_button_down, ev.mouseButton.button});
             break;
 
         case sf::Event::MouseButtonReleased:
             mouse_btn_pressed_[ev.mouseButton.button] = false;
-            curr.process_event({event::mouse_button_up, ev.mouseButton.button});
+            process_event({event::mouse_button_up, ev.mouseButton.button});
             break;
 
         case sf::Event::MouseWheelMoved:
-            curr.process_event({event::mouse_wheel, ev.mouseWheel.delta});
+            process_event({event::mouse_wheel, ev.mouseWheel.delta});
             break;
 
         case sf::Event::TextEntered:
-            curr.process_event({event::key_text, ev.text.unicode});
+            process_event({event::key_text, ev.text.unicode});
             break;
 
         case sf::Event::JoystickButtonPressed:
-            curr.process_event({event::joy_button_down, ev.joystickButton.button});
+            process_event({event::joy_button_down, ev.joystickButton.button});
             break;
 
         case sf::Event::JoystickButtonReleased:
-            curr.process_event({event::joy_button_up, ev.joystickButton.button});
+            process_event({event::joy_button_up, ev.joystickButton.button});
             break;
 
         case sf::Event::JoystickMoved:
@@ -232,7 +234,7 @@ void game::poll_events()
                       ev.joystickMove.position * 0.01f };
 
             joy_axis_[temp.id] = temp.position;
-            curr.process_event({event::joy_move, temp});
+            process_event({event::joy_move, temp});
             }
             break;
 
@@ -243,7 +245,16 @@ void game::poll_events()
     if (mouse_is_relative() && mouse_move != vector2<float>(0,0))
     {
         sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), window());
-        curr.process_event({event::mouse_move_rel, mouse_move});
+        process_event({event::mouse_move_rel, mouse_move});
+    }
+}
+
+void game::process_event (const event &ev)
+{
+    for (auto i (states_.rbegin()); i != states_.rend(); ++i)
+    {
+        if ((*i)->process_event(ev))
+            return;
     }
 }
 

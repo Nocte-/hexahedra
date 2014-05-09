@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/server/lua.hpp
+/// \file   server/lua.hpp
 /// \brief  Interface with Lua scripts.
 //
 // This file is part of Hexahedra.
@@ -17,9 +17,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 extern "C" {
@@ -37,6 +37,7 @@ extern "C" {
 #include <boost/filesystem/path.hpp>
 
 #include <hexa/basic_types.hpp>
+#include <hexa/ip_address.hpp>
 #include <hexa/ray.hpp>
 #include "network.hpp"
 
@@ -65,6 +66,9 @@ public:
 
     static const luabind::object&
     material_definition(uint16_t material);
+
+    static void
+    on_authenticate_player(const luabind::object& callback);
 
     static void
     on_approach(const world_coordinates& p, unsigned int radius,
@@ -104,6 +108,8 @@ public:
     static luabind::object
     raycast(const wfpos& origin, const yaw_pitch& dir, float range);
 
+    static int material_id(const std::string& name);
+
     static void
     send_console_message(es::entity plr, const std::string& type,
                          const std::string& name,
@@ -142,6 +148,8 @@ public:
 
     void console(es::entity plr, const std::string& text);
 
+    bool authenticate(const ip_address& source, const std::string& player,
+                      const std::string& passwd);
 
     static std::array<uint16_t, 6>
          find_textures (const std::vector<std::string>& textures);
@@ -161,6 +169,7 @@ private:
     static std::unordered_map<int, luabind::object> material_definitions;
     static std::list<luabind::object>               cb_on_login;
     static std::list<luabind::object>               cb_console;
+    static luabind::object                          cb_authenticate_player;
 
     server_entity_system&   entities_;
 

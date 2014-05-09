@@ -1,65 +1,60 @@
 {
+"name": [{"en": "Hexahedra default game"}],
+"description": [{"en": "The default sandbox game, with infinite terrain, building, and crafting." }],
+"url": "http://hexahedra.net/",
+"color": "#601010",
+"mode": "singleplayer",
+
+"settings" : [
+    {
+        "variable": "height_range",
+        "type": "integer",
+        "ui-hint": "logarithmic",
+        "min": 0,
+        "max": 10000,
+        "default": 1000,
+        "label": 
+        [
+            {"en": "Height range"},
+            {"nl": "Hoogteverschil"}
+        ],
+        "description": 
+        [
+            {"en": "The maximum height of the mountain tops." },
+            {"nl": "De maximum hoogte van de bergtoppen." }
+        ]
+    }
+],
+
 "areas": [
     {
-        "module": "standard_heightmap",
         "name": "heightmap",
-        "octaves": 12,
-        "height": 2000,
-        "scale": 10000
+        "cache": true,
+        "def": "shift(40,5):distance:div(50):sin:mul(30)"
     },
     {
-        "module": "null",
-        "name": "surface"
+        "name": "waterlevel",
+        "def": "-10"
     },
     {
-        "module": "biome",
-        "name": "rough_terrain",
-        "octaves": 2,
-        "scale": 200
+        "name": "surface",
+        "cache": true
     },
     {
-        "module": "biome",
-        "name": "temperature",
-        "min": 0,
-        "max": 500,
-        "octaves": 2,
-        "scale": 800
-    },
-    {
-        "module": "biome",
-        "name": "precipitation",
-        "min": 0,
-        "max": 400,
-        "octaves": 2,
-        "scale": 600
-    },
-    {
-        "module": "biome",
-        "name": "forest_density",
-        "min": 0,
-        "max": 100,
-        "octaves": 2,
-        "scale": 500
+        "name": "biomes",
+        "def":  "scale(20):checkerboard:add(1):div(2)"
     }
 ],
  
 "terrain": [
-    {
-        "module" : "standard"
-    },
-    {
-        "module" : "ocean"
-    },
-    {
-        "module" : "topsurface",
-        "span"   : 6
-    },
-    {
-        "module" : "soil"
-    },
-    {
-        "module" : "trees"
-    }
+    { "module" : "heightmap_terrain" },
+    { "module" : "caves" },
+    { "module" : "soil",
+      "material": [
+          [ "grass", "dirt" ],
+          [ "sand" ]
+    ]},
+    { "module" : "heightmap_terrain", "area":"waterlevel", "material":"water" }
 ],
 
 "light": [

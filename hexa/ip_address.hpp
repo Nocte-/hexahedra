@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
@@ -50,6 +50,18 @@ public:
     bool is_ipv4() const;
     bool is_unspecified() const;
     bool is_loopback() const;
+
+    bool operator== (const ip_address& c) const
+    {
+        for (int i (0); i < 8; ++i)
+            if ((*this)[i] != c[i])
+                return false;
+
+        return true;
+    }
+
+    bool operator!= (const ip_address& c) const
+        { return !operator==(c); }
 
 public:
     static ip_address unspecified();

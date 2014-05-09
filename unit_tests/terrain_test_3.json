@@ -1,0 +1,9 @@
+{
+"terrain": [
+    {
+        "module" : "testpattern",
+        "name"   : "test3"
+    }
+]
+}
+

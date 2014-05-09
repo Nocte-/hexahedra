@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <vector>
@@ -40,7 +40,7 @@ public:
         { return vector3<int32_t>(position - o) + position_fraction; }
 
     chunk_coordinates   chunk_position() const
-        { return position / chunk_size; }
+        { return position >> cnkshift; }
 
     vector3<float>       position_relative_in_chunk() const
         { return (position % chunk_size) + position_fraction; }

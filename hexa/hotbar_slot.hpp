@@ -19,12 +19,14 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <string>
 #include <vector>
 #include "basic_types.hpp"
+
+#include <iostream>
 
 namespace hexa {
 
@@ -50,7 +52,7 @@ struct hotbar_slot
         : type (type_)
         , name (name_)
         , counter (0xffff)
-		, progress_bar (0)
+        , progress_bar (0)
         , can_drag (false)
         , cooldown (0)
     { }
@@ -84,11 +86,11 @@ struct hotbar_slot
 
 using hotbar = std::vector<hotbar_slot>;
 
-// No support for type aliases in Visual Studio :.(
-/*
-class hotbar : private std::vector<hotbar_slot>
+/* No longer needed, VS2013 now supports template aliases?
+class hotbar
 {
     typedef std::vector<hotbar_slot> base;
+    base d;
 
 public:
     typedef base::iterator          iterator;
@@ -96,31 +98,52 @@ public:
     typedef base::value_type        value_type;
     typedef base::size_type         size_type;
 
-    using base::operator[];
-    using base::at;
-    using base::begin;
-    using base::end;
-    using base::cbegin;
-    using base::cend;
-    using base::size;
-    using base::empty;
-    using base::resize;
-    using base::clear;
-
 public:
-    hotbar() { }
-    hotbar(size_type i) : base(i) { }
-    hotbar(const hotbar& copy) : base(copy) { }
-    hotbar(hotbar&& m) : base(std::move(m)) { }
+    hotbar()   { }
+    ~hotbar()  { }
+    hotbar(size_type i) : d(i) {  }
+    hotbar(const hotbar& copy) : d(copy.d) { }
+    hotbar(hotbar&& m) : d(std::move(m.d)) { }
 
-    hotbar& operator= (hotbar&& m) { base::operator=(std::move(m)); return *this; }
-    hotbar& operator= (const hotbar& c) { base::operator=(c); return *this; }
+    hotbar& operator= (hotbar&& m)
+    {
+        if (this != &m)
+            d=(std::move(m.d));
+
+        return *this;
+    }
+
+    hotbar& operator= (const hotbar& c)
+    {
+        if (this != &c)
+            d=c.d;
+        return *this;
+    }
+
+    hotbar_slot& operator[] (int i) { return d[i]; }
+    const hotbar_slot& operator[] (int i) const { return d[i]; }
+    hotbar_slot& at (int i) { return d.at(i); }
+    const hotbar_slot& at (int i) const { return d.at(i); }
+
+    void push_back (const hotbar_slot& x) { d.push_back(x); }
+
+    template<typename... args>
+    void emplace_back (args&&... p) { d.emplace_back(std::forward<args>(p)...); }
+
+    iterator begin() { return d.begin(); }
+    const_iterator begin() const { return d.begin(); }
+    iterator end() { return d.end(); }
+    const_iterator end() const { return d.end(); }
+
+    void clear() { d.clear(); }
+    size_t size() const { return d.size(); }
+    void resize(int i) { d.resize(i); }
+    bool empty() const { return d.empty(); }
 
     template<class archive>
     archive& serialize(archive& ar)
     {
-        std::vector<hotbar_slot>* p (this);
-        return ar(*p);
+        return ar(d);
     }
 };
 */

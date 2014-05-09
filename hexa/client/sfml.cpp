@@ -127,20 +127,20 @@ std::array<vector, 4> make_quad (yaw_pitch pos, float radius, float dist = 1.0f)
 
 void init_opengl()
 {
-	glewInit();
+    glewInit();
 
     log_msg(reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS)));
 
-	if (GLEW_ARB_shading_language_100)
+    if (GLEW_ARB_shading_language_100)
         log_msg("Found: GLSL");
 
-	if (GLEW_ARB_shader_objects)
+    if (GLEW_ARB_shader_objects)
         log_msg("Found: Shader objects");
 
     if (GLEW_ARB_vertex_shader)
         log_msg("Found: Vertex shader");
 
-	if (GLEW_ARB_fragment_shader)
+    if (GLEW_ARB_fragment_shader)
         log_msg("Found: Fragment shader");
 
     GLfloat fogColor[4] = {0.56f, 0.67f, 1.0f, 1.0f};
@@ -207,8 +207,9 @@ void opengl_cube(float size, vector3<int> pos)
 } // anonymous namespace
 
 
-sfml::sfml(sf::RenderWindow& win)
-    : width_  (win.getSize().x)
+sfml::sfml(sf::RenderWindow& win, scene& s)
+    : renderer_i (s)
+    , width_  (win.getSize().x)
     , height_ (win.getSize().y)
     , app_    (win)
 
@@ -233,8 +234,6 @@ sfml::sfml(sf::RenderWindow& win)
     tf->SetKeyboardInputEnabled(true);
     tf->Focus();
 */
-    world_offset_ = world_center;
-
     app_.setVerticalSyncEnabled(global_settings["vsync"].as<bool>());
     init_opengl();
 
@@ -252,7 +251,7 @@ sfml::sfml(sf::RenderWindow& win)
         {
             sf::Sprite& elem (ui_elem_[x + y * 16]);
             elem.setTexture(*ui_img_);
-			elem.setTextureRect(sf::IntRect(x * 16, y * 16, 16, 16));
+            elem.setTextureRect(sf::IntRect(x * 16, y * 16, 16, 16));
         }
     }
     for (int y (0); y < 4; ++y)
@@ -261,7 +260,7 @@ sfml::sfml(sf::RenderWindow& win)
         {
             sf::Sprite& elem (ui_elem_[128 + x + y * 8]);
             elem.setTexture(*ui_img_);
-			elem.setTextureRect(sf::IntRect(x * 32, 128 + y * 32, 32, 32));
+            elem.setTextureRect(sf::IntRect(x * 32, 128 + y * 32, 32, 32));
         }
     }
 
@@ -304,20 +303,14 @@ sfml::~sfml()
 
 void sfml::draw_chunk_face (const chunk_coordinates& p, direction_type d)
 {
-    //glLoadIdentity();
-    //gluLookAt(camx, camy, camz, lax, lay, laz, up.x, up.y, up.z);
-
-    vector3<int> offset (p * chunk_size - world_offset_);
-    opengl_cube_face(16.0f, offset, d);
+    vec3i offset (p - chunk_offset_);
+    opengl_cube_face(256.0f, offset, d);
 }
 
 void sfml::draw_chunk_cube (const chunk_coordinates& p)
 {
-    //glLoadIdentity();
-    //gluLookAt(camx, camy, camz, lax, lay, laz, up.x, up.y, up.z);
-
-    vector3<int> offset (p * chunk_size - world_offset_);
-    opengl_cube(16.0f, offset);
+    vec3i offset (p - chunk_offset_);
+    opengl_cube(256.0f, offset);
 }
 
 void sfml::prepare(const player& plr)
@@ -325,7 +318,7 @@ void sfml::prepare(const player& plr)
     const float eye_height (1.7f);
     camera_wpos_ = wfpos(plr.position(), vector(0,0,0));
 
-    vector c (plr.rel_world_position(world_offset_));
+    vector c (plr.rel_world_position(chunk_offset_ * chunk_size));
     c.z += eye_height;
 
     float bob (0.0f), rock (0.0f);
@@ -504,7 +497,7 @@ void sfml::highlight_face(const pos_dir<world_coordinates>& face,
                           const color_alpha& hl_color)
 {
     glCheck(glDepthMask(GL_FALSE));
-    vector3<float> offset (vector3<int>(face.pos - world_offset_));
+    vec3f offset (vec3i(face.pos - chunk_offset_ * chunk_size));
     offset *= 16.f;
     auto mtx (translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
@@ -519,7 +512,7 @@ void sfml::highlight_custom_block(world_coordinates block,
                                   const color_alpha &hl_color)
 {
     glCheck(glDepthMask(GL_FALSE));
-    vector3<float> offset (vector3<int>(block - world_offset_));
+    vec3f offset (vec3i(block - chunk_offset_ * chunk_size));
     offset *= 16.f;
     auto mtx (translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
@@ -688,9 +681,7 @@ void sfml::draw_hotbar(const hud& h)
 {
     static const light prefab[6] = { 5, 5, 9, 9, 15, 15 };
 
-    std::cout << "draw hotbar " << h.hotbar.size() << std::endl;
-
-    if (h.hotbar.empty())
+    if (h.bar.empty())
         return;
 
     ui_elem_manager::resource slot       (ui_elem("slot"));
@@ -711,9 +702,9 @@ void sfml::draw_hotbar(const hud& h)
     size_t slot_height ((*slot).getGlobalBounds().height),
            actv_height ((*slot_actv).getGlobalBounds().height);
 
-    size_t total (h.hotbar.size() * size_slot + size_left + size_right);
-    if (h.hotbar.size() >= 2)
-        total += (h.hotbar.size() - 1) * size_sep;
+    size_t total (h.bar.size() * size_slot + size_left + size_right);
+    if (h.bar.size() >= 2)
+        total += (h.bar.size() - 1) * size_sep;
 
     size_t edge (size_actv > size_slot ? (size_actv - size_slot) * 0.5 : 0);
     size_t edge_l (0), edge_r (0);
@@ -743,13 +734,13 @@ void sfml::draw_hotbar(const hud& h)
         pen_x += size_left;
     }
 
-    for (size_t cnt (0); cnt < h.hotbar.size(); ++cnt)
+    for (size_t cnt (0); cnt < h.bar.size(); ++cnt)
     {
         slot->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot);
         pen_x += size_slot;
 
-        if (slot_sep && cnt + 1 < h.hotbar.size())
+        if (slot_sep && cnt + 1 < h.bar.size())
         {
             slot_sep->setPosition(pen_x, pen_y);
             hotbar_.draw(*slot_sep);
@@ -761,11 +752,10 @@ void sfml::draw_hotbar(const hud& h)
     {
         slot_right->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot_right);
-        pen_x += size_right;
     }
 
     pen_x = edge_l + size_left;
-    for (auto& curr_slot : h.hotbar)
+    for (auto& curr_slot : h.bar)
     {
         switch (curr_slot.type)
         {
@@ -821,7 +811,7 @@ void sfml::draw_hotbar(const hud& h)
         pen_x += size_slot + size_sep;
     }
 
-    if (h.active_slot < h.hotbar.size())
+    if (h.active_slot < h.bar.size())
     {
         slot_actv->setPosition(edge_l + size_left + h.active_slot * (size_slot + size_sep) + size_slot * 0.5 - size_actv * 0.5, 0);
         hotbar_.draw(*slot_actv);
