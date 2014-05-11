@@ -40,10 +40,6 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/filesystem/operations.hpp>
 
-// The Boost threadpool library is not included in the official distribution
-// yet.  For now, it's distributed along with Hexahedra.
-#include <boost/threadpool.hpp>
-
 #include <enet/enet.h>
 
 #include <hexa/config.hpp>
@@ -71,7 +67,6 @@ using namespace hexa;
 namespace hexa {
 
 // Accessible by other modules
-boost::threadpool::prio_pool pool (3);
 po::variables_map global_settings;
 
 }
