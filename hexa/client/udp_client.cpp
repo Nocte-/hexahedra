@@ -18,7 +18,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "udp_client.hpp"
 
 #include <boost/format.hpp>
@@ -148,7 +148,7 @@ float udp_client::rtt() const
     return peer_->roundTripTime * 0.001f;
 }
 
-void udp_client::send (const std::vector<uint8_t>& p, msg::reliability method)
+void udp_client::send (const binary_data& p, msg::reliability method)
 {
     uint32_t flags (0);
 

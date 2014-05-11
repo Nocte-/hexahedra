@@ -19,12 +19,11 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <stdexcept>
 #include <boost/thread/mutex.hpp>
-#include <boost/utility.hpp>
 #include <enet/enet.h>
 #include <hexa/packet.hpp>
 #include <hexa/protocol.hpp>
@@ -34,17 +33,18 @@ namespace hexa {
 class network_error : public std::runtime_error
 {
 public:
-	network_error(const std::string& what)
+    network_error(const std::string& what)
         : std::runtime_error(what.c_str())
-	{}
+    {}
 };
 
 
-class udp_client : boost::noncopyable
+class udp_client
 {
 public:
     udp_client (const std::string& host, uint16_t port);
     ~udp_client();
+    udp_client(const udp_client&) = delete;
 
     bool connect (unsigned int timeout = 3000);
 
@@ -52,7 +52,7 @@ public:
 
     void poll (unsigned int timeout = 200);
 
-    void send (const std::vector<uint8_t>& p, msg::reliability method);
+    void send (const binary_data& p, msg::reliability method);
 
     virtual void on_connect() { }
     virtual void on_disconnect() { }

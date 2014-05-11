@@ -78,8 +78,11 @@ public:
     void on_disconnect (ENetPeer* c);
     void on_receive (ENetPeer* c, const packet& p);
 
-    bool send (uint32_t entity, const std::vector<uint8_t>& msg,
+    bool send (uint32_t entity, const binary_data& msg,
                msg::reliability method) const;
+
+    void broadcast (const binary_data& msg,
+                    msg::reliability method) const;
 
 private:
     struct packet_info

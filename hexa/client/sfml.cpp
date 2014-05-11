@@ -562,20 +562,25 @@ void sfml::draw_ui(double elapsed, const hud& h)
 
 //    pCanvas->RenderCanvas();
 
-    auto& msgs (h.console_messages());
+    std::vector<std::string> msgs;
+    if (h.show_input())
+        msgs = h.old_console_messages();
+    else
+        msgs = h.console_messages();
+
     if (!msgs.empty())
     {
         float height (20 * msgs.size());
-        sf::RectangleShape bg ({ 500.f, height });
-        bg.setPosition(5, height_ - (50 + height));
+        sf::RectangleShape bg ({ width_ - 20.0f, height });
+        bg.setPosition(5, height_ - (80 + height));
         bg.setFillColor(sf::Color(0, 0, 0, 100));
         app_.draw(bg);
 
-        float y (height_ - (50 + height));
+        float y (height_ - (80 + height));
         for (auto& line : msgs)
         {
             std::u32string wide;
-            sf::Utf8::toUtf32(line.msg.begin(), line.msg.end(), std::back_inserter(wide));
+            sf::Utf8::toUtf32(line.begin(), line.end(), std::back_inserter(wide));
             sf::String l ((const unsigned int*)&wide[0]);
 
             sf::Text txt (l, *ui_font_, 16);
@@ -583,6 +588,28 @@ void sfml::draw_ui(double elapsed, const hud& h)
             app_.draw(txt);
             y += 20;
         }
+    }
+
+    if (h.show_input())
+    {
+        sf::RectangleShape bg ({ width_ - 10.f, 20.f });
+        bg.setPosition(5, height_ - 70);
+        bg.setFillColor(sf::Color(0, 0, 0, 100));
+        app_.draw(bg);
+
+        sf::String l ((const unsigned int*)&h.get_input()[0]);
+        sf::Text txt (l, *ui_font_, 16);
+        txt.setPosition(10, height_ - 70);
+        app_.draw(txt);
+
+        sf::Text measure (l.substring(0,h.get_cursor()), *ui_font_, 16);
+        float width (measure.getLocalBounds().width);
+        sf::Vertex cline[] =
+        {
+            sf::Vertex(sf::Vector2f(10 + width, height_ - 68)),
+            sf::Vertex(sf::Vector2f(10 + width, height_ - 52))
+        };
+        app_.draw(cline, 2, sf::Lines);
     }
 
     if (h.hotbar_needs_update)

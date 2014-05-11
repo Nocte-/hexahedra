@@ -111,14 +111,11 @@ public:
     static int material_id(const std::string& name);
 
     static void
-    send_console_message(es::entity plr, const std::string& type,
-                         const std::string& name,
-                         const std::string& text);
+    send_console_message(es::entity plr,
+                         const std::string& json);
 
     static void
-    broadcast_console_message(const std::string& type,
-                              const std::string& name,
-                              const std::string& text);
+    broadcast_console_message(const std::string& json);
 
     static void
     server_log(const std::string& msg);

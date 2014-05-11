@@ -110,7 +110,7 @@ class lua_component
 public:
     enum storage_t
     {
-        st_wfpos, st_vector, st_string, st_yaw_pitch,
+        st_wfpos, st_vector, st_vector2, st_string, st_yaw_pitch,
         st_float, st_uint16, st_uint, st_entity,
         st_tag
     };
@@ -140,7 +140,9 @@ private:
 static std::vector<lua_component> registered_components
 {
     { 0,  "position",   lua_component::st_wfpos },
-    { 1,  "velocity",   lua_component::st_vector }
+    { 1,  "velocity",   lua_component::st_vector },
+    { 2,  "force",      lua_component::st_vector },
+    { 3,  "walk",       lua_component::st_vector2 },
 };
 
 class lua_entity
@@ -212,8 +214,14 @@ public:
     void set_model (uint16_t v)
         { set(entity_system::c_model, v); }
 
-    boost::optional<std::string> get_name() const
-        { return get<std::string>(entity_system::c_name); }
+    std::string get_name() const
+    {
+        auto result (get<std::string>(entity_system::c_name));
+        if (result)
+            return *result;
+
+        return std::string();
+    }
 
     void set_name (const std::string& v)
         { set(entity_system::c_name, v); }
@@ -424,6 +432,7 @@ lua::lua(server_entity_system& entities, world &w)
         def("block_boundingbox", blk_to_bb_wc),
         def("block_boundingbox", blk_to_bb_wf),
         def("boundingbox_from_size", vecf_to_bb),
+        def("broadcast_console_message", broadcast_console_message),
 
         class_<world_coordinates>("pos")
             .def(constructor<uint32_t, uint32_t, uint32_t>())
@@ -972,7 +981,16 @@ void lua::console(es::entity plr, const std::string& text)
 {
     lua_entity tmp (entities_, plr);
     for (auto& cb : cb_console)
-        call_function<void>(cb, tmp, text);
+    {
+        try
+        {
+            call_function<void>(cb, tmp, text);
+        }
+        catch (luabind::error&)
+        {
+            log_msg("Lua error: %1%", lua_tostring(state_, -1));
+        }
+    }
 }
 
 void lua::change_block(const world_coordinates& p, uint16_t type)
@@ -1018,11 +1036,17 @@ lua::raycast(const wfpos& origin, const yaw_pitch& dir, float range)
 }
 
 void lua::send_console_message(es::entity plr,
-                               const std::string &type,
-                               const std::string &name,
-                               const std::string &text)
+                               const std::string& json)
 {
 
+}
+
+
+void lua::broadcast_console_message(const std::string& json)
+{
+    msg::print_msg msg;
+    msg.json = json;
+    net_->broadcast(serialize_packet(msg), msg.method());
 }
 
 void lua::server_log(const std::string& msg)

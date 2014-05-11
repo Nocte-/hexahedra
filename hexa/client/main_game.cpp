@@ -31,6 +31,8 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/filesystem/operations.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <SFML/Graphics/Image.hpp>
 
@@ -51,6 +53,7 @@
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/process.hpp>
 #include <hexa/trace.hpp>
+#include <hexa/utf8.hpp>
 #include <hexa/voxel_range.hpp>
 
 #include "clock.hpp"
@@ -69,6 +72,7 @@ using namespace boost;
 using namespace boost::math::float_constants;
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+namespace pt = boost::property_tree;
 
 using boost::format;
 
@@ -92,6 +96,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     , loading_screen_(false)
     , singleplayer_  (host == "localhost")
     , show_ui_       (true)
+    , ignore_text_   (0)
 {
     if (singleplayer_)
     {
@@ -100,7 +105,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
             log_msg("Launching server...");
             fs::path dir (executable_path().parent_path());
             log_msg("Path is %1%", dir);
-            server_process_ = start_process(dir / "hexahedra-server", std::vector<std::string>());
+            server_process_ = start_process(dir / "hexahedra-server", { "--mode=singleplayer" });
             log_msg("Done.");
             boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
         }
@@ -214,6 +219,9 @@ void main_game::resize (unsigned int w, unsigned int h)
 
 void main_game::player_controls()
 {
+    if (hud_.show_input())
+        return;
+
     if (key_pressed(key::space))
         action(0);
 
@@ -502,43 +510,54 @@ void main_game::process_event_captured (const event& ev)
         switch (ev.keycode)
         {
         case key::esc:
-            stop(); break;
+            if (hud_.show_input())
+            {
+                hud_.set_input(std::u32string());
+                hud_.show_input(false);
+            }
+            else
+            {
+                stop();
+            }
+            break;
 
-        case key::num0: hud_.active_slot = 0; break;
-        case key::num1: hud_.active_slot = 1; break;
-        case key::num2: hud_.active_slot = 2; break;
-        case key::num3: hud_.active_slot = 3; break;
-        case key::num4: hud_.active_slot = 4; break;
-        case key::num5: hud_.active_slot = 5; break;
-        case key::num6: hud_.active_slot = 6; break;
-        case key::num7: hud_.active_slot = 7; break;
-        case key::num8: hud_.active_slot = 8; break;
-        case key::num9: hud_.active_slot = 9; break;
+        case key::num0: hud_.active_slot = 1; break;
+        case key::num1: hud_.active_slot = 2; break;
+        case key::num2: hud_.active_slot = 3; break;
+        case key::num3: hud_.active_slot = 4; break;
+        case key::num4: hud_.active_slot = 5; break;
+        case key::num5: hud_.active_slot = 6; break;
+        case key::num6: hud_.active_slot = 7; break;
+        case key::num7: hud_.active_slot = 8; break;
+        case key::num8: hud_.active_slot = 9; break;
+        case key::num9: hud_.active_slot =10; break;
 
         //case key::space:
         //    action(0); break;
 
         case key::l_bracket:
+            if (!hud_.show_input())
             {
-            auto vd (scene_.view_distance());
-            if (vd > 4)
-            {
-                --vd;
-                scene_.view_distance(vd);
-                hud_.console_message((format("View distance decreased to %1%.") % (vd * chunk_size)).str());
-            }
+                auto vd (scene_.view_distance());
+                if (vd > 4)
+                {
+                    --vd;
+                    scene_.view_distance(vd);
+                    hud_.console_message((format("View distance decreased to %1%.") % (vd * chunk_size)).str());
+                }
             }
             break;
 
         case key::r_bracket:
+            if (!hud_.show_input())
             {
-            auto vd (scene_.view_distance());
-            if (vd < 64)
-            {
-                ++vd;
-                scene_.view_distance(vd);
-                hud_.console_message((format("View distance increased to %1%.") % (vd * chunk_size)).str());
-            }
+                auto vd (scene_.view_distance());
+                if (vd < 64)
+                {
+                    ++vd;
+                    scene_.view_distance(vd);
+                    hud_.console_message((format("View distance increased to %1%.") % (vd * chunk_size)).str());
+                }
             }
             break;
 
@@ -548,16 +567,64 @@ void main_game::process_event_captured (const event& ev)
 
         case key::f2:
             hud_.console_message("Screenshot saved.");
-            // The screenshot save routine itself is in game.cpp
+            // The screenshot save routine itself is in game.cpp, here we
+            // just augment it with a console message.
             break;
 
         case key::f3:
             hud_.show_debug_info = !hud_.show_debug_info;
             break;
 
+        case key::t:
+        case key::slash:
+            if (!hud_.show_input())
+            {
+                hud_.show_input(true);
+                hud_.set_cursor(0);
+                hud_.set_input(std::u32string());
+                if (ev.keycode == key::t)
+                    ignore_text_ = 't';
+            }
+            break;
+
+        case key::backspace:
+            if (hud_.show_input())
+            {
+                auto str (hud_.get_input());
+                auto pos (hud_.get_cursor());
+                if (pos > 0)
+                {
+                    --pos;
+                    str.erase(str.begin() + pos);
+                    hud_.set_input(str);
+                    hud_.set_cursor(pos);
+                }
+            }
+            break;
+
+
+        case key::enter:
+            if (hud_.show_input())
+            {
+                console_input(hud_.get_input());
+                hud_.show_input(false);
+            }
+            break;
+
         default: ; // do nothing
 
         }
+        break;
+
+    case event::key_text:
+        if (ignore_text_ != ev.code && hud_.show_input() && std::isprint(ev.code))
+        {
+            std::u32string str (hud_.get_input());
+            str.insert(str.begin() + hud_.get_cursor(), ev.code);
+            hud_.set_input(str);
+            hud_.set_cursor(hud_.get_cursor() + 1);
+        }
+        ignore_text_ = 0;
         break;
 
     case event::mouse_move_rel:
@@ -664,6 +731,13 @@ void main_game::player_motion()
     old_chunk_pos_ = player_.position() / chunk_size;
 }
 
+void main_game::console_input(const std::u32string &msg)
+{
+    msg::console m;
+    m.text = utf32_to_utf8(msg);
+    send(serialize_packet(m), m.method());
+}
+
 void main_game::login()
 {
     clock_ = boost::thread([&]{ bg_thread(); });
@@ -671,7 +745,20 @@ void main_game::login()
     msg::login m;
 
     m.protocol_version = 1;
-    m.credentials = "{\"name\":\"Griefy McGriefenstein\", \"method\":\"singleplayer\"}";
+    std::string method;
+    if (singleplayer_)
+        method = "singleplayer";
+    else
+        method = "ecdh";
+
+    std::stringstream json;
+    pt::ptree info;
+    info.put("name", "Griefy McGriefenstein");
+    info.put("uid", "0");
+    info.put("method", method);
+    pt::json_parser::write_json(json, info);
+
+    m.credentials = json.str();
 
     send(serialize_packet(m), m.method());
 }
@@ -743,6 +830,8 @@ void main_game::receive (const packet& p)
             handshake(archive); break;
         case msg::greeting::msg_id:
             greeting(archive); break;
+        case msg::kick::msg_id:
+            kick(archive); break;
         case msg::time_sync_response::msg_id:
             time_sync_response(archive); break;
         case msg::define_resources::msg_id:
@@ -765,6 +854,8 @@ void main_game::receive (const packet& p)
             configure_hotbar(archive); break;
         case msg::global_config::msg_id:
             global_config(archive); break;
+        case msg::print_msg::msg_id:
+            print_msg(archive); break;
 
         default:
             log_msg("Unknown packet type %1%", mt);
@@ -802,6 +893,16 @@ void main_game::greeting (deserializer<packet>& p)
     msg::time_sync_request sync;
     sync.request = clock::time();
     send(serialize_packet(sync), sync.method());
+}
+
+void main_game::kick (deserializer<packet>& p)
+{
+    msg::kick mesg;
+    mesg.serialize(p);
+
+    trace("Got kicked: %1%", mesg.reason);
+    log_msg("Got kicked: %1%", mesg.reason);
+    disconnect();
 }
 
 void main_game::time_sync_response (deserializer<packet>& p)
@@ -993,6 +1094,14 @@ void main_game::global_config (deserializer<packet>& p)
 {
     msg::global_config msg;
     msg.serialize(p);
+}
+
+void main_game::print_msg (deserializer<packet>& p)
+{
+    msg::print_msg msg;
+    msg.serialize(p);
+
+    hud_.console_message(msg.json);
 }
 
 void main_game::bg_thread()

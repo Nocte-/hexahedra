@@ -172,14 +172,18 @@ void game::poll_events()
         case sf::Event::KeyPressed:
             {
             uint32_t keycode (ev.key.code);
-            key_pressed_[keycode] = true;
+            if (keycode < key_pressed_.size())
+                key_pressed_[keycode] = true;
+
             process_event({event::key_down, keycode});
             handle_keypress(keycode);
             }
             break;
 
         case sf::Event::KeyReleased:
-            key_pressed_[ev.key.code] = false;
+            if (ev.key.code < key_pressed_.size())
+                key_pressed_[ev.key.code] = false;
+
             process_event({event::key_up, (uint32_t)ev.key.code});
             break;
 

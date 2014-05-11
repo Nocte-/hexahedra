@@ -58,6 +58,8 @@ namespace po = boost::program_options;
 
 namespace hexa {
 
+extern po::variables_map global_settings;
+
 namespace {
 
 template <class message_t>
@@ -269,10 +271,11 @@ void network::on_connect (ENetPeer* c)
     msg::handshake m;
 
     m.server_name = "LOL server";
-    m.public_key.resize(4);
+    m.public_key.resize(33);
 
     send(c, serialize_packet(m), m.method());
 
+    // Send resources, material list, etc.
     {
     msg::define_resources msg;
     msg.textures.resize(texture_names.size());
@@ -368,7 +371,7 @@ void network::on_receive (ENetPeer* c, const packet& p)
     }
 }
 
-bool network::send (uint32_t entity, const std::vector<uint8_t>& msg,
+bool network::send (uint32_t entity, const binary_data& msg,
                     msg::reliability method) const
 {
     auto found (connections_.find(entity));
@@ -377,6 +380,13 @@ bool network::send (uint32_t entity, const std::vector<uint8_t>& msg,
         send(found->second, msg, method);
 
     return have_connection;
+}
+
+void
+network::broadcast (const binary_data& msg, msg::reliability method) const
+{
+    for (auto& conn : connections_)
+        send(conn.second, msg, method);
 }
 
 /*
@@ -486,17 +496,30 @@ void network::login (packet_info& info)
     auto msg (make<msg::login>(info.p));
 
     world_coordinates start_pos (world_center);
+    wfpos start_pos_sub;
 
     // Figure out the login info
     ptree tree;
     std::stringstream str (msg.credentials);
     read_json(str, tree);
     auto login_method (tree.get<std::string>("method", "singleplayer"));
-    auto player_name  (tree.get<std::string>("player_name", "Player"));
+    auto player_name  (tree.get<std::string>("name", "Player"));
 
     if (login_method == "singleplayer")
     {
+        if (global_settings["mode"].as<std::string>() != "singleplayer")
+        {
+            msg::kick reply;
+            reply.reason = "Server is not running in singleplayer mode";
+            send(info.conn, serialize_packet(reply), reply.method());
+
+            return;
+        }
         info.plr = 0;
+    }
+    else
+    {
+
     }
 
     entities_[info.conn] = info.plr;
@@ -504,75 +527,83 @@ void network::login (packet_info& info)
 
     log_msg("player %1% (%2%) login", info.plr, player_name);
 
-    // Move the spawn point to the lowlands.
-    int hm (world_.find_area_generator("heightmap"));
-    if (hm != -1)
-    {
-        size_t count (0);
-        auto proxy (world_.acquire_read_access());
-        for(;;)
-        {
-            auto& ap (proxy.get_area_data(start_pos / chunk_size, hm));
-            int16_t local_height(ap(8, 8));
-            if (++count > 100 || (local_height > 10 && local_height < 200))
-            {
-                start_pos.z = local_height + world_center.z + 4;
-                break;
-            }
-            else
-            {
-                start_pos.x += chunk_size;
-            }
-        }
-    }
-    else
-    {
-        auto ch (coarse_height(world_, start_pos / chunk_size));
-        if (ch != undefined_height && ch < chunk_world_limit.z)
-            start_pos.z = ch * chunk_size;
-        else
-            start_pos.z = world_center.z + 40;
-    }
-
-    trace("Going to spawn player near %1%", world_rel_coordinates(start_pos - world_center));
-
-    // Move the spawn point to the surface.
-    if (false){
-    auto proxy (world_.acquire_read_access());
-    if (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air)
-    {
-        do
-        {
-            trace("Moving down...");
-            start_pos.z -=2;
-        }
-        while (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air);
-    }
-    else
-    {
-        do
-        {
-            trace("Moving up...");
-            start_pos.z += 2;
-        }
-        while (proxy.get_block(start_pos) != type::air) ;
-    }
-    }
-
-    start_pos.z += 26;
-    log_msg("Spawning new player at %1%", start_pos);
-    trace("Final position: %1%", world_rel_coordinates(start_pos - world_center));
-
-    wfpos start_pos_sub (start_pos, vector(0.5, 0.5, 0.5));
-    {
-    auto write_lock (es_.acquire_write_lock());
-
-    es_.make(info.plr);
     es_.set(info.plr, server_entity_system::c_name, player_name);
-    es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
-    es_.set(info.plr, server_entity_system::c_velocity, vector(0,0,0));
-    es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.73f));
-    es_.set(info.plr, server_entity_system::c_lookat, yaw_pitch(0, 0));
+
+    auto pi (es_.make(info.plr));
+    if (es_.entity_has_component(pi, entity_system::c_position))
+    {
+        start_pos_sub = es_.get<wfpos>(pi, entity_system::c_position);
+    }
+    else
+    {
+        // Move the spawn point to the lowlands.
+        int hm (world_.find_area_generator("heightmap"));
+        if (hm != -1)
+        {
+            size_t count (0);
+            auto proxy (world_.acquire_read_access());
+            for(;;)
+            {
+                auto& ap (proxy.get_area_data(start_pos / chunk_size, hm));
+                int16_t local_height(ap(8, 8));
+                if (++count > 100 || (local_height > 10 && local_height < 200))
+                {
+                    start_pos.z = local_height + world_center.z + 4;
+                    break;
+                }
+                else
+                {
+                    start_pos.x += chunk_size;
+                }
+            }
+        }
+        else
+        {
+            auto ch (coarse_height(world_, start_pos / chunk_size));
+            if (ch != undefined_height && ch < chunk_world_limit.z)
+                start_pos.z = ch * chunk_size;
+            else
+                start_pos.z = world_center.z + 40;
+        }
+
+        trace("Going to spawn player near %1%", world_rel_coordinates(start_pos - world_center));
+
+        // Move the spawn point to the surface.
+        if (false){
+        auto proxy (world_.acquire_read_access());
+        if (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air)
+        {
+            do
+            {
+                trace("Moving down...");
+                start_pos.z -=2;
+            }
+            while (proxy.get_block(start_pos + dir_vector[dir_down]) == type::air);
+        }
+        else
+        {
+            do
+            {
+                trace("Moving up...");
+                start_pos.z += 2;
+            }
+            while (proxy.get_block(start_pos) != type::air) ;
+        }
+        }
+
+        start_pos.z += 26;
+        log_msg("Spawning new player at %1%", start_pos);
+        trace("Final position: %1%", world_rel_coordinates(start_pos - world_center));
+
+        start_pos_sub = wfpos(start_pos, vector(0.5, 0.5, 0.5));
+        {
+        auto write_lock (es_.acquire_write_lock());
+
+        es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
+        es_.set(info.plr, server_entity_system::c_velocity, vector(0,0,0));
+        es_.set(info.plr, server_entity_system::c_boundingbox, vector(0.4f,0.4f,1.73f));
+        es_.set(info.plr, server_entity_system::c_lookat, yaw_pitch(0, 0));
+        }
     }
 
     // Log in
@@ -874,6 +905,7 @@ void network::button_release (const packet_info& info)
 void network::console (const packet_info& info)
 {
     auto msg (make<msg::console>(info.p));
+    trace("Console msg: %1%", msg.text);
     lua_.console(info.plr, msg.text);
 }
 

@@ -37,10 +37,10 @@ public:
 
     void poll (uint16_t milliseconds);
 
-    void send (ENetPeer* dest, const std::vector<uint8_t>& msg,
+    void send (ENetPeer* dest, const binary_data& msg,
                msg::reliability method) const;
 
-    void broadcast (const std::vector<uint8_t>& msg,
+    void broadcast (const binary_data& msg,
                     msg::reliability method) const;
 
     virtual void on_connect (ENetPeer* peer) = 0;

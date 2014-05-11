@@ -70,7 +70,9 @@ using boost::bind;
 using boost::format;
 using namespace hexa;
 
+namespace hexa {
 po::variables_map global_settings;
+}
 
 static std::string default_db_path()
 {

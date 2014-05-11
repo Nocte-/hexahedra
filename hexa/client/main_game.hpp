@@ -103,9 +103,11 @@ private:
     double elapsed_time();
     void   player_controls();
     void   player_motion();
+    void   console_input (const std::u32string& msg);
 
     void handshake(deserializer<packet>& p);
     void greeting(deserializer<packet>& p);
+    void kick(deserializer<packet>& p);
     void time_sync_response(deserializer<packet>& p);
     void define_resources(deserializer<packet>& p);
     void define_materials(deserializer<packet>& p);
@@ -118,6 +120,7 @@ private:
     void heightmap_update(deserializer<packet>& p);
     void configure_hotbar(deserializer<packet>& p);
     void global_config(deserializer<packet>& p);
+    void print_msg(deserializer<packet>& p);
 
 private:
     boost::asio::io_service                io_;
@@ -160,6 +163,8 @@ private:
     bool                singleplayer_;
     pid_type            server_process_;
     bool                show_ui_;
+
+    uint32_t            ignore_text_;
 };
 
 } // namespace hexa

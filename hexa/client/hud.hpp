@@ -55,10 +55,13 @@ public:
     void console_message_timeout (float seconds);
     void console_message (const std::string& msg);
 
-    const std::list<timeout_msg>& console_messages() const
-        { return console_; }
+    std::vector<std::string>  console_messages() const;
+    std::vector<std::string>  old_console_messages() const;
 
-    void set_input (const std::string& msg);
+    void show_input (bool on_off) { show_input_ = on_off; }
+    bool show_input () const      { return show_input_; }
+
+    void set_input (const std::u32string& msg);
     void set_cursor (unsigned int pos);
 
     const std::u32string&   get_input() const
@@ -70,7 +73,9 @@ public:
 private:
     std::list<timeout_msg>  console_;
     float                   console_timeout_;
+    unsigned int            max_msgs_;
 
+    bool                    show_input_;
     std::u32string          input_;
     unsigned int            input_cursor_;
 };

@@ -29,18 +29,18 @@ hud::hud()
     , show_debug_info (false)
     , local_height (undefined_height)
     , console_timeout_(12.0f)
+    , max_msgs_ (12)
+    , show_input_ (false)
     , input_cursor_ (0)
 {}
 
 void hud::time_tick(float seconds)
 {
-    for (auto i (console_.begin()); i != console_.end(); )
+    for (auto& m : console_)
     {
-        i->time -= seconds;
-        if (i->time <= 0.0f)
-            i = console_.erase(i);
-        else
-            ++i;
+        m.time -= seconds;
+        if (m.time < 0.0f)
+            m.time = 0.0f;
     }
 }
 
@@ -52,6 +52,41 @@ void hud::console_message_timeout(float seconds)
 void hud::console_message(const std::string& msg)
 {
     console_.push_back({ msg, console_timeout_ });
+    if (console_.size() > max_msgs_)
+        console_.pop_front();
+
+}
+
+std::vector<std::string>
+hud::console_messages() const
+{
+    std::vector<std::string> result;
+    for (auto& m : console_)
+    {
+        if (m.time > 0)
+            result.push_back(m.msg);
+    }
+    return result;
+}
+
+std::vector<std::string>
+hud::old_console_messages() const
+{
+    std::vector<std::string> result;
+    for (auto& m : console_)
+        result.push_back(m.msg);
+
+    return result;
+}
+
+void hud::set_cursor(unsigned int pos)
+{
+    input_cursor_ = pos;
+}
+
+void hud::set_input(const std::u32string &msg)
+{
+    input_ = msg;
 }
 
 } // namespace hexa

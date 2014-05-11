@@ -18,7 +18,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "udp_server.hpp"
 
 #include <stdexcept>
@@ -78,7 +78,7 @@ void udp_server::poll (uint16_t milliseconds)
     }
 }
 
-void udp_server::send (ENetPeer* peer, const std::vector<uint8_t>& msg,
+void udp_server::send (ENetPeer* peer, const binary_data& msg,
                        msg::reliability method) const
 {
     uint32_t flags (0);
