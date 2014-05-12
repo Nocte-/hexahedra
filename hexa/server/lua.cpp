@@ -662,6 +662,37 @@ void lua::define_material(uint16_t mat_id, const object& specs)
             }
         }
 
+        else if (key == "collision_boxes")
+        {
+            for (luabind::iterator j (*i), end; j != end; ++j)
+            {
+                size_t count (0);
+                std::vector<unsigned int> values (6);
+
+                for (luabind::iterator k (*j); k != end; ++k, ++count)
+                {
+                    if (count < 6)
+                        values[count] = object_cast<unsigned int>(*k);
+                }
+
+                if (count < 6)
+                    throw std::runtime_error("not enough parameters in collision box definition");
+
+                aabb<vector> part;
+                part.first  = vector(float(values[0] % 16) / 16.f,
+                                     float(values[1] % 16) / 16.f,
+                                     float(values[2] % 16) / 16.f);
+                part.second = vector(float((values[3] % 16) + 1) / 16.f,
+                                     float((values[4] % 16) + 1) / 16.f,
+                                     float((values[5] % 16) + 1) / 16.f);
+                part.make_correct();
+
+                trace("custom box for material %1%, %2%", data.name, part);
+
+                data.bounding_box.emplace_back(std::move(part));
+            }
+        }
+
         else if (key == "on_place")
         {
             cb_on_place[mat_id] = *i;

@@ -509,63 +509,78 @@ mc(85, 0, { name = "fence.0000", texture = { "fence" }, transparency = 0.9,
 
 mc(85, 1, { name = "fence.000E", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 10, 8, 10, 15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 10, 8, 10, 15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 7, 0, 15, 9, 15 } } })
 
 mc(85, 2, { name = "fence.00W0", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 0, 8, 10,   6, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 0, 8, 10,   6, 8, 12, "bark" } },
+            collision_boxes = { { 0, 7, 0, 9, 9, 15 } } })
 
 mc(85, 3, { name = "fence.00WE", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 0, 8, 10,  15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 0, 8, 10,  15, 8, 12, "bark" } },
+            collision_boxes = { { 0, 7, 0, 15, 9, 15 } } })
 
 mc(85, 4, { name = "fence.0N00", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" } },
+            collision_boxes = { { 7, 7, 0, 9, 15, 15 } } })
 
 mc(85, 5, { name = "fence.0N0E", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 7, 0, 9, 15, 15 }, { 7, 7, 0, 15, 9, 15 } } })
 
 mc(85, 6, { name = "fence.0NW0", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   7, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   7, 8, 12, "bark" } },
+            collision_boxes = { { 7, 7, 0, 9, 15, 15 }, { 0, 7, 0, 9, 9, 15 } } })
 
 mc(85, 7, { name = "fence.0NWE", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 0, 8, 10,  15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8, 10, 10,  8, 15, 12, "bark" }, { 0, 8, 10,  15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 7, 0, 9, 15, 15 }, { 0, 7, 0, 15, 9, 15 } } })
 
 mc(85, 8, { name = "fence.S000", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 9, 15 } } })
 
 mc(85, 9, { name = "fence.S00E", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 9, 15 }, { 7, 7, 0, 15, 9, 15 } } })
 
 mc(85, 10, { name = "fence.S0W0", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 0, 8, 10,   6, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 0, 8, 10,   6, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 9, 15 }, { 0, 7, 0, 9, 9, 15 } } })
 
 mc(85, 11, { name = "fence.S0WE", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 0, 8, 10,  15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 6, 12, "bark" }, { 0, 8, 10,  15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 9, 15 }, { 0, 7, 0, 15, 9, 15 } } })
 
 mc(85, 12, { name = "fence.SN00", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 15, 15 } } })
 
 mc(85, 13, { name = "fence.SN0E", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 10, 8, 10, 15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 15, 15 }, { 7, 7, 0, 15, 9, 15 } } })
 
 mc(85, 14, { name = "fence.SNW0", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   6, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   6, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 15, 15 }, { 0, 7, 0, 9, 9, 15 } } })
 
 mc(85, 15, { name = "fence.SNWE", texture = { "fence" }, transparency = 0.9,
             on_remove = remove_fence,
-            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   15, 8, 12, "bark" } } })
+            custom_model = { { 7, 7, 0, 9, 9, 15, "fence" }, { 8,  0, 10,  8, 15, 12, "bark" }, { 0, 8, 10,   15, 8, 12, "bark" } },
+            collision_boxes = { { 7, 0, 0, 9, 15, 15 }, { 0, 7, 0, 15, 9, 15 } } })
 
       
 -- Pumpkins, facing south, west, north, east
