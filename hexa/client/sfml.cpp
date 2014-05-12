@@ -37,6 +37,8 @@
 #include <boost/thread/locks.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Event.hpp>
@@ -48,6 +50,8 @@
 #include <hexa/log.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
+
+#include <hexa/server/random.hpp>
 
 #include "event.hpp"
 #include "game.hpp"
@@ -68,6 +72,7 @@ using namespace boost::math::constants;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+namespace pt = boost::property_tree;
 
 //---------------------------------------------------------------------------
 
@@ -573,17 +578,59 @@ void sfml::draw_ui(double elapsed, const hud& h)
         float height (20 * msgs.size());
         sf::RectangleShape bg ({ width_ - 20.0f, height });
         bg.setPosition(5, height_ - (80 + height));
-        bg.setFillColor(sf::Color(0, 0, 0, 100));
+        bg.setFillColor(sf::Color(0, 0, 0, 150));
         app_.draw(bg);
 
         float y (height_ - (80 + height));
         for (auto& line : msgs)
         {
+            std::string msg;
+            sf::Color   msg_color (sf::Color::White);
+
+            try
+            {
+                std::stringstream strm (line);
+                pt::ptree info;
+                pt::json_parser::read_json(strm, info);
+
+                trace(line);
+
+                std::string type (info.get<std::string>("type", ""));
+                std::string text (info.get<std::string>("message", ""));
+                std::string user (info.get<std::string>("name", ""));
+
+
+                if (type == "chat")
+                {
+                    static const sf::Color chat_color[] =
+                    {
+                        { 0x00, 0x74, 0xD9 },
+                        { 0x7F, 0xDB, 0xFF },
+                        { 0x39, 0xCC, 0xCC },
+                        { 0x2E, 0xCC, 0x40 },
+                        { 0x01, 0xFF, 0x70 },
+                        { 0xFF, 0xDC, 0x00 },
+                        { 0xFF, 0x85, 0x1B },
+                        { 0xB1, 0x0D, 0xC9 }
+                    };
+
+                    msg = (boost::format("<%1%> %2%") % user % text).str();
+                    msg_color = chat_color[fnv_hash(user) % 8];
+                }
+                else
+                    msg = text;
+            }
+            catch (...)
+            {
+                msg = line;
+            }
+
             std::u32string wide;
-            sf::Utf8::toUtf32(line.begin(), line.end(), std::back_inserter(wide));
+            sf::Utf8::toUtf32(msg.begin(), msg.end(), std::back_inserter(wide));
             sf::String l ((const unsigned int*)&wide[0]);
 
             sf::Text txt (l, *ui_font_, 16);
+            txt.setColor(msg_color);
             txt.setPosition(10, y);
             app_.draw(txt);
             y += 20;
@@ -594,7 +641,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     {
         sf::RectangleShape bg ({ width_ - 10.f, 20.f });
         bg.setPosition(5, height_ - 70);
-        bg.setFillColor(sf::Color(0, 0, 0, 100));
+        bg.setFillColor(sf::Color(0, 0, 0, 150));
         app_.draw(bg);
 
         sf::String l ((const unsigned int*)&h.get_input()[0]);

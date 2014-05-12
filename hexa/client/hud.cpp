@@ -29,7 +29,7 @@ hud::hud()
     , show_debug_info (false)
     , local_height (undefined_height)
     , console_timeout_(12.0f)
-    , max_msgs_ (12)
+    , max_msgs_ (20)
     , show_input_ (false)
     , input_cursor_ (0)
 {}
