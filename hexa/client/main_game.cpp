@@ -384,7 +384,8 @@ void main_game::render()
         renderer().draw_model(p, 0);
         return false;
     });
-    }
+    } // entities_ lock
+
     renderer().handle_occlusion_queries();
     renderer().transparent_pass();
 
@@ -396,7 +397,7 @@ void main_game::render()
     float alpha (std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.12f);
     color_alpha hl_color (1,1,1, alpha);
 
-    world_coordinates offset (renderer().offset());
+    world_coordinates offset (renderer().offset() * chunk_size);
     vector origin (player_.rel_world_position(offset));
     origin.z += 1.7f; // Dirty hack to get to the eye level, TODO
 
