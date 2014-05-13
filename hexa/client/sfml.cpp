@@ -578,7 +578,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
         float height (20 * msgs.size());
         sf::RectangleShape bg ({ width_ - 20.0f, height });
         bg.setPosition(5, height_ - (80 + height));
-        bg.setFillColor(sf::Color(0, 0, 0, 150));
+        bg.setFillColor(sf::Color(0, 0, 0, 170));
         app_.draw(bg);
 
         float y (height_ - (80 + height));
@@ -593,8 +593,6 @@ void sfml::draw_ui(double elapsed, const hud& h)
                 pt::ptree info;
                 pt::json_parser::read_json(strm, info);
 
-                trace(line);
-
                 std::string type (info.get<std::string>("type", ""));
                 std::string text (info.get<std::string>("message", ""));
                 std::string user (info.get<std::string>("name", ""));
@@ -604,18 +602,20 @@ void sfml::draw_ui(double elapsed, const hud& h)
                 {
                     static const sf::Color chat_color[] =
                     {
-                        { 0x00, 0x74, 0xD9 },
                         { 0x7F, 0xDB, 0xFF },
                         { 0x39, 0xCC, 0xCC },
                         { 0x2E, 0xCC, 0x40 },
                         { 0x01, 0xFF, 0x70 },
                         { 0xFF, 0xDC, 0x00 },
                         { 0xFF, 0x85, 0x1B },
-                        { 0xB1, 0x0D, 0xC9 }
+                        { 0xFF, 0x41, 0x36 },
+                        { 0xF0, 0x12, 0xBE },
+                        { 0xC1, 0x1D, 0xD9 },
+                        { 0xC0, 0xC0, 0xC0 }
                     };
 
                     msg = (boost::format("<%1%> %2%") % user % text).str();
-                    msg_color = chat_color[fnv_hash(user) % 8];
+                    msg_color = chat_color[fnv_hash(user) % 10];
                 }
                 else
                     msg = text;
@@ -711,10 +711,11 @@ void sfml::draw_ui(double elapsed, const hud& h)
         acc_elapsed = 0;
     }
 
-    app_.draw(info);
     if (h.show_debug_info)
+    {
+        app_.draw(info);
         app_.draw(debug_info);
-
+    }
     app_.popGLStates();
 }
 
@@ -859,7 +860,6 @@ void sfml::draw_hotbar(const hud& h)
 
             glTranslatef(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f);
             glScalef(scale, scale, 0.0f);
-            //glRotatef( 30, 1, 0, 0);
             glRotatef( 90, 1, 0, 0);
             glRotatef( 30, 1, 0, 0);
             glRotatef( 30, 0, 0, 1);
