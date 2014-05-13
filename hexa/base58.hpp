@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/crypto.hpp
-/// \brief  Common cryptographic functions
+/// \file   hexa/base58.hpp
+/// \brief  Base58 encoding and decoding
 //
 // This file is part of Hexahedra.
 //
@@ -21,32 +21,21 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <vector>
-#include <crypto++/eccrypto.h>
+#include "basic_types.hpp"
+
+#include <string>
+#include <stdexcept>
 
 namespace hexa {
-namespace crypto {
 
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-make_new_key();
+class base58_error : public std::runtime_error
+{
+public:
+    base58_error() : std::runtime_error("not a valid base58 encoding") { }
+};
 
-std::vector<uint8_t>
-make_random (int bytes);
+binary_data base58_decode (const std::string& in);
 
-CryptoPP::Integer
-make_random_128();
+std::string base58_encode (const binary_data& in);
 
-std::string
-serialize_private_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& key);
-
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-deserialize_private_key (const std::string& key);
-
-std::string
-serialize_public_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& privkey);
-
-CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>
-deserialize_public_key (const std::string& privkey);
-
-
-}} // namespace hexa::crypto
+} // namespace hexa

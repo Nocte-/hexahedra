@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   hexa/crypto.hpp
-/// \brief  Common cryptographic functions
+/// \file   hexa/client/player_info.hpp
+/// \brief  Persistent storage of player name, UID, and keys
 //
 // This file is part of Hexahedra.
 //
@@ -21,32 +21,25 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <vector>
-#include <crypto++/eccrypto.h>
+#include <string>
 
 namespace hexa {
-namespace crypto {
 
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-make_new_key();
+struct player_info
+{
+    std::string     name;
+    std::string     uid;
+    std::string     public_key;
+    std::string     private_key;
+    std::string     password;
+};
 
-std::vector<uint8_t>
-make_random (int bytes);
+player_info get_player_info();
 
-CryptoPP::Integer
-make_random_128();
+void        write_player_info (const player_info& info);
 
-std::string
-serialize_private_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& key);
+void        generate_new_key (player_info& info);
 
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-deserialize_private_key (const std::string& key);
+void        generate_new_uid (player_info& info);
 
-std::string
-serialize_public_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& privkey);
-
-CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>
-deserialize_public_key (const std::string& privkey);
-
-
-}} // namespace hexa::crypto
+} // namespace hexa

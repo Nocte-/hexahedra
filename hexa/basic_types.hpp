@@ -163,7 +163,7 @@ typedef uint32_t gameclock_t;
 typedef uint32_t clientclock_t;
 
 /** Container type for raw binary data. */
-typedef std::vector<char>   binary_data;
+typedef std::vector<uint8_t> binary_data;
 
 //---------------------------------------------------------------------------
 

@@ -58,6 +58,7 @@
 
 #include "clock.hpp"
 #include "event.hpp"
+#include "player_info.hpp"
 #include "renderer_i.hpp"
 #include "sfml_ogl2.hpp"
 #include "sfml_ogl3.hpp"
@@ -752,10 +753,12 @@ void main_game::login()
     else
         method = "ecdh";
 
+    auto plr_info (get_player_info());
     std::stringstream json;
     pt::ptree info;
-    info.put("name", "Griefy McGriefenstein");
-    info.put("uid", "0");
+    info.put("name", plr_info.name);
+    info.put("uid", plr_info.uid);
+    info.put("public_key", plr_info.public_key);
     info.put("method", method);
     pt::json_parser::write_json(json, info);
 

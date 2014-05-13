@@ -56,6 +56,7 @@
 #include "game.hpp"
 #include "main_game.hpp"
 #include "main_menu.hpp"
+#include "player_info.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -155,6 +156,11 @@ int main (int argc, char* argv[])
         std::cerr << "Warning: could not open logfile in " << temp_dir().string() << std::endl;
         set_log_output(std::cout);
     }
+
+    auto plinf (get_player_info());
+    trace("Player name : %1%", plinf.name);
+    trace("Player uid  : %1%", plinf.uid);
+    trace("Player key  : %1%", plinf.public_key);
 
     log_msg("Initializing Enet");
     auto enet_rc (enet_initialize());
