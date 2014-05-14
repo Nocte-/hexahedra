@@ -687,7 +687,7 @@ void lua::define_material(uint16_t mat_id, const object& specs)
                                      float((values[5] % 16) + 1) / 16.f);
                 part.make_correct();
 
-                trace("custom box for material %1%, %2%", data.name, part);
+                //trace("custom box for material %1%, %2%", data.name, part);
 
                 data.bounding_box.emplace_back(std::move(part));
             }

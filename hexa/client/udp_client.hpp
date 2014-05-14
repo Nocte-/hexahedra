@@ -42,7 +42,7 @@ public:
 class udp_client
 {
 public:
-    udp_client (const std::string& host, uint16_t port);
+    udp_client (std::string host, uint16_t port);
     ~udp_client();
     udp_client(const udp_client&) = delete;
 

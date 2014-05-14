@@ -29,13 +29,16 @@ using boost::format;
 
 namespace hexa {
 
-udp_client::udp_client (const std::string& host, uint16_t port)
+udp_client::udp_client (std::string host, uint16_t port)
     : connected_ (false)
 {
     boost::lock_guard<boost::mutex> lock (host_mutex_);
     host_ = enet_host_create(nullptr, 1, UDP_CHANNELS, 0, 0);
     if (host_ == nullptr)
         throw network_error("could not set up UDP host");
+
+    if (host.empty())
+        host = "localhost";
 
     enet_address_set_host(&address_, host.c_str());
     address_.port = port;
