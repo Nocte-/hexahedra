@@ -18,7 +18,7 @@
 //
 // Copyright 2012, 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "texture.hpp"
 
 #include <stdexcept>
@@ -186,7 +186,7 @@ void texture_array::load(const sf::Image& img, unsigned int index,
     part %= img.getSize().y / height_;
     glCheck(glTexSubImage3D(GT2DA, 0, 0, 0, index, width_, height_,
                             1, GL_RGBA, GL_UNSIGNED_BYTE,
-                            img.getPixelsPtr() + width_ * 4 * part));
+                            img.getPixelsPtr() + width_ * height_ * 4 * part));
 
     if (glGenerateMipmap)
         glCheck(glGenerateMipmap(GT2DA));

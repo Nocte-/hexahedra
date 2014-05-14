@@ -410,7 +410,7 @@ void sfml_ogl3::load_textures(const std::vector<std::string>& name_list)
 
         while (!name.empty() && !fs::is_regular_file(file))
         {
-            auto dot (find_last(name, "."));
+            auto dot (find_last(name, "_"));
             if (!dot)
                 break;
 
@@ -460,8 +460,22 @@ void sfml_ogl3::prepare(const player& plr)
     if (textures_ready_)
     {
         texarr_.load(textures_, 16, 16, texture::transparent);
-        textures_.clear();
         textures_ready_ = false;
+    }
+
+    static int icount (0), jcount (1);
+    if (++icount >= 40 && texarr_.id() != 0)
+    {
+        int i (0);
+        for (sf::Image& t : textures_)
+        {
+            if (t.getSize().y > 16)
+                texarr_.load(t, i, jcount);
+
+            ++i;
+        }
+        icount = 0;
+        ++jcount;
     }
 
     static float count (0.5f);
