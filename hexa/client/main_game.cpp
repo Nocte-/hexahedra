@@ -95,7 +95,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     , player_entity_ (0xffffffff)
     , waiting_for_data_(true)
     , loading_screen_(false)
-    , singleplayer_  (host == "localhost")
+    , singleplayer_  (host.empty())
     , show_ui_       (true)
     , ignore_text_   (0)
 {
@@ -112,24 +112,17 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
         }
         catch (std::runtime_error& e)
         {
-            log_msg("Cannot launch server (%1%), attempt to connect to localhost",
+            log_msg("Cannot launch server (%1%), attempt to connect to multiplayer localhost",
                     e.what());
+
+            singleplayer_ = false;
         }
     }
-
-    //hud_.console_message(u8"Testing UTF-8 text... \u00A9 \u00C6 \u0270 \u03C1");
-    //hud_.time_tick(1);
-    //hud_.console_message(u8"это русский текст");
-    //hud_.time_tick(1);
-    //hud_.console_message(u8"Español Straße Türkçe ελληνικά");
 
     game_.relative_mouse(true);
     setup_renderer();
     setup_world(host, port);
     scene_.view_distance(vd);
-
-    //renderer().on_new_vbo.connect([&](chunk_coordinates pos)
-    //    { scene_.send_visibility_requests(pos); });
 
     log_msg("Trying to connect to %1%:%2% ...", host, port);
     int tries (0);
@@ -146,7 +139,6 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
         }
     }
     log_msg("Connected!");
-
     login();
     log_msg("Logged in successfully");
 }
@@ -156,9 +148,7 @@ main_game::~main_game()
     clock_.join();
 
     if (singleplayer_)
-    {
         terminate_process(server_process_);
-    }
 }
 
 void main_game::setup_world (const std::string& host, uint16_t port)
@@ -330,22 +320,6 @@ void main_game::update(double time_delta)
     on_tick(time_delta);
     player_controls();
     player_motion();
-
-    /*
-    {
-    mutex::scoped_lock lock2 (scene_.lock);
-    renderer().remove_chunks(scene_.to_be_deleted);
-    scene_.to_be_deleted.clear();
-
-    for (chunk_coordinates pos : scene_.new_occlusion_queries)
-        renderer().add_occlusion_query(pos);
-
-    scene_.new_occlusion_queries.clear();
-
-    for (chunk_coordinates pos : renderer().get_visible_queries())
-        scene_.make_chunk_visible(pos);
-    } // scoped  lock
-    */
 }
 
 void main_game::render()

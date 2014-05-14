@@ -89,7 +89,7 @@ int main (int argc, char* argv[])
 
     po::options_description config("Configuration");
     config.add_options()
-        ("hostname", po::value<std::string>()->default_value("localhost"),
+        ("hostname", po::value<std::string>()->default_value(""),
             "server name")
         ("port", po::value<uint16_t>()->default_value(15556),
             "default port")
