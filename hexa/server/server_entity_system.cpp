@@ -28,7 +28,7 @@ namespace hexa {
 server_entity_system::server_entity_system()
 {
     auto check1 (register_component<ip_address>("ipaddr"));
-    auto check2 (register_component<std::vector<char>>("uuid"));
+    auto check2 (register_component<uint64_t>("player_uid"));
 
     if (!es::is_flat<ip_address>::value)
         throw std::runtime_error("ip_address object is not flat");
@@ -36,8 +36,8 @@ server_entity_system::server_entity_system()
     if (check1 != c_ip_addr)
         throw std::runtime_error("cannot register component ipaddr");
 
-    if (check2 != c_uuid)
-        throw std::runtime_error("cannot register component uuid");
+    if (check2 != c_player_uid)
+        throw std::runtime_error("cannot register component player_uid");
 }
 
 } // namespace hexa

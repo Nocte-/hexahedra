@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "udp_server.hpp"
@@ -95,6 +95,11 @@ void udp_server::send (ENetPeer* peer, const binary_data& msg,
     boost::lock_guard<boost::mutex> lock (enet_mutex_);
     enet_peer_send(peer, 0, pkt);
     }
+}
+
+void udp_server::disconnect (ENetPeer* peer)
+{
+    enet_peer_disconnect_now(peer, 0);
 }
 
 } // namespace hexa

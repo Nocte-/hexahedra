@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #pragma once
@@ -42,6 +42,8 @@ public:
 
     void broadcast (const binary_data& msg,
                     msg::reliability method) const;
+
+    void disconnect (ENetPeer* peer);
 
     virtual void on_connect (ENetPeer* peer) = 0;
     virtual void on_receive (ENetPeer* peer, const packet& pkt) = 0;

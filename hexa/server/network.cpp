@@ -34,6 +34,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include <hexa/base58.hpp>
 #include <hexa/compression.hpp>
 #include <hexa/entity_system.hpp>
 #include <hexa/entity_system_physics.hpp>
@@ -389,43 +390,6 @@ network::broadcast (const binary_data& msg, msg::reliability method) const
         send(conn.second, msg, method);
 }
 
-/*
-
-void network::change_block(const world_coordinates& pos, uint16_t material)
-{
-    chunk_index ci (pos % chunk_size);
-    auto lock (acquire_write_lock());
-    world::change_block(pos, material);
-
-    chunk_coordinates cpos (pos / chunk_size);
-
-    if (material == 0)
-    {
-        if (ci.x == 0)
-            send_surface(cpos + chunk_coordinates(-1, 0, 0));
-        else if (ci.x == chunk_size - 1)
-            send_surface(cpos + chunk_coordinates(1, 0, 0));
-
-        if (ci.y == 0)
-            send_surface(cpos + chunk_coordinates(0, -1, 0));
-        else if (ci.y == chunk_size - 1)
-            send_surface(cpos + chunk_coordinates(0, 1, 0));
-
-        if (ci.z == 0)
-            send_surface(cpos + chunk_coordinates(0, 0, -1));
-        else if (ci.z == chunk_size - 1)
-            send_surface(cpos + chunk_coordinates(0, 0, 1));
-    }
-
-    send_surface(cpos);
-}
-
-void network::change_block(const world_coordinates& pos, const std::string& material)
-{
-    change_block(pos, find_material(material));
-}
-*/
-
 void network::send_surface(const chunk_coordinates& cpos)
 {
     trace("broadcast surface %1%", world_vector(cpos - world_chunk_center));
@@ -491,6 +455,16 @@ void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
     send(dest, serialize_packet(heights), heights.method());
 }
 
+void network::kick_player(ENetPeer *dest, const std::string &kickmsg)
+{
+    trace("Kick player: %1%", kickmsg);
+    msg::kick reply;
+    reply.reason = kickmsg;
+    send(dest, serialize_packet(reply), reply.method());
+    disconnect(dest);
+    on_disconnect(dest);
+}
+
 void network::login (packet_info& info)
 {
     auto msg (make<msg::login>(info.p));
@@ -503,23 +477,83 @@ void network::login (packet_info& info)
     std::stringstream str (msg.credentials);
     read_json(str, tree);
     auto login_method (tree.get<std::string>("method", "singleplayer"));
-    auto player_name  (tree.get<std::string>("name", "Player"));
+    auto player_name  (tree.get<std::string>("name", "Guest" + std::to_string(info.conn->address.host % 1000)));
+
+    trace("Login %1%", player_name);
 
     if (login_method == "singleplayer")
     {
         if (global_settings["mode"].as<std::string>() != "singleplayer")
         {
-            msg::kick reply;
-            reply.reason = "Server is not running in singleplayer mode";
-            send(info.conn, serialize_packet(reply), reply.method());
-
+            kick_player(info.conn, "Server is not running in singleplayer mode");
             return;
         }
         info.plr = 0;
     }
+    else if (login_method == "ecdh")
+    {
+        if (global_settings["mode"].as<std::string>() == "singleplayer")
+        {
+            kick_player(info.conn, "Server is not running in multiplayer mode");
+            return;
+        }
+
+        try
+        {
+            auto uid (base58_decode(tree.get<std::string>("uid")));
+            auto key (tree.get<std::string>("public_key"));
+            if (uid.size() != 8)
+                throw 0;
+
+            int found (0);
+            es::storage::iterator iter;
+            uint64_t player_uid (*reinterpret_cast<const uint64_t*>(&uid[0]));
+
+            es_.for_each<uint64_t>(server_entity_system::c_player_uid, [&](es::storage::iterator i, uint64_t& eid)
+            {
+                trace("Check against %1%...", eid);
+                if (eid == player_uid)
+                {
+                    ++found;
+                    iter = i;
+                }
+                return false;
+            });
+
+            if (found == 0)
+            {
+                trace("Log in new player with uid %1% (%2%)", tree.get<std::string>("uid"), player_uid);
+                info.plr = es_.new_entity();
+                es_.set(info.plr, server_entity_system::c_player_uid, player_uid);
+
+                trace("Double check: %1%", es_.get<uint64_t>(info.plr, server_entity_system::c_player_uid));
+
+                es_.for_each<uint64_t>(server_entity_system::c_player_uid, [&](es::storage::iterator i, uint64_t& id)
+                {
+                    trace("Triple check: %1%", id);
+                    return false;
+                });
+            }
+            else
+            {
+                trace("Log in existing player with uid %1% (%2%)", tree.get<std::string>("uid"), player_uid);
+
+                if (found > 1)
+                    trace("ERROR: Found more than one, actually");
+
+                info.plr = iter->first;
+            }
+        }
+        catch (...)
+        {
+            kick_player(info.conn, "Missing uid/pubkey");
+            return;
+        }
+    }
     else
     {
-
+        kick_player(info.conn, "Not a valid login method");
+        return;
     }
 
     entities_[info.conn] = info.plr;

@@ -111,6 +111,7 @@ private:
     void send_surface (const chunk_coordinates& pos, ENetPeer* dest);
     void send_coarse_height (chunk_coordinates pos);
     void send_height  (const map_coordinates& pos, ENetPeer* dest);
+    void kick_player  (ENetPeer* dest, const std::string& kickmsg);
 
     void on_update_surface (const chunk_coordinates& pos);
 
