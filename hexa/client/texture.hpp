@@ -58,9 +58,9 @@ public:
 
     virtual ~texture();
 
-    operator bool() const { return id_ != nullptr; }
+    operator bool() const { return id_.get() != nullptr; }
 
-    GLuint id() const { assert(id_); return *id_; }
+    GLuint id() const { assert(id_.get() != nullptr); return *id_; }
 
     void bind() const { glCheck(glBindTexture(GL_TEXTURE_2D, id())); }
 

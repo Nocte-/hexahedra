@@ -464,7 +464,7 @@ void sfml_ogl3::prepare(const player& plr)
     }
 
     static int icount (0), jcount (1);
-    if (++icount >= 40 && texarr_.id() != 0)
+    if (++icount >= 40 && texarr_)
     {
         int i (0);
         for (sf::Image& t : textures_)
