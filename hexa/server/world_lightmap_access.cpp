@@ -25,6 +25,18 @@
 
 namespace hexa {
 
+namespace {
+
+static const chunk dummy_;
+
+}
+
+world_lightmap_access::world_lightmap_access(world &w)
+    : w_(w)
+    , cached_pos_(-1, -1, -1)
+    , cached_cnk_(dummy_)
+{ }
+
 world_lightmap_access::~world_lightmap_access()
 {
 }
@@ -32,7 +44,13 @@ world_lightmap_access::~world_lightmap_access()
 const chunk&
 world_lightmap_access::get_chunk (const chunk_coordinates& pos)
 {
-    return w_.get_chunk(pos);
+    if (pos == cached_pos_)
+        return cached_cnk_;
+
+    cached_pos_ = pos;
+    cached_cnk_ = w_.get_chunk(pos);
+
+    return cached_cnk_;
 }
 
 const surface_data&

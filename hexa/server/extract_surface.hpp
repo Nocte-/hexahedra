@@ -28,6 +28,10 @@
 
 namespace hexa {
 
+/** Initialize the lookup tables. */
+void
+init_surface_extraction();
+
 /** Find all potentially visible opaque faces in a chunk.
  *  If two solid blocks are right next to each other, the two touching
  *  faces will never be visible.  This function will only return faces

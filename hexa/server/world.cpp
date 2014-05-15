@@ -379,7 +379,7 @@ world::generate_chunk (chunk_coordinates pos)
 }
 
 light_data&
-world::generate_lightmap (chunk_coordinates pos)
+world::generate_lightmap (chunk_coordinates pos, int level)
 {
     world_lightmap_access proxy (*this);
     light_data& result (lightmaps_[pos]);
@@ -389,14 +389,14 @@ world::generate_lightmap (chunk_coordinates pos)
     if (!result.opaque.empty())
     {
         for (auto& gen : lightgen_)
-            gen->generate(proxy, pos, surf.opaque, result.opaque, 1);
+            gen->generate(proxy, pos, surf.opaque, result.opaque, level);
     }
 
     result.transparent.resize(count_faces(surf.transparent));
     if (!result.transparent.empty())
     {
         for (auto& gen : lightgen_)
-            gen->generate(proxy, pos, surf.transparent, result.transparent, 1);
+            gen->generate(proxy, pos, surf.transparent, result.transparent, level);
     }
 
     return result;

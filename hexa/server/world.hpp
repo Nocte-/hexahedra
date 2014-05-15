@@ -173,7 +173,7 @@ private:
     chunk  generate_chunk (chunk_coordinates pos);
 
     /** Generate the lightmap of a given chunk. */
-    light_data& generate_lightmap (chunk_coordinates pos);
+    light_data& generate_lightmap (chunk_coordinates pos, int level = 0);
 
     chunk_height generate_coarse_height (map_coordinates pos);
 
