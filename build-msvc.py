@@ -230,7 +230,7 @@ def main():
     -DHEXANOISE_INCLUDE_DIR={root}/hexanoise-master
     -DHEXANOISE_LIBRARY={root}/hexanoise-build/hexanoise/Release/hexanoise-s.lib
     -DLEVELDB_INCLUDE_DIR={root}/leveldb-master/include
-    -DLEVELDB_LIBRARY={root}/leveldb-build/Release/leveldb.lib
+    -DLEVELDB_LIBRARIES={root}/leveldb-build/Release/leveldb.lib
     -DRHEA_INCLUDE_DIR={root}/rhea-master
     -DRHEA_LIBRARY={root}/rhea-build/rhea/Release/rhea-s.lib
     -DLUAJIT_INCLUDE_DIR={root}/{luajit}/src
