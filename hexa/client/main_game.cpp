@@ -1102,12 +1102,12 @@ void main_game::bg_thread()
         {
             std::unordered_set<map_coordinates> missing_height;
 
-            msg::request_chunks req;
+            msg::request_surfaces req;
             //for (auto& pos : requests_)
             size_t count2 (0);
             for (auto i (requests_.begin()); i != requests_.end(); )
             {
-                if (++count2 > 20000)
+                if (++count2 > 2000)
                 {
                     log_msg("Warning: request queue full");
                     break;
@@ -1119,13 +1119,18 @@ void main_game::bg_thread()
                     missing_height.insert(pos);
                     req.requests.emplace_back(pos, 0);
                 }
-                else if (!is_air_chunk(pos, map().get_coarse_height(pos)))
+                else if (is_air_chunk(pos, map().get_coarse_height(pos)))
                 {
-                    req.requests.emplace_back(pos, 0);
+                    trace("Tried to send request for air chunk");
+                }
+                else if (map().is_surface_available(pos))
+                {
+                    trace("Request for surface I already have, %1%", map().get_surface(pos).version);
+                    req.requests.emplace_back(pos, map().get_surface(pos).version);
                 }
                 else
                 {
-                    trace("Tried to send request for air chunk");
+                    req.requests.emplace_back(pos, 0);
                 }
                 i = requests_.erase(i);
             }

@@ -309,6 +309,10 @@ world::commit_write (chunk_coordinates pos)
         if (!is_air_chunk(p, get_coarse_height(p)))
         {
             auto srf (build_surface(p));
+
+            if (is_surface_available(p))
+                srf.version = get_surface(p).version + 1;
+
             surfaces_[p] = srf;
             storage_.store(persistent_storage_i::surface, p, pack(srf));
 

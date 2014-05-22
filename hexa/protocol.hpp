@@ -578,7 +578,7 @@ public:
 };
 
 /** Request chunk surface data. */
-class request_chunks : public msg_i
+class request_surfaces : public msg_i
 {
 public:
     enum { msg_id = 139 };
@@ -588,18 +588,17 @@ public:
     struct record
     {
         chunk_coordinates   position;
-        gameclock_t         last_update;
-
+        uint32_t            version;
 
         record() { }
 
-        record(chunk_coordinates p, gameclock_t l = 0)
-            : position(p), last_update(l) { }
+        record(chunk_coordinates p, uint32_t v = 0)
+            : position(p), version(v) { }
 
         template<class archive>
         archive& serialize(archive& ar)
         {
-            return ar(position)(last_update);
+            return ar(position)(version);
         }
     };
 

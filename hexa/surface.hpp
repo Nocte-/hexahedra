@@ -64,18 +64,24 @@ typedef std::vector<faces> surface;
 class surface_data
 {
 public:
+    uint32_t    version;
     surface     opaque;
     surface     transparent;
 
 public:
-    surface_data () { }
+    surface_data ()
+        : version(0)
+    { }
+
     surface_data (surface&& o, surface&& t)
-        : opaque(std::move(o))
+        : version(1)
+        , opaque(std::move(o))
         , transparent(std::move(t))
     { }
 
     surface_data(surface_data&& m)
-        : opaque(std::move(m.opaque))
+        : version(m.version)
+        , opaque(std::move(m.opaque))
         , transparent(std::move(m.transparent))
     { }
 
@@ -85,6 +91,7 @@ public:
     {
         if (this != &m)
         {
+            version = m.version;
             opaque = std::move(m.opaque);
             transparent = std::move(m.transparent);
         }
@@ -103,7 +110,7 @@ public:
 
     template <class archive>
     archive& serialize(archive& ar)
-        { return ar(opaque)(transparent); }
+        { return ar(version)(opaque)(transparent); }
 };
 
 /** Count the number of faces in a surface. */

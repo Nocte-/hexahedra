@@ -352,7 +352,7 @@ void network::on_receive (ENetPeer* c, const packet& p)
         case msg::logout::msg_id:           logout      (info);     break;
         case msg::time_sync_request::msg_id:timesync    (info);     break;
         case msg::request_heights::msg_id:  req_heights (info);     break;
-        case msg::request_chunks::msg_id:   req_chunks  (info);     break;
+        case msg::request_surfaces::msg_id: req_chunks  (info);     break;
         case msg::look_at::msg_id:          look_at     (info);     break;
         case msg::motion::msg_id:           motion      (info);     break;
         case msg::button_press::msg_id:     button_press(info);     break;
@@ -561,9 +561,9 @@ void network::login (packet_info& info)
 
     log_msg("player %1% (%2%) login", info.plr, player_name);
 
-    es_.set(info.plr, server_entity_system::c_name, player_name);
-
     auto pi (es_.make(info.plr));
+    es_.set(pi, server_entity_system::c_name, player_name);
+
     if (es_.entity_has_component(pi, entity_system::c_position))
     {
         start_pos_sub = es_.get<wfpos>(pi, entity_system::c_position);
@@ -572,7 +572,7 @@ void network::login (packet_info& info)
     {
         // Move the spawn point to the lowlands.
         int hm (world_.find_area_generator("heightmap"));
-        if (hm != -1)
+        if (false && hm != -1)
         {
             size_t count (0);
             auto proxy (world_.acquire_read_access());
@@ -625,7 +625,7 @@ void network::login (packet_info& info)
         }
         }
 
-        start_pos.z += 26;
+        start_pos.z += 16;
         log_msg("Spawning new player at %1%", start_pos);
         trace("Final position: %1%", world_rel_coordinates(start_pos - world_center));
 
@@ -840,17 +840,18 @@ void network::req_heights (const packet_info& info)
 
 void network::req_chunks (const packet_info& info)
 {
-    auto msg (make<msg::request_chunks>(info.p));
+    auto msg (make<msg::request_surfaces>(info.p));
 
     for(auto& req : msg.requests)
     {
         trace("request for surface %1%", world_rel_coordinates(req.position - world_chunk_center));
         try
         {
-            if (is_air_chunk(req.position, coarse_height(world_, req.position)))
+            auto pos (req.position);
+            if (is_air_chunk(req.position, coarse_height(world_, pos)))
             {
                 trace("air chunk, sending coarse height");
-                send_height(req.position, info.conn);
+                send_height(pos, info.conn);
                 continue;
             }
 
@@ -859,6 +860,13 @@ void network::req_chunks (const packet_info& info)
 
             {
             auto proxy (world_.acquire_read_access());
+
+            if (   proxy.is_surface_available(pos)
+                && req.version == proxy.get_surface(pos).version)
+            {
+                continue;
+            }
+
             chunk_ok = proxy.is_chunk_available(req.position);
             light_ok = proxy.is_lightmap_available(req.position);
             }
