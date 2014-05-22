@@ -644,12 +644,15 @@ void sfml::draw_ui(double elapsed, const hud& h)
         bg.setFillColor(sf::Color(0, 0, 0, 150));
         app_.draw(bg);
 
-        sf::String l ((const unsigned int*)&h.get_input()[0]);
+        sf::String l (reinterpret_cast<const unsigned int*>(&h.get_input()[0]));
         sf::Text txt (l, *ui_font_, 16);
         txt.setPosition(10, height_ - 70);
         app_.draw(txt);
 
-        sf::Text measure (l.substring(0,h.get_cursor()), *ui_font_, 16);
+        // Hopefully sf::String::substring will be available soon.
+        auto sub (h.get_input().substr(0, h.get_cursor()));
+        sf::String ml (reinterpret_cast<const unsigned int*>(&sub[0]));
+        sf::Text measure (ml, *ui_font_, 16);
         float width (measure.getLocalBounds().width);
         sf::Vertex cline[] =
         {
