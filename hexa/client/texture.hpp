@@ -37,6 +37,8 @@
 
 namespace hexa {
 
+namespace gl { class vbo; }
+
 class texture
 {
 public:
@@ -99,7 +101,7 @@ public:
     void load(const std::list<sf::Image>& imagelist,
               uint16_t width, uint16_t height, transparency_t alpha);
 
-    void load(const sf::Image& img, unsigned int index, unsigned int part = 0);
+    void load(const gl::vbo& tx, unsigned int index, unsigned int y_offset);
 
 private:
     uint16_t    width_;

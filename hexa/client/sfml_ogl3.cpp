@@ -460,20 +460,28 @@ void sfml_ogl3::prepare(const player& plr)
     if (textures_ready_)
     {
         texarr_.load(textures_, 16, 16, texture::transparent);
+
+        int slice (0);
+        for (sf::Image& img : textures_)
+        {
+            auto dim (img.getSize());
+            if (dim.x == 16 && dim.y > 16)
+            {
+                gl::vbo buffer (img.getPixelsPtr(), dim.x * dim.y, 4);
+                animations_.emplace_back(animated_texture(slice, dim.y / 16, std::move(buffer)));
+            }
+            ++slice;
+        }
+        textures_.clear();
         textures_ready_ = false;
     }
 
     static int icount (0), jcount (1);
-    if (++icount >= 40 && texarr_)
+    if (++icount >= 40)
     {
-        int i (0);
-        for (sf::Image& t : textures_)
-        {
-            if (t.getSize().y > 16)
-                texarr_.load(t, i, jcount);
+        for (auto& a : animations_)
+            texarr_.load(a.buffer, a.slice, (jcount % a.frame_count) * 16);
 
-            ++i;
-        }
         icount = 0;
         ++jcount;
     }
@@ -486,8 +494,8 @@ void sfml_ogl3::prepare(const player& plr)
     count = 0.5f;
 
     sky_color(sky_grad(count));
-    ambient_color(0.6f * color(0.6f, 0.7f, 1.0f));//amb_grad(count));
-    sun_color(0.6f * sun_grad(count));
+    ambient_color(0.7f * color(0.6f, 0.7f, 1.0f));//amb_grad(count));
+    sun_color(0.7f * sun_grad(count));
     terrain_shader_.use();
     artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);
     fog_density_ = 2.2f / (float)(scene_.view_distance() * chunk_size * 20);
