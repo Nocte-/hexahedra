@@ -33,7 +33,11 @@ namespace hexa {
 udp_server::udp_server(uint16_t port, uint16_t max_users)
     : sv_ (nullptr)
 {
+#ifdef ENET_IPV6
+    addr_.host = in6addr_any;
+#else
     addr_.host = ENET_HOST_ANY;
+#endif
     addr_.port = port;
 
     sv_ = enet_host_create(&addr_, max_users, 3, 0, 0);

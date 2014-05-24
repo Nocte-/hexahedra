@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "ip_address.hpp"
 
 #include <stdexcept>
@@ -42,6 +42,11 @@ ip_address::ip_address(uint32_t ipv4)
     std::copy(ipv4_mask.begin(), ipv4_mask.end(), begin());
     (*this)[6] = static_cast<uint16_t>(ipv4 >> 16);
     (*this)[7] = static_cast<uint16_t>(ipv4      );
+}
+
+ip_address::ip_address(const in6_addr &addr)
+{
+    std::copy_n((const uint16_t*)&addr, 8, begin());
 }
 
 ip_address::ip_address(const std::string& addr)

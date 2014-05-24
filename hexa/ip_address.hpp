@@ -19,7 +19,7 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <algorithm>
@@ -27,6 +27,12 @@
 #include <cstdint>
 #include <initializer_list>
 #include <string>
+
+#ifdef WIN32
+# include <in6addr.h>
+#else
+# include <netinet/in.h>
+#endif
 
 namespace hexa {
 
@@ -46,6 +52,7 @@ public:
     ip_address(uint32_t ipv4);
     ip_address(std::initializer_list<uint16_t> ipv6);
     ip_address(const std::string& addr);
+    ip_address(const in6_addr& addr);
 
     bool is_ipv4() const;
     bool is_unspecified() const;

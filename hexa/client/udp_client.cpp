@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "udp_client.hpp"
@@ -38,7 +38,13 @@ udp_client::udp_client (std::string host, uint16_t port)
         throw network_error("could not set up UDP host");
 
     if (host.empty())
-        host = "localhost";
+    {
+#ifdef ENET_IPV6
+        host = "::1";
+#else
+        host = "127.0.0.1";
+#endif
+    }
 
     enet_address_set_host(&address_, host.c_str());
     address_.port = port;

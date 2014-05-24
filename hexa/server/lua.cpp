@@ -344,7 +344,7 @@ public:
 
     world_coordinates get_chunk() const { return p_.chunk_position(); }
 
-    uint32_t get_ip() const { return p_.conn->address.host; }
+    ip_address get_ip() const { return p_.conn->address.host; }
 
     std::string get_name() const { return p_.name; }
 

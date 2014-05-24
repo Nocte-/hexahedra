@@ -477,7 +477,7 @@ void network::login (packet_info& info)
     std::stringstream str (msg.credentials);
     read_json(str, tree);
     auto login_method (tree.get<std::string>("method", "singleplayer"));
-    auto player_name  (tree.get<std::string>("name", "Guest" + std::to_string(info.conn->address.host % 1000)));
+    auto player_name  (tree.get<std::string>("name", "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000)));
 
     trace("Login %1%", player_name);
 
