@@ -140,24 +140,7 @@
 #ifndef CL_HPP_
 #define CL_HPP_
 
-#ifdef _WIN32
-#include <windows.h>
-#include <malloc.h>
-#if defined(USE_DX_INTEROP)
-#include <CL/cl_d3d10.h>
-#endif
-#endif // _WIN32
-
-//
-#if defined(USE_CL_DEVICE_FISSION)
-#include <CL/cl_ext.h>
-#endif
-
-#if defined(__APPLE__) || defined(__MACOSX)
-#include <OpenCL/opencl.h>
-#else
-#include <CL/cl.h>
-#endif // !__APPLE__
+#include "../clew/clew.h"
 
 #if !defined(CL_CALLBACK)
 #define CL_CALLBACK

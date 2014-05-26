@@ -105,6 +105,12 @@ private:
         animated_texture(unsigned int s, unsigned int f, gl::vbo&& b)
             : slice(s), frame_count(f), buffer(std::move(b))
         { }
+
+#ifdef _MSC_VER
+        animated_texture(const animated_texture&) = delete;
+        animated_texture(animated_texture&& m) : slice(m.slice), frame_count(m.frame_count), buffer(std::move(m.buffer)) { }
+        animated_texture& operator= (animated_texture&& m) { if (this != &m) { slice = m.slice; frame_count = m.frame_count; buffer = std::move(m.buffer); } return *this; }
+#endif
     };
 
     std::vector<animated_texture> animations_;
