@@ -29,6 +29,7 @@
 #include <string>
 
 #ifdef WIN32
+# include <windows.h>
 # include <in6addr.h>
 #else
 # include <netinet/in.h>
