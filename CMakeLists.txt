@@ -34,7 +34,7 @@ endif()
 
 set(WEBPAGE "http://hexahedra.net/")
 
-set(REQUIRED_BOOST_VERSION "1.50")
+set(REQUIRED_BOOST_VERSION "1.54")
 
 # What to build?
 #
