@@ -16,7 +16,7 @@ script:
  - cd hexanoise-build
  - cmake ../hexanoise
  - make
- - make install
+ - sudo make install
  - cd ..
  - mkdir build
  - cd build
