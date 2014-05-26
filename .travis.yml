@@ -20,7 +20,7 @@ script:
  - cd ..
  - mkdir build
  - cd build
- - cmake -DBUILD_UNITTESTS=ON -DBUILD_SERVER=0 -DBUILD_CLIENT=0 ..
+ - cmake -DBUILD_UNITTESTS=ON -DBUILD_SERVER=1 -DBUILD_CLIENT=0 ..
  - make 
  - cd unit_tests
  - ./unit_tests
