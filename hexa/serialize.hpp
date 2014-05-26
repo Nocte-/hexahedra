@@ -44,8 +44,10 @@
 #include "wfpos.hpp"
 
 // Turn off Clang++ warnings about the register keyword in the system headers
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated"
+#if defined(__clang__)
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wdeprecated"
+#endif
 
 namespace hexa {
 
@@ -618,4 +620,6 @@ obj deserialize_as (const buf_t& buffer, obj result = obj())
 
 } // namespace hexa
 
-#pragma clang diagnostic pop
+#if defined(__clang__)
+# pragma clang diagnostic pop
+#endif

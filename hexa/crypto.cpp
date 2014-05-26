@@ -23,6 +23,7 @@
 #include "crypto.hpp"
 
 #include <sstream>
+#include <stdexcept>
 
 #include <crypto++/eccrypto.h>
 #include <crypto++/asn.h>
