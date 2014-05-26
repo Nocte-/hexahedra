@@ -26,8 +26,8 @@
 #include <boost/filesystem/operations.hpp>
 #define BOOST_NETWORK_NO_LIB
 #include <boost/network/protocol/http.hpp>
-#include <crypto++/hex.h>
-#include <crypto++/sha.h>
+#include <cryptopp/hex.h>
+#include <cryptopp/sha.h>
 
 #include "algorithm.hpp"
 
