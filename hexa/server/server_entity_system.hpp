@@ -34,7 +34,7 @@ public:
     enum server_components
     {
         c_ip_addr = c_last_component,   // ip_addr
-        c_uuid,                         // vector<char>
+        c_player_uid,                   // uint64_t
         c_last_server_component
     };
 

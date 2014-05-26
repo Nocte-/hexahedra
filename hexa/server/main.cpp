@@ -56,6 +56,7 @@
 #include <hexa/log.hpp>
 
 #include "clock.hpp"
+#include "extract_surface.hpp"
 #include "init_terrain_generators.hpp"
 #include "lua.hpp"
 #include "network.hpp"
@@ -70,7 +71,9 @@ using boost::bind;
 using boost::format;
 using namespace hexa;
 
+namespace hexa {
 po::variables_map global_settings;
+}
 
 static std::string default_db_path()
 {
@@ -267,6 +270,8 @@ int main (int argc, char* argv[])
 #endif
         // Start the game clock
         clock::init();
+
+        init_surface_extraction();
 
         boost::asio::io_service io_srv;
         boost::asio::io_service::work io_srv_keepalive (io_srv);

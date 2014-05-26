@@ -19,9 +19,9 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
+#include <vector>
 #include <crypto++/eccrypto.h>
 
 namespace hexa {
@@ -29,6 +29,9 @@ namespace crypto {
 
 CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
 make_new_key();
+
+std::vector<uint8_t>
+make_random (int bytes);
 
 CryptoPP::Integer
 make_random_128();

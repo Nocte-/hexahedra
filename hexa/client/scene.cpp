@@ -342,6 +342,7 @@ scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
     }
     assert(lmi == lm.transparent.end());
     }
+
     // Return the results as a std::future, so the render loop can pick
     // it up at the next round.
     return { pos, std::move(opaque_mesh), std::move(transparent_mesh) };
@@ -370,11 +371,10 @@ scene::chunk_became_visible (chunk_coordinates pos)
     {
         set(pos, m.get_surface(pos), m.get_lightmap(pos));
     }
-    else
-    {
-        // Otherwise, we'll have to ask the server for the data.
-        request_chunk_from_server(pos);
-    }
+
+    // Ask the server for the data, even if we already had it, just in case
+    // there's a newer version available.
+    request_chunk_from_server(pos);
 }
 
 void

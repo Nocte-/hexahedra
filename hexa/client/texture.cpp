@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "texture.hpp"
 
 #include <stdexcept>
@@ -26,6 +26,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include "opengl.hpp"
+#include "vbo.hpp"
 
 using namespace boost::range;
 using namespace boost::filesystem;
@@ -170,8 +171,8 @@ void texture_array::load(const std::list<sf::Image>& imagelist,
         glCheck(glGenerateMipmap(GT2DA));
 }
 
-void texture_array::load(const sf::Image& img, unsigned int index,
-                         unsigned int part)
+void texture_array::load(const gl::vbo& tx, unsigned int index,
+                         unsigned int y_offset)
 {
     if (id_ == nullptr)
     {
@@ -183,13 +184,14 @@ void texture_array::load(const sf::Image& img, unsigned int index,
         glCheck(glBindTexture(GT2DA, id()));
     }
 
-    part %= img.getSize().y / height_;
-    glCheck(glTexSubImage3D(GT2DA, 0, 0, 0, index, width_, height_,
-                            1, GL_RGBA, GL_UNSIGNED_BYTE,
-                            img.getPixelsPtr() + width_ * 4 * part));
+    tx.bind_pixel_buffer();
+    glTexSubImage3D(GT2DA, 0, 0, 0, index, width_, height_,
+                    1, GL_RGBA, GL_UNSIGNED_BYTE,
+                    (const GLvoid*)(y_offset * width_ * 4L));
+    tx.unbind_pixel_buffer();
 
-    if (glGenerateMipmap)
-        glCheck(glGenerateMipmap(GT2DA));
+    //if (glGenerateMipmap)
+    //    glCheck(glGenerateMipmap(GT2DA));
 }
 
 } // namespace hexa

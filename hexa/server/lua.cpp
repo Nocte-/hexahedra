@@ -110,7 +110,7 @@ class lua_component
 public:
     enum storage_t
     {
-        st_wfpos, st_vector, st_string, st_yaw_pitch,
+        st_wfpos, st_vector, st_vector2, st_string, st_yaw_pitch,
         st_float, st_uint16, st_uint, st_entity,
         st_tag
     };
@@ -140,7 +140,9 @@ private:
 static std::vector<lua_component> registered_components
 {
     { 0,  "position",   lua_component::st_wfpos },
-    { 1,  "velocity",   lua_component::st_vector }
+    { 1,  "velocity",   lua_component::st_vector },
+    { 2,  "force",      lua_component::st_vector },
+    { 3,  "walk",       lua_component::st_vector2 },
 };
 
 class lua_entity
@@ -212,8 +214,14 @@ public:
     void set_model (uint16_t v)
         { set(entity_system::c_model, v); }
 
-    boost::optional<std::string> get_name() const
-        { return get<std::string>(entity_system::c_name); }
+    std::string get_name() const
+    {
+        auto result (get<std::string>(entity_system::c_name));
+        if (result)
+            return *result;
+
+        return std::string();
+    }
 
     void set_name (const std::string& v)
         { set(entity_system::c_name, v); }
@@ -336,7 +344,7 @@ public:
 
     world_coordinates get_chunk() const { return p_.chunk_position(); }
 
-    uint32_t get_ip() const { return p_.conn->address.host; }
+    ip_address get_ip() const { return p_.conn->address.host; }
 
     std::string get_name() const { return p_.name; }
 
@@ -424,6 +432,7 @@ lua::lua(server_entity_system& entities, world &w)
         def("block_boundingbox", blk_to_bb_wc),
         def("block_boundingbox", blk_to_bb_wf),
         def("boundingbox_from_size", vecf_to_bb),
+        def("broadcast_console_message", broadcast_console_message),
 
         class_<world_coordinates>("pos")
             .def(constructor<uint32_t, uint32_t, uint32_t>())
@@ -650,6 +659,37 @@ void lua::define_material(uint16_t mat_id, const object& specs)
 
                 //trace("custom model for material #%1%, %2%", mat_id, data.name);
                 data.model.emplace_back(std::move(part));
+            }
+        }
+
+        else if (key == "collision_boxes")
+        {
+            for (luabind::iterator j (*i), end; j != end; ++j)
+            {
+                size_t count (0);
+                std::vector<unsigned int> values (6);
+
+                for (luabind::iterator k (*j); k != end; ++k, ++count)
+                {
+                    if (count < 6)
+                        values[count] = object_cast<unsigned int>(*k);
+                }
+
+                if (count < 6)
+                    throw std::runtime_error("not enough parameters in collision box definition");
+
+                aabb<vector> part;
+                part.first  = vector(float(values[0] % 16) / 16.f,
+                                     float(values[1] % 16) / 16.f,
+                                     float(values[2] % 16) / 16.f);
+                part.second = vector(float((values[3] % 16) + 1) / 16.f,
+                                     float((values[4] % 16) + 1) / 16.f,
+                                     float((values[5] % 16) + 1) / 16.f);
+                part.make_correct();
+
+                //trace("custom box for material %1%, %2%", data.name, part);
+
+                data.bounding_box.emplace_back(std::move(part));
             }
         }
 
@@ -972,7 +1012,16 @@ void lua::console(es::entity plr, const std::string& text)
 {
     lua_entity tmp (entities_, plr);
     for (auto& cb : cb_console)
-        call_function<void>(cb, tmp, text);
+    {
+        try
+        {
+            call_function<void>(cb, tmp, text);
+        }
+        catch (luabind::error&)
+        {
+            log_msg("Lua error: %1%", lua_tostring(state_, -1));
+        }
+    }
 }
 
 void lua::change_block(const world_coordinates& p, uint16_t type)
@@ -1018,11 +1067,17 @@ lua::raycast(const wfpos& origin, const yaw_pitch& dir, float range)
 }
 
 void lua::send_console_message(es::entity plr,
-                               const std::string &type,
-                               const std::string &name,
-                               const std::string &text)
+                               const std::string& json)
 {
 
+}
+
+
+void lua::broadcast_console_message(const std::string& json)
+{
+    msg::print_msg msg;
+    msg.json = json;
+    net_->broadcast(serialize_packet(msg), msg.method());
 }
 
 void lua::server_log(const std::string& msg)

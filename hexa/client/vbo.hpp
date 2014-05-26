@@ -80,6 +80,11 @@ public:
      *  and calling draw(). */
     void   bind() const;
 
+
+    void   bind_pixel_buffer() const;
+
+    void   unbind_pixel_buffer() const;
+
     /** Draw this VBO as an array of quads.
      *  The VBO must have been bound first, and the vertex data layout must
      *  have been specified (using the bind_attributes function in

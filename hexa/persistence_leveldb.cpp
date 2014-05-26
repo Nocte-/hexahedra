@@ -84,8 +84,8 @@ persistence_leveldb::store (data_type type, chunk_coordinates xyz,
     key[3] = xyz.z;
 
     auto serialized (serialize(data));
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
-    leveldb::Slice db_value (&*serialized.begin(), serialized.size());
+    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_value (reinterpret_cast<const char*>(&*serialized.begin()), serialized.size());
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
 }
@@ -100,8 +100,8 @@ persistence_leveldb::store (map_coordinates xy, chunk_height z)
 
     auto ser (serialize(z));
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
-    leveldb::Slice db_value (&*ser.begin(), ser.size());
+    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_value (reinterpret_cast<const char*>(&*ser.begin()), ser.size());
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
 }
@@ -191,7 +191,7 @@ persistence_leveldb::store (const es::storage& es)
         buffer.clear();
         es.serialize(i, buffer);
 
-        leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+        leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
         leveldb::Slice db_value (reinterpret_cast<const char*>(&buffer[0]), buffer.size());
 
         check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
@@ -208,7 +208,7 @@ persistence_leveldb::store (const es::storage& es, es::storage::iterator i)
 
     es.serialize(i, buffer);
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
     leveldb::Slice db_value (reinterpret_cast<const char*>(&buffer[0]), buffer.size());
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));

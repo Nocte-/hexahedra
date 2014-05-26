@@ -40,10 +40,14 @@ class world;
 class world_lightmap_access
 {
     world& w_;
+
+    chunk_coordinates                   cached_pos_;
+    std::reference_wrapper<const chunk> cached_cnk_;
+
     friend class world;
 
 protected:
-    world_lightmap_access (world& w) : w_(w) { }
+    world_lightmap_access (world& w);
 
 public:
     world_lightmap_access (const world_lightmap_access&) = delete;

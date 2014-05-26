@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cassert>
@@ -36,6 +36,8 @@
 #include "opengl.hpp"
 
 namespace hexa {
+
+namespace gl { class vbo; }
 
 class texture
 {
@@ -58,9 +60,9 @@ public:
 
     virtual ~texture();
 
-    operator bool() const { return id_ != nullptr; }
+    operator bool() const { return id_.get() != nullptr; }
 
-    GLuint id() const { assert(id_); return *id_; }
+    GLuint id() const { assert(id_.get() != nullptr); return *id_; }
 
     void bind() const { glCheck(glBindTexture(GL_TEXTURE_2D, id())); }
 
@@ -99,7 +101,7 @@ public:
     void load(const std::list<sf::Image>& imagelist,
               uint16_t width, uint16_t height, transparency_t alpha);
 
-    void load(const sf::Image& img, unsigned int index, unsigned int part = 0);
+    void load(const gl::vbo& tx, unsigned int index, unsigned int y_offset);
 
 private:
     uint16_t    width_;

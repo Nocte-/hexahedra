@@ -40,7 +40,7 @@
 #include "sfml.hpp"
 #include "texture.hpp"
 #include "types.hpp"
-#include "vao.hpp"
+#include "vbo.hpp"
 #include "sfml_resource_manager.hpp"
 
 namespace hexa {
@@ -95,6 +95,19 @@ private:
     shader_program      model_shader_;
 
     model_manager::resource    mrfixit_;
+
+    struct animated_texture
+    {
+        unsigned int slice;
+        unsigned int frame_count;
+        gl::vbo      buffer;
+
+        animated_texture(unsigned int s, unsigned int f, gl::vbo&& b)
+            : slice(s), frame_count(f), buffer(std::move(b))
+        { }
+    };
+
+    std::vector<animated_texture> animations_;
 };
 
 } // namespace hexa

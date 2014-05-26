@@ -461,8 +461,10 @@ BOOST_AUTO_TEST_CASE (crypto_test)
         auto spriv (crypto::serialize_private_key(key));
         auto spubl (crypto::serialize_public_key(key));
 
-        //std::cout << spriv << std::endl;
-        //std::cout << spubl << std::endl;
+        std::cout << spriv << std::endl;
+        std::cout << spubl << std::endl;
+
+
     }
 }
 
@@ -588,6 +590,7 @@ BOOST_AUTO_TEST_CASE (es_loadsave_test)
     auto c2 (st.register_component<std::string>("second"));
     auto c3 (st.register_component<wfpos>("pos"));
     auto c4 (st.register_component<hotbar>("hb"));
+    auto c5 (st.register_component<uint64_t>("uid"));
 
     auto e1 (st.new_entity());
     auto e2 (st.new_entity());
@@ -596,8 +599,10 @@ BOOST_AUTO_TEST_CASE (es_loadsave_test)
     hotbar testbar;
     testbar.emplace_back(hotbar_slot(1, "lol"));
 
+    uint64_t testvalue (0x123456789abcdef0);
     st.set(e1, c1, 42);
     st.set(e2, c2, std::string("42"));
+    st.set(e2, c5, testvalue);
     st.set(e3, c3, wfpos(1.234f, 5.678f, 9.012f));
     st.set(e3, c4, testbar);
 
@@ -629,16 +634,31 @@ BOOST_AUTO_TEST_CASE (es_loadsave_test)
     BOOST_CHECK(!st.entity_has_component(ie1, c2));
     BOOST_CHECK(!st.entity_has_component(ie2, c1));
     BOOST_CHECK(st.entity_has_component(ie2, c2));
+    BOOST_CHECK(st.entity_has_component(ie2, c5));
     BOOST_CHECK(!st.entity_has_component(ie3, c2));
     BOOST_CHECK(!st.entity_has_component(ie3, c1));
     BOOST_CHECK(st.entity_has_component(ie3, c3));
     BOOST_CHECK(st.entity_has_component(ie3, c4));
+    BOOST_CHECK(!st.entity_has_component(ie3, c5));
 
     BOOST_CHECK_EQUAL(st.get<int>(ie1, c1), 42);
     BOOST_CHECK_EQUAL(st.get<std::string>(ie2, c2), "42");
+    BOOST_CHECK_EQUAL(st.get<uint64_t>(ie2, c5), testvalue);
     BOOST_CHECK_EQUAL(st.get<wfpos>(ie3, c3), wfpos(1.234f, 5.678f, 9.012f));
     BOOST_CHECK_EQUAL(st.get<hotbar>(ie3, c4).size(), 1);
     BOOST_CHECK_EQUAL(st.get<hotbar>(ie3, c4)[0].name, "lol");
+
+    int count (0);
+    uint64_t check (0);
+    st.for_each<uint64_t>(c5, [&](es::storage::iterator i, uint64_t& id)
+    {
+        ++count;
+        check = id;
+        return false;
+    });
+
+    BOOST_CHECK_EQUAL(count, 1);
+    BOOST_CHECK_EQUAL(check, testvalue);
 }
 
 BOOST_AUTO_TEST_CASE (voxelrange_test)

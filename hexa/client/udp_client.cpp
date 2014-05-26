@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "udp_client.hpp"
 
 #include <boost/format.hpp>
@@ -29,13 +29,22 @@ using boost::format;
 
 namespace hexa {
 
-udp_client::udp_client (const std::string& host, uint16_t port)
+udp_client::udp_client (std::string host, uint16_t port)
     : connected_ (false)
 {
     boost::lock_guard<boost::mutex> lock (host_mutex_);
     host_ = enet_host_create(nullptr, 1, UDP_CHANNELS, 0, 0);
     if (host_ == nullptr)
         throw network_error("could not set up UDP host");
+
+    if (host.empty())
+    {
+#ifdef ENET_IPV6
+        host = "::1";
+#else
+        host = "127.0.0.1";
+#endif
+    }
 
     enet_address_set_host(&address_, host.c_str());
     address_.port = port;
@@ -148,7 +157,7 @@ float udp_client::rtt() const
     return peer_->roundTripTime * 0.001f;
 }
 
-void udp_client::send (const std::vector<uint8_t>& p, msg::reliability method)
+void udp_client::send (const binary_data& p, msg::reliability method)
 {
     uint32_t flags (0);
 

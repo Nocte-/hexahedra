@@ -44,6 +44,17 @@ DL_PrivateKey_EC<ECP> make_new_key()
     return decr.GetKey();
 }
 
+std::vector<uint8_t>
+make_random (int bytes)
+{
+    if (bytes < 1)
+        throw std::runtime_error("'bytes' must be greater than zero");
+
+    std::vector<uint8_t> out (bytes);
+    rng.GenerateBlock(&out[0], bytes);
+    return out;
+}
+
 Integer
 make_random_128()
 {
@@ -55,11 +66,11 @@ make_random_128()
 std::string
 serialize_private_key (const DL_PrivateKey_EC<ECP>& key)
 {
-    //auto num (key.GetPrivateExponent());
+    auto num (key.GetPrivateExponent());
     std::string result;
     HexEncoder enc (new StringSink(result));
-    //num.DEREncode(enc);
-    key.DEREncode(enc);
+    num.DEREncode(enc);
+    //key.DEREncode(enc);
 
     return result;
 }
@@ -67,7 +78,7 @@ serialize_private_key (const DL_PrivateKey_EC<ECP>& key)
 DL_PrivateKey_EC<ECP>
 deserialize_private_key (const std::string& privkey)
 {
-        throw 0;
+    throw 0;
 }
 
 std::string

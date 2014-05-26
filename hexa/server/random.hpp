@@ -44,6 +44,12 @@ fnv_hash (const t& in)
     return fnv_hash(reinterpret_cast<const uint8_t*>(&in), sizeof(t));
 }
 
+inline const uint32_t
+fnv_hash (const std::string& in)
+{
+    return fnv_hash(reinterpret_cast<const uint8_t*>(&in[0]), sizeof(in));
+}
+
 /** Pseudorandom number generator.
  *  This is the standard glibc linear congruential generator.
  * @param i  Seed value, or previous round of the PRNG

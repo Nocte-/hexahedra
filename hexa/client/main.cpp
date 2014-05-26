@@ -40,10 +40,6 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/filesystem/operations.hpp>
 
-// The Boost threadpool library is not included in the official distribution
-// yet.  For now, it's distributed along with Hexahedra.
-#include <boost/threadpool.hpp>
-
 #include <enet/enet.h>
 
 #include <hexa/config.hpp>
@@ -60,6 +56,7 @@
 #include "game.hpp"
 #include "main_game.hpp"
 #include "main_menu.hpp"
+#include "player_info.hpp"
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
@@ -71,7 +68,6 @@ using namespace hexa;
 namespace hexa {
 
 // Accessible by other modules
-boost::threadpool::prio_pool pool (3);
 po::variables_map global_settings;
 
 }
@@ -93,7 +89,7 @@ int main (int argc, char* argv[])
 
     po::options_description config("Configuration");
     config.add_options()
-        ("hostname", po::value<std::string>()->default_value("localhost"),
+        ("hostname", po::value<std::string>()->default_value(""),
             "server name")
         ("port", po::value<uint16_t>()->default_value(15556),
             "default port")
@@ -160,6 +156,11 @@ int main (int argc, char* argv[])
         std::cerr << "Warning: could not open logfile in " << temp_dir().string() << std::endl;
         set_log_output(std::cout);
     }
+
+    auto plinf (get_player_info());
+    trace("Player name : %1%", plinf.name);
+    trace("Player uid  : %1%", plinf.uid);
+    trace("Player key  : %1%", plinf.public_key);
 
     log_msg("Initializing Enet");
     auto enet_rc (enet_initialize());

@@ -80,6 +80,16 @@ void vbo::bind() const
     glCheck(glBindBuffer(GL_ARRAY_BUFFER, id_));
 }
 
+void vbo::bind_pixel_buffer() const
+{
+    glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, id_));
+}
+
+void vbo::unbind_pixel_buffer() const
+{
+    glCheck(glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0));
+}
+
 void vbo::draw() const
 {
     assert(count_ % 4 == 0);

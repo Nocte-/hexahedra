@@ -37,6 +37,8 @@
 #include <boost/thread/locks.hpp>
 #include <boost/math/constants/constants.hpp>
 #include <boost/program_options/variables_map.hpp>
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Event.hpp>
@@ -48,6 +50,8 @@
 #include <hexa/log.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
+
+#include <hexa/server/random.hpp>
 
 #include "event.hpp"
 #include "game.hpp"
@@ -68,6 +72,7 @@ using namespace boost::math::constants;
 
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
+namespace pt = boost::property_tree;
 
 //---------------------------------------------------------------------------
 
@@ -562,27 +567,99 @@ void sfml::draw_ui(double elapsed, const hud& h)
 
 //    pCanvas->RenderCanvas();
 
-    auto& msgs (h.console_messages());
+    std::vector<std::string> msgs;
+    if (h.show_input())
+        msgs = h.old_console_messages();
+    else
+        msgs = h.console_messages();
+
     if (!msgs.empty())
     {
         float height (20 * msgs.size());
-        sf::RectangleShape bg ({ 500.f, height });
-        bg.setPosition(5, height_ - (50 + height));
-        bg.setFillColor(sf::Color(0, 0, 0, 100));
+        sf::RectangleShape bg ({ width_ - 20.0f, height });
+        bg.setPosition(5, height_ - (80 + height));
+        bg.setFillColor(sf::Color(0, 0, 0, 170));
         app_.draw(bg);
 
-        float y (height_ - (50 + height));
+        float y (height_ - (80 + height));
         for (auto& line : msgs)
         {
+            std::string msg;
+            sf::Color   msg_color (sf::Color::White);
+
+            try
+            {
+                std::stringstream strm (line);
+                pt::ptree info;
+                pt::json_parser::read_json(strm, info);
+
+                std::string type (info.get<std::string>("type", ""));
+                std::string text (info.get<std::string>("message", ""));
+                std::string user (info.get<std::string>("name", ""));
+
+
+                if (type == "chat")
+                {
+                    static const sf::Color chat_color[] =
+                    {
+                        { 0x7F, 0xDB, 0xFF },
+                        { 0x39, 0xCC, 0xCC },
+                        { 0x2E, 0xCC, 0x40 },
+                        { 0x01, 0xFF, 0x70 },
+                        { 0xFF, 0xDC, 0x00 },
+                        { 0xFF, 0x85, 0x1B },
+                        { 0xFF, 0x41, 0x36 },
+                        { 0xF0, 0x12, 0xBE },
+                        { 0xC1, 0x1D, 0xD9 },
+                        { 0xC0, 0xC0, 0xC0 }
+                    };
+
+                    msg = (boost::format("<%1%> %2%") % user % text).str();
+                    msg_color = chat_color[fnv_hash(user) % 10];
+                }
+                else
+                    msg = text;
+            }
+            catch (...)
+            {
+                msg = line;
+            }
+
             std::u32string wide;
-            sf::Utf8::toUtf32(line.msg.begin(), line.msg.end(), std::back_inserter(wide));
+            sf::Utf8::toUtf32(msg.begin(), msg.end(), std::back_inserter(wide));
             sf::String l ((const unsigned int*)&wide[0]);
 
             sf::Text txt (l, *ui_font_, 16);
+            txt.setColor(msg_color);
             txt.setPosition(10, y);
             app_.draw(txt);
             y += 20;
         }
+    }
+
+    if (h.show_input())
+    {
+        sf::RectangleShape bg ({ width_ - 10.f, 20.f });
+        bg.setPosition(5, height_ - 70);
+        bg.setFillColor(sf::Color(0, 0, 0, 150));
+        app_.draw(bg);
+
+        sf::String l (reinterpret_cast<const unsigned int*>(&h.get_input()[0]));
+        sf::Text txt (l, *ui_font_, 16);
+        txt.setPosition(10, height_ - 70);
+        app_.draw(txt);
+
+        // Hopefully sf::String::substring will be available soon.
+        auto sub (h.get_input().substr(0, h.get_cursor()));
+        sf::String ml (reinterpret_cast<const unsigned int*>(&sub[0]));
+        sf::Text measure (ml, *ui_font_, 16);
+        float width (measure.getLocalBounds().width);
+        sf::Vertex cline[] =
+        {
+            sf::Vertex(sf::Vector2f(10 + width, height_ - 68)),
+            sf::Vertex(sf::Vector2f(10 + width, height_ - 52))
+        };
+        app_.draw(cline, 2, sf::Lines);
     }
 
     if (h.hotbar_needs_update)
@@ -637,10 +714,11 @@ void sfml::draw_ui(double elapsed, const hud& h)
         acc_elapsed = 0;
     }
 
-    app_.draw(info);
     if (h.show_debug_info)
+    {
+        app_.draw(info);
         app_.draw(debug_info);
-
+    }
     app_.popGLStates();
 }
 
@@ -785,7 +863,6 @@ void sfml::draw_hotbar(const hud& h)
 
             glTranslatef(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f);
             glScalef(scale, scale, 0.0f);
-            //glRotatef( 30, 1, 0, 0);
             glRotatef( 90, 1, 0, 0);
             glRotatef( 30, 1, 0, 0);
             glRotatef( 30, 0, 0, 1);

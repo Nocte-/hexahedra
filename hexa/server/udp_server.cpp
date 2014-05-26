@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "udp_server.hpp"
 
 #include <stdexcept>
@@ -33,7 +33,11 @@ namespace hexa {
 udp_server::udp_server(uint16_t port, uint16_t max_users)
     : sv_ (nullptr)
 {
+#ifdef ENET_IPV6
+    addr_.host = in6addr_any;
+#else
     addr_.host = ENET_HOST_ANY;
+#endif
     addr_.port = port;
 
     sv_ = enet_host_create(&addr_, max_users, 3, 0, 0);
@@ -78,7 +82,7 @@ void udp_server::poll (uint16_t milliseconds)
     }
 }
 
-void udp_server::send (ENetPeer* peer, const std::vector<uint8_t>& msg,
+void udp_server::send (ENetPeer* peer, const binary_data& msg,
                        msg::reliability method) const
 {
     uint32_t flags (0);
@@ -95,6 +99,11 @@ void udp_server::send (ENetPeer* peer, const std::vector<uint8_t>& msg,
     boost::lock_guard<boost::mutex> lock (enet_mutex_);
     enet_peer_send(peer, 0, pkt);
     }
+}
+
+void udp_server::disconnect (ENetPeer* peer)
+{
+    enet_peer_disconnect_now(peer, 0);
 }
 
 } // namespace hexa

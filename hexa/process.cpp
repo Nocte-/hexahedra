@@ -60,6 +60,9 @@ start_process (const boost::filesystem::path &exe,
     else if (pid == 0)
     {
         std::vector<char*> argv;
+        std::string filename (exe.string());
+        argv.push_back(const_cast<char*>(filename.c_str())); // :(
+
         for (auto& arg : args)
         {
             auto buf (new char[arg.size() + 1]);

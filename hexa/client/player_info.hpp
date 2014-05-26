@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------
-// server/server_entity_system.cpp
+/// \file   hexa/client/player_info.hpp
+/// \brief  Persistent storage of player name, UID, and keys
 //
 // This file is part of Hexahedra.
 //
@@ -16,28 +17,29 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013-2014, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
+#pragma once
 
-#include "server_entity_system.hpp"
-
-#include <hexa/ip_address.hpp>
+#include <string>
 
 namespace hexa {
 
-server_entity_system::server_entity_system()
+struct player_info
 {
-    auto check1 (register_component<ip_address>("ipaddr"));
-    auto check2 (register_component<uint64_t>("player_uid"));
+    std::string     name;
+    std::string     uid;
+    std::string     public_key;
+    std::string     private_key;
+    std::string     password;
+};
 
-    if (!es::is_flat<ip_address>::value)
-        throw std::runtime_error("ip_address object is not flat");
+player_info get_player_info();
 
-    if (check1 != c_ip_addr)
-        throw std::runtime_error("cannot register component ipaddr");
+void        write_player_info (const player_info& info);
 
-    if (check2 != c_player_uid)
-        throw std::runtime_error("cannot register component player_uid");
-}
+void        generate_new_key (player_info& info);
+
+void        generate_new_uid (player_info& info);
 
 } // namespace hexa

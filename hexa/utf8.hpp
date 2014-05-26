@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------
-// server/server_entity_system.cpp
+/// \file   hexa/utf8.hpp
+/// \brief  Conversion between UTF-8 and UCS-2/UCS-4
 //
 // This file is part of Hexahedra.
 //
@@ -16,28 +17,18 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013-2014, nocte@hippie.nu
+// Copyright (C) 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
+#pragma once
 
-#include "server_entity_system.hpp"
-
-#include <hexa/ip_address.hpp>
+#include <string>
 
 namespace hexa {
 
-server_entity_system::server_entity_system()
-{
-    auto check1 (register_component<ip_address>("ipaddr"));
-    auto check2 (register_component<uint64_t>("player_uid"));
+std::string
+utf32_to_utf8 (const std::u32string& in);
 
-    if (!es::is_flat<ip_address>::value)
-        throw std::runtime_error("ip_address object is not flat");
-
-    if (check1 != c_ip_addr)
-        throw std::runtime_error("cannot register component ipaddr");
-
-    if (check2 != c_player_uid)
-        throw std::runtime_error("cannot register component player_uid");
-}
+std::u32string
+utf8_to_utf32 (const std::string& in);
 
 } // namespace hexa

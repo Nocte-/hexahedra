@@ -19,7 +19,7 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <string>
@@ -507,15 +507,10 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    /** Message group, e.g. "chat". */
-    std::string group;
-    /** User name, if applicable. */
-    std::string name;
-    /** The actual message. */
-    std::string text;
+    std::string json;
 
     template <class archive>
-    void serialize(archive& ar) { ar(group)(name)(text); }
+    void serialize(archive& ar) { ar(json); }
 };
 
 /**@}*/
@@ -583,7 +578,7 @@ public:
 };
 
 /** Request chunk surface data. */
-class request_chunks : public msg_i
+class request_surfaces : public msg_i
 {
 public:
     enum { msg_id = 139 };
@@ -593,18 +588,17 @@ public:
     struct record
     {
         chunk_coordinates   position;
-        gameclock_t         last_update;
-
+        uint32_t            version;
 
         record() { }
 
-        record(chunk_coordinates p, gameclock_t l = 0)
-            : position(p), last_update(l) { }
+        record(chunk_coordinates p, uint32_t v = 0)
+            : position(p), version(v) { }
 
         template<class archive>
         archive& serialize(archive& ar)
         {
-            return ar(position)(last_update);
+            return ar(position)(version);
         }
     };
 
@@ -744,9 +738,9 @@ public:
 /**@}*/
 
 template <class message_t>
-std::vector<uint8_t> serialize_packet(message_t& m)
+binary_data serialize_packet(message_t& m)
 {
-    std::vector<uint8_t> result;
+    binary_data result;
     result.push_back(message_t::msg_id);
     auto archive (make_serializer(result));
     m.serialize(archive);

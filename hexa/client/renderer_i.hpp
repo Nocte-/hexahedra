@@ -50,10 +50,6 @@ struct event;
 class renderer_i
 {
 public:
-    //boost::signals2::signal<void (chunk_coordinates)> on_new_vbo;
-    //boost::signals2::signal<void (chunk_coordinates)> on_update_vbo;
-    //occlusion_manager  occ_mgr;
-
     typedef std::unique_ptr<terrain_mesher_i> terrain_mesher_ptr;
 
 public:
@@ -64,9 +60,7 @@ public:
 
     virtual ~renderer_i() {}
 
-    //virtual void view_distance(size_t distance) = 0;
     virtual void load_textures(const std::vector<std::string>& textures) = 0;
-    //virtual void remove_chunks(const std::vector<chunk_coordinates>& list) = 0;
     virtual void prepare(const player& plr) = 0;
     virtual void opaque_pass() = 0;
     virtual void handle_occlusion_queries() = 0;
@@ -75,24 +69,11 @@ public:
     virtual void display() = 0;
     virtual void resize(unsigned int w, unsigned int h) = 0;
 
-    //virtual void add_occlusion_query(chunk_coordinates pos) = 0;
-    //virtual void cancel_occlusion_query(chunk_coordinates pos) = 0;
-
-    //virtual std::list<chunk_coordinates>
-    //             get_visible_queries() = 0;
-
     virtual void sky_color(const color&) = 0;
     virtual void ambient_color(const color&) = 0;
     virtual void sun_color(const color&) = 0;
 
-    //virtual void on_update_height(map_coordinates pos, chunk_height z,
-    //                              chunk_height old_z) = 0;
-
     virtual terrain_mesher_ptr make_terrain_mesher() { return nullptr; }
-
-    //virtual void queue_meshes(chunk_coordinates pos,
-    //                          terrain_mesher_ptr opaque,
-    //                          terrain_mesher_ptr transparent) = 0;
 
     virtual void draw(const gl::vbo& v) const = 0;
     virtual void draw_model(const wfpos& p, uint16_t m) const = 0;

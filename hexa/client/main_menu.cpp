@@ -183,7 +183,7 @@ main_menu::main_menu(game& the_game)
 
     auto& buttons (menus_[0]);
 
-    buttons[0].on_clicked = [&]{ host_ = "localhost"; port_ = 15556; done(); };
+    buttons[0].on_clicked = [&]{ host_ = ""; port_ = 15556; done(); };
     buttons[1].on_clicked = [&]{ switch_menu(1); };
     buttons[2].on_clicked = [&]{ std::cout << "Settings" << std::endl; };
     buttons[3].on_clicked = [&]{ exit_ = true; cleanup(); done(); };

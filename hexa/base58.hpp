@@ -1,5 +1,6 @@
 //---------------------------------------------------------------------------
-// server/server_entity_system.cpp
+/// \file   hexa/base58.hpp
+/// \brief  Base58 encoding and decoding
 //
 // This file is part of Hexahedra.
 //
@@ -16,28 +17,25 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013-2014, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
+#pragma once
 
-#include "server_entity_system.hpp"
+#include "basic_types.hpp"
 
-#include <hexa/ip_address.hpp>
+#include <string>
+#include <stdexcept>
 
 namespace hexa {
 
-server_entity_system::server_entity_system()
+class base58_error : public std::runtime_error
 {
-    auto check1 (register_component<ip_address>("ipaddr"));
-    auto check2 (register_component<uint64_t>("player_uid"));
+public:
+    base58_error() : std::runtime_error("not a valid base58 encoding") { }
+};
 
-    if (!es::is_flat<ip_address>::value)
-        throw std::runtime_error("ip_address object is not flat");
+binary_data base58_decode (const std::string& in);
 
-    if (check1 != c_ip_addr)
-        throw std::runtime_error("cannot register component ipaddr");
-
-    if (check2 != c_player_uid)
-        throw std::runtime_error("cannot register component player_uid");
-}
+std::string base58_encode (const binary_data& in);
 
 } // namespace hexa

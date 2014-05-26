@@ -78,8 +78,11 @@ public:
     void on_disconnect (ENetPeer* c);
     void on_receive (ENetPeer* c, const packet& p);
 
-    bool send (uint32_t entity, const std::vector<uint8_t>& msg,
+    bool send (uint32_t entity, const binary_data& msg,
                msg::reliability method) const;
+
+    void broadcast (const binary_data& msg,
+                    msg::reliability method) const;
 
 private:
     struct packet_info
@@ -108,6 +111,7 @@ private:
     void send_surface (const chunk_coordinates& pos, ENetPeer* dest);
     void send_coarse_height (chunk_coordinates pos);
     void send_height  (const map_coordinates& pos, ENetPeer* dest);
+    void kick_player  (ENetPeer* dest, const std::string& kickmsg);
 
     void on_update_surface (const chunk_coordinates& pos);
 
