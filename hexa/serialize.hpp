@@ -45,8 +45,11 @@
 
 // Turn off Clang++ warnings about the register keyword in the system headers
 #if defined(__clang__)
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wdeprecated"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated"
+#elif defined(__GNUC__) || defined(__GNUG__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated"
 #endif
 
 namespace hexa {
@@ -621,5 +624,7 @@ obj deserialize_as (const buf_t& buffer, obj result = obj())
 } // namespace hexa
 
 #if defined(__clang__)
-# pragma clang diagnostic pop
+#pragma clang diagnostic pop
+#elif defined(__GNUC__) || defined(__GNUG__)
+#pragma GCC diagnostic pop
 #endif

@@ -6,22 +6,29 @@
 .\#*
 *.tmp
 *.gz
+*.a
 
 /build/
+nbproject/
+CMakeFiles/
 CMakeFiles/*
 Makefile
 CPackConfig.cmake
 CPackSourceConfig.cmake
 CMakeCache.txt
 CMakeLists.txt.user
+cmake_install.cmake
+install_manifest.txt
+config.hpp
 tags
 
-/hexa/config.hpp
 /install/hexahedra-server.rc
 /install/hexahedra-client.rc
 /win32/
+/hexa/client/hexahedra
+/hexa/server/hexahedra-server
 
 .excludes
 hexahedra.json
 manifest.json
-
+Doxyfile
