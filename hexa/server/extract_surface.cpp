@@ -21,7 +21,7 @@
 
 #include "extract_surface.hpp"
 
-#include <boost/range/algorithm.hpp>
+#include <cassert>
 #include <hexa/voxel_range.hpp>
 
 using namespace boost::range;
@@ -88,6 +88,9 @@ init_surface_extraction()
 surface
 extract_opaque_surface (const world_subsection_read& terrain)
 {
+    assert(!chunk_outer_shell.empty());
+    assert(!chunk_inner_core.empty());
+
     surface result;
     result.reserve(256);
 
@@ -152,6 +155,9 @@ extract_opaque_surface (const world_subsection_read& terrain)
 surface
 extract_transparent_surface (const world_subsection_read& terrain)
 {
+    assert(!chunk_outer_shell.empty());
+    assert(!chunk_inner_core.empty());
+
     surface result;
 
     // Cache the center chunk

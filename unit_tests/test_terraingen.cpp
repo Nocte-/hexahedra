@@ -40,6 +40,7 @@
 #include <hexa/server/init_terrain_generators.hpp>
 #include <hexa/server/world.hpp>
 #include <hexa/server/random.hpp>
+#include <hexa/server/extract_surface.hpp>
 #include <hexa/server/voxel_shapes.hpp>
 #include <hexa/server/terrain/testpattern_generator.hpp>
 
@@ -112,6 +113,8 @@ BOOST_FIXTURE_TEST_SUITE(terrain, fixture)
 
 BOOST_AUTO_TEST_CASE (setup_tests)
 {
+    init_surface_extraction();
+
     register_new_material(1).name = "one";
     register_new_material(2).name = "two";
     register_new_material(3).name = "three";
