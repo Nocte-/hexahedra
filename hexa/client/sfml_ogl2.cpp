@@ -403,7 +403,7 @@ void sfml_ogl2::opaque_pass()
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_EXP2);
     glFogfv(GL_FOG_COLOR, fog_color);
-    glFogf(GL_FOG_DENSITY, 2.2f / (float)(scene_.view_distance() * chunk_size));
+    glFogf(GL_FOG_DENSITY, 2.2f / (float)(scene_.view_distance() * chunk_size * 4));
     glHint(GL_FOG_HINT, GL_NICEST);
 
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -474,7 +474,6 @@ void sfml_ogl2::handle_occlusion_queries()
     if (!texture_atlas_)
         return;
 
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     glCheck(glDisable(GL_TEXTURE_2D));
 
     frustum clip (camera_.mvp_matrix());
@@ -483,7 +482,6 @@ void sfml_ogl2::handle_occlusion_queries()
 
     glCheck(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
     glCheck(glDisable(GL_CULL_FACE));
-    enable_vertex_attributes<occ_cube_vtx>();
 
     scene_.for_each_occlusion_query([&](const chunk_coordinates& pos, gl::occlusion_query& qry)
     {
@@ -492,7 +490,8 @@ void sfml_ogl2::handle_occlusion_queries()
 
         if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
         {
-            glTranslatef(offset.x, offset.y, offset.z);
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
 
             switch (qry.state())
             {
@@ -502,14 +501,14 @@ void sfml_ogl2::handle_occlusion_queries()
 
             case gl::occlusion_query::busy:
                 occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
+                bind_attributes_ogl2<occ_cube_vtx>();
                 glColor3f(1.f, 0.f, 0.f);
                 occlusion_block_.draw();
                 break;
 
             case gl::occlusion_query::visible:
                 occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
+                bind_attributes_ogl2<occ_cube_vtx>();
                 glColor3f(0.f, 1.f, 0.f);
                 occlusion_block_.draw();
                 break;
@@ -517,17 +516,15 @@ void sfml_ogl2::handle_occlusion_queries()
             default:
                 qry.begin_query();
                 occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
+                bind_attributes_ogl2<occ_cube_vtx>();
                 glColor3f(1.f, 1.f, 1.f);
                 occlusion_block_.draw();
                 qry.end_query();
             }
-            glTranslatef(-offset.x, -offset.y, -offset.z);
         }
     });
 
     gl::vbo::unbind();
-    disable_vertex_attributes<occ_cube_vtx>();
     glCheck(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
     glCheck(glEnable(GL_CULL_FACE));
     glCheck(glEnable(GL_TEXTURE_2D));
@@ -543,7 +540,7 @@ void sfml_ogl2::draw(const gl::vbo& v) const
 
     texture_atlas_.bind();
     v.bind();
-    bind_attributes<ogl2_terrain_vertex>();
+    bind_attributes_ogl2<ogl2_terrain_vertex>();
     v.draw();
     v.unbind();
 
