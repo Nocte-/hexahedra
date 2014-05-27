@@ -113,9 +113,13 @@ cl::Device& opencl_device()
 
 #else
 
+namespace hexa {
+
 void init_opencl()  { }
 bool have_opencl()  { return false; }
 cl::Context& opencl_context() { throw 0; }
 cl::Device& opencl_device() { throw 0; }
+
+}
 
 #endif
