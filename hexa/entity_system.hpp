@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <es/storage.hpp>

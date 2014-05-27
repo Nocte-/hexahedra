@@ -353,11 +353,17 @@ void main_game::render()
 
     entities_.for_each<wfpos>(entity_system::c_position,
         [&](es::storage::iterator i,
-            wfpos& p)
+            wfpos& p) -> uint64_t
     {
         p.normalize();
         renderer().draw_model(p, 0);
-        return false;
+
+        if (entities_.entity_has_component(i, entity_system::c_name))
+        {
+
+        }
+
+        return 0;
     });
     } // entities_ lock
 

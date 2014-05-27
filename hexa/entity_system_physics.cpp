@@ -38,7 +38,7 @@ void system_walk (es::storage& s, float timestep)
         [&](es::storage::iterator i,
             vector& v,
             vector2<float>& f,
-            yaw_pitch& l)
+            yaw_pitch& l) -> uint64_t
     {
         constexpr float max_walk_speed (5.0f);
 
@@ -52,7 +52,7 @@ void system_walk (es::storage& s, float timestep)
         v.x = result.x;
         v.y = result.y;
 
-        return true;
+        return (1 << entity_system::c_velocity);
 
 /*
         constexpr float max_walk_speed_sq (max_walk_speed * max_walk_speed);
@@ -82,11 +82,11 @@ void system_force (es::storage& s, float timestep)
                                entity_system::c_force,
         [&](es::storage::iterator i,
             vector& v,
-            vector& f)
+            vector& f) -> uint64_t
     {
         // Simple Euler for now.
         v += f * timestep;
-        return true;
+        return (1 << entity_system::c_velocity);
     });
 }
 
@@ -94,7 +94,7 @@ void system_gravity (es::storage& s, float timestep)
 {
     s.for_each<vector>(entity_system::c_velocity,
         [&](es::storage::iterator i,
-            vector& v)
+            vector& v) -> uint64_t
     {
         constexpr float gravity (15.f); // 9.81 doesn't feel right
         constexpr float air_viscosity (0.008f);
@@ -102,7 +102,7 @@ void system_gravity (es::storage& s, float timestep)
         v += vector(0, 0, -gravity) * timestep;
         v -= (v * absolute(v) * air_viscosity) * timestep;
 
-        return true;
+        return (1 << entity_system::c_velocity);
     });
 }
 
@@ -112,11 +112,11 @@ void system_motion (es::storage& s, float timestep)
                               entity_system::c_velocity,
         [&](es::storage::iterator i,
             wfpos& p,
-            vector& v)
+            vector& v) -> uint64_t
     {
         p += v * timestep;
         p.normalize();
-        return true;
+        return (1 << entity_system::c_position);
     });
 }
 
@@ -134,7 +134,7 @@ void system_terrain_collision (es::storage& s, get_surf_func get_surface, is_air
         [&](es::storage::iterator i,
             wfpos&  p,
             vector& v,
-            vector& bb)
+            vector& bb) -> uint64_t
     {
         p.normalize();
         auto& offset (p.pos);
@@ -226,7 +226,7 @@ void system_terrain_collision (es::storage& s, get_surf_func get_surface, is_air
         }
 
         s.set(i, entity_system::c_impact, impact);
-        return true;
+        return 0;
     });
 }
 
@@ -238,7 +238,7 @@ void system_terrain_friction (es::storage& s, float timestep)
                                entity_system::c_impact,
         [&](es::storage::iterator i,
             vector& v,
-            vector& m)
+            vector& m) -> uint64_t
     {
         constexpr float friction (16.0f);
 
@@ -255,9 +255,9 @@ void system_terrain_friction (es::storage& s, float timestep)
 
             v -= nv;
 
-            return true;
+            return (1 << entity_system::c_velocity);
         }
-        return false;
+        return 0;
     });
 }
 
@@ -270,10 +270,10 @@ void system_lag_compensate (es::storage& s, float timestep, uint32_t skip)
         [&](es::storage::iterator i,
             wfpos& p,
             vector& v,
-            last_known_phys& d)
+            last_known_phys& d) -> uint64_t
     {
         if (i->first == skip)
-            return false;
+            return 0;
 
         d.position += d.speed * timestep;
 
@@ -293,7 +293,7 @@ void system_lag_compensate (es::storage& s, float timestep, uint32_t skip)
             p = lerp(p, d.position, amount);
             v = lerp(v, d.speed, amount);
         }
-        return true;
+        return (1 << entity_system::c_position) + (1 << entity_system::c_velocity) + (1 << entity_system::c_lag_comp);
     });
 }
 
