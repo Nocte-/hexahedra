@@ -14,3 +14,7 @@ find_package(Boost ${REQUIRED_BOOST_VERSION} REQUIRED COMPONENTS filesystem sign
 include_directories(${Boost_INCLUDE_DIRS})
 
 target_link_libraries(${EXE} hexaserver hexacommon hexanoise dl ${Boost_LIBRARIES})
+
+file(GLOB TESTFILES "${CMAKE_CURRENT_SOURCE_DIR}/terrain_test_*.json")
+file(COPY ${TESTFILES} DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
+
