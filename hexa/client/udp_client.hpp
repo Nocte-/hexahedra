@@ -46,7 +46,7 @@ public:
     ~udp_client();
     udp_client(const udp_client&) = delete;
 
-    bool connect (unsigned int timeout = 3000);
+    bool connect (unsigned int timeout = 4000);
 
     bool disconnect();
 

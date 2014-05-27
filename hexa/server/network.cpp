@@ -457,7 +457,7 @@ void network::send_height(const map_coordinates& cpos, ENetPeer* dest)
 
 void network::kick_player(ENetPeer *dest, const std::string &kickmsg)
 {
-    trace("Kick player: %1%", kickmsg);
+    log_msg("Kick player: %1%", kickmsg);
     msg::kick reply;
     reply.reason = kickmsg;
     send(dest, serialize_packet(reply), reply.method());
@@ -479,7 +479,7 @@ void network::login (packet_info& info)
     auto login_method (tree.get<std::string>("method", "singleplayer"));
     auto player_name  (tree.get<std::string>("name", "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000)));
 
-    trace("Login %1%", player_name);
+    log_msg("player '%1%' tries to login", player_name);
 
     if (login_method == "singleplayer")
     {
@@ -525,14 +525,6 @@ void network::login (packet_info& info)
                 trace("Log in new player with uid %1% (%2%)", tree.get<std::string>("uid"), player_uid);
                 info.plr = es_.new_entity();
                 es_.set(info.plr, server_entity_system::c_player_uid, player_uid);
-
-                trace("Double check: %1%", es_.get<uint64_t>(info.plr, server_entity_system::c_player_uid));
-
-                es_.for_each<uint64_t>(server_entity_system::c_player_uid, [&](es::storage::iterator i, uint64_t& id)
-                {
-                    trace("Triple check: %1%", id);
-                    return false;
-                });
             }
             else
             {
@@ -559,7 +551,7 @@ void network::login (packet_info& info)
     entities_[info.conn] = info.plr;
     connections_[info.plr] = info.conn;
 
-    log_msg("player %1% (%2%) login", info.plr, player_name);
+    log_msg("player %1% (%2%) logged in", info.plr, player_name);
 
     auto pi (es_.make(info.plr));
     es_.set(pi, server_entity_system::c_name, player_name);
@@ -657,10 +649,6 @@ void network::login (packet_info& info)
     msg::heightmap_update heights;
     heights.data.reserve((hmr + 1) * (hmr + 1));
 
-    //trace("   trying to get read lock...");
-    //auto lock (acquire_read_lock());
-    //trace("   got lock");
-
     for (uint32_t y (pcp.y - hmr); y <= pcp.y + hmr; ++y)
     {
         for (uint32_t x (pcp.x - hmr); x <= pcp.x + hmr; ++x)
@@ -688,31 +676,6 @@ void network::login (packet_info& info)
     workers_.enqueue([=]{ prepare_for_player(world_, pcp);
                           send_surface_queue(pcp, info.conn); });
 
-/*
-    try
-    {
-        msg::surface_update reply;
-        reply.position = pcp;
-
-        // If the player starts high above ground, send the first normal
-        // terrain chunk below instead.
-        //
-        auto ch (world_.get_coarse_height(pcp));
-        if (is_air_chunk(pcp, ch))
-            pcp.z = ch - 1;
-
-        trace((boost::format("send chunk %1%") % world_vector(pcp - world_chunk_center)).str());
-
-        reply.terrain = world_.get_compressed_surface(pcp);
-        reply.light   = world_.get_compressed_lightmap(pcp);
-
-        send(info.conn, serialize_packet(reply), reply.method());
-    }
-    catch (std::exception& e)
-    {
-        std::cout << "msg::req_chunks: cannot provide " << pcp << " to player, because: " << e.what() << std::endl;
-    }
-*/
 
     log_msg("send position to player %1%", info.plr);
 

@@ -119,24 +119,20 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
         }
     }
 
+    std::string host_ext (singleplayer_ ? "local" : host);
+
     game_.relative_mouse(true);
     setup_renderer();
-    setup_world(host, port);
+    setup_world(host_ext, port);
     scene_.view_distance(vd);
 
-    log_msg("Trying to connect to %1%:%2% ...", host, port);
-    int tries (0);
-    while (!connect())
+    log_msg("Trying to connect to %1%:%2% ...", host_ext, port);
+    if (!connect())
     {
-        log_msg("   ... retrying...");
-        ++tries;
-        if (tries > 2)
-        {
-            if (singleplayer_)
-                terminate_process(server_process_);
+        if (singleplayer_)
+            terminate_process(server_process_);
 
-            throw std::runtime_error("cannot connect to server");
-        }
+        throw std::runtime_error("cannot connect to server");
     }
     log_msg("Connected!");
     login();
@@ -222,7 +218,7 @@ void main_game::player_controls()
     msg::motion mesg;
 
     // Translate the key press status of the WSAD keys to an angle
-    // and a speed, both encoded in 8 bits.
+    // and a speed, each encoded in 8 bits.
 
     int y (1);
     if (key_pressed(key::w)) ++y;
@@ -886,6 +882,7 @@ void main_game::kick (deserializer<packet>& p)
 
     trace("Got kicked: %1%", mesg.reason);
     log_msg("Got kicked: %1%", mesg.reason);
+    waiting_for_data_ = false;
     disconnect();
 }
 
@@ -1151,6 +1148,11 @@ void main_game::bg_thread()
             send(serialize_packet(req), req.method());
         }
     }
+}
+
+void main_game::on_disconnect()
+{
+    waiting_for_data_ = false;
 }
 
 } // namespace hexa

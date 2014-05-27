@@ -122,6 +122,8 @@ private:
     void global_config(deserializer<packet>& p);
     void print_msg(deserializer<packet>& p);
 
+    void on_disconnect() override;
+
 private:
     boost::asio::io_service                io_;
 
