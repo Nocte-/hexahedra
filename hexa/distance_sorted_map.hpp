@@ -65,6 +65,8 @@ public:
 public:
     distance_sorted_map()
         : view_dist_(0)
+        , sq_view_dist_(0)
+        , pos_(world_chunk_center)
     { }
 
     size_t  size() const
@@ -86,7 +88,7 @@ public:
     bool
     is_inside (chunk_coordinates pos) const
     {
-        return squared_distance(pos, pos_) <= sq_view_dist_;
+        return squared_distance(pos, pos_) < sq_view_dist_;
     }
 
     /** Query the view radius, measured in chunks. */
