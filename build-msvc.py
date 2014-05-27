@@ -154,15 +154,15 @@ def main():
         print("Downloading Crypto++...")
         download("http://www.cryptopp.com/cryptopp562.zip")
         
-    if not os.path.exists("crypto++"):
-        os.mkdir("crypto++")
-        os.chdir("crypto++")
+    if not os.path.exists("cryptopp"):
+        os.mkdir("cryptopp")
+        os.chdir("cryptopp")
         extract("../cryptopp562.zip")
         os.chdir("..")
         
-    if not os.path.exists("crypto++/Win32/Output/Release/cryptlib.lib"):
+    if not os.path.exists("cryptopp/Win32/Output/Release/cryptlib.lib"):
         print("Build Crypto++...")
-        os.chdir("crypto++")
+        os.chdir("cryptopp")
         os.system("vcupgrade cryptlib.vcproj")
         os.system("MSBuild.exe cryptlib.vcxproj /p:Configuration=Debug")
         os.system("MSBuild.exe cryptlib.vcxproj /p:Configuration=Release")
@@ -243,7 +243,7 @@ def main():
     -DSFML_GRAPHICS_LIBRARY={root}/{sfml}-build/lib/Release/sfml-graphics-s.lib
     -DSFML_SYSTEM_LIBRARY={root}/{sfml}-build/lib/Release/sfml-system-s.lib
     -DSFML_WINDOW_LIBRARY={root}/{sfml}-build/lib/Release/sfml-window-s.lib
-    """.format(root=root, zlib=zlib, boost=boost, sfml="sfml-2.1", glew=glew, cryptopp="crypto++", enet="enet-1.3.11", luajit="LuaJit-2.0.3").replace("\n","")
+    """.format(root=root, zlib=zlib, boost=boost, sfml="sfml-2.1", glew=glew, cryptopp="cryptopp", enet="enet-1.3.11", luajit="LuaJit-2.0.3").replace("\n","")
                
     os.system("cmake ../hexahedra " + build_opts)
     
