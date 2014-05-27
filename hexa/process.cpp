@@ -128,12 +128,10 @@ start_process (const boost::filesystem::path &exe,
     ZeroMemory(&start_info, sizeof(start_info));
     start_info.cb = sizeof(start_info);
 
-    std::string cmdline_params;
+    std::string cmdline_params (exe.string());
     for (auto& arg : args)
     {
-        if (!cmdline_params.empty())
-            cmdline_params.push_back(' ');
-
+        cmdline_params.push_back(' ');
         cmdline_params += arg;
     }
     // Can't use c_str() here, add our own null terminator.
