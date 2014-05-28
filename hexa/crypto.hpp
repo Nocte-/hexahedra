@@ -26,19 +26,27 @@
 #include <cryptopp/eccrypto.h>
 
 namespace hexa {
-    namespace crypto {
-        CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> make_new_key();
+namespace crypto {
 
-        std::vector<uint8_t> make_random(int bytes);
+CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
+make_new_key();
 
-        CryptoPP::Integer make_random_128();
+std::vector<uint8_t>
+make_random (int bytes);
 
-        std::string serialize_private_key(const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & key);
+CryptoPP::Integer
+make_random_128();
 
-        CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> deserialize_private_key(const std::string & key);
+std::string
+serialize_private_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & key);
 
-        std::string serialize_public_key(const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & privkey);
+CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
+deserialize_private_key (const std::string & key);
 
-        CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> deserialize_public_key(const std::string & privkey);
-    }
-} // namespace hexa::crypto
+std::string
+serialize_public_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & privkey);
+
+CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>
+deserialize_public_key (const std::string & privkey);
+
+}} // namespace hexa::crypto
