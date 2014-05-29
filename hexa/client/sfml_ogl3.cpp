@@ -629,7 +629,6 @@ bool debug_mode = false;
 
 void sfml_ogl3::handle_occlusion_queries()
 {
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     glCheck(glDisable(GL_TEXTURE_2D));
 
     frustum clip (camera_.mvp_matrix());

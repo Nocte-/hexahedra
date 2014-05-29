@@ -390,7 +390,6 @@ void sfml_ogl2::prepare(const player& plr)
 
     sky_color(color(0.56f, 0.67f, 1.0f));
     sfml::prepare(plr);
-    offset(plr.chunk_position());
 }
 
 void sfml_ogl2::opaque_pass()
@@ -410,13 +409,11 @@ void sfml_ogl2::opaque_pass()
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     frustum clip (camera_.mvp_matrix());
     const float sphere_diam (16.f * 13.86f);
 
     glEnable(GL_TEXTURE_2D);
     texture_atlas_.bind();
-    bind_attributes_ogl2<ogl2_terrain_vertex>();
 
     scene_.for_each_opaque_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
@@ -425,13 +422,19 @@ void sfml_ogl2::opaque_pass()
 
         if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
         {
-            glTranslatef(offset.x, offset.y, offset.z);
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
             bind_attributes_ogl2<ogl2_terrain_vertex>();
             vbo.draw();
-            glTranslatef(-offset.x, -offset.y, -offset.z);
         }
     });
+
+    glDisable(GL_TEXTURE_2D);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisable(GL_FOG);
 }
 
 void sfml_ogl2::transparent_pass()
@@ -439,13 +442,16 @@ void sfml_ogl2::transparent_pass()
     if (!texture_atlas_)
         return;
 
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
     frustum clip (camera_.mvp_matrix());
+    const float sphere_diam (16.f * 13.86f);
+
+    glEnable(GL_FOG);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_COLOR_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
     glEnable(GL_TEXTURE_2D);
     texture_atlas_.bind();
-
-    const float sphere_diam (16.f * 13.86f);
 
     scene_.for_each_transparent_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
@@ -454,11 +460,11 @@ void sfml_ogl2::transparent_pass()
 
         if (clip.is_inside(vector3<float>(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
         {
-            glTranslatef(offset.x, offset.y, offset.z);
+            auto mtx (translate(camera_.model_view_matrix(), offset));
+            glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
             bind_attributes_ogl2<ogl2_terrain_vertex>();
             vbo.draw();
-            glTranslatef(-offset.x, -offset.y, -offset.z);
         }
     });
 
@@ -466,6 +472,7 @@ void sfml_ogl2::transparent_pass()
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glDisableClientState(GL_COLOR_ARRAY);
     glDisableClientState(GL_VERTEX_ARRAY);
+    glDisable(GL_TEXTURE_2D);
     glDisable(GL_FOG);
 }
 
@@ -482,6 +489,7 @@ void sfml_ogl2::handle_occlusion_queries()
 
     glCheck(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
     glCheck(glDisable(GL_CULL_FACE));
+    glEnableClientState(GL_VERTEX_ARRAY);
 
     scene_.for_each_occlusion_query([&](const chunk_coordinates& pos, gl::occlusion_query& qry)
     {
@@ -526,8 +534,7 @@ void sfml_ogl2::handle_occlusion_queries()
 
     gl::vbo::unbind();
     glCheck(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-    glCheck(glEnable(GL_CULL_FACE));
-    glCheck(glEnable(GL_TEXTURE_2D));
+    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 void sfml_ogl2::draw(const gl::vbo& v) const
@@ -535,16 +542,18 @@ void sfml_ogl2::draw(const gl::vbo& v) const
     if (!texture_atlas_)
         return;
 
-    glCheck(glEnable(GL_TEXTURE_2D));
-    glCheck(glEnable(GL_CULL_FACE));
+    glCheck(glPushAttrib(GL_ALL_ATTRIB_BITS));
+    glCheck(glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT));
 
     texture_atlas_.bind();
     v.bind();
     bind_attributes_ogl2<ogl2_terrain_vertex>();
     v.draw();
     v.unbind();
-
     texture_atlas_.unbind();
+
+    glCheck(glPopClientAttrib());
+    glCheck(glPopAttrib());
 }
 
 void sfml_ogl2::draw_model(const wfpos& p, uint16_t m) const

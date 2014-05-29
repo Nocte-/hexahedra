@@ -552,8 +552,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     tot_elapsed += elapsed;
     ++step;
 
-    glCheck(glEnable(GL_CULL_FACE));
-    glCheck(glDisable(GL_DEPTH_TEST));
+    app_.pushGLStates();
 
     glCheck(glMatrixMode(GL_PROJECTION));
     glCheck(glLoadIdentity());
@@ -561,11 +560,18 @@ void sfml::draw_ui(double elapsed, const hud& h)
     glCheck(glMatrixMode(GL_MODELVIEW));
     glCheck(glLoadIdentity());
 
-    app_.pushGLStates();
     app_.resetGLStates();
-    app_.draw(ui_elem_[0]);
 
-//    pCanvas->RenderCanvas();
+    // Doesn't work in OpenGL 2?
+    //app_.draw(ui_elem_[0]);
+
+    // Band-aid fix:
+    sf::Sprite a;
+    a.setTexture(*ui_img_);
+    a.setTextureRect(sf::IntRect(0, 0, 16, 16));
+    a.setOrigin(8,8);
+    a.setPosition(width_ * 0.5, height_ * 0.5);
+    app_.draw(a);
 
     std::vector<std::string> msgs;
     if (h.show_input())
@@ -719,6 +725,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
         app_.draw(info);
         app_.draw(debug_info);
     }
+
     app_.popGLStates();
 }
 
@@ -762,11 +769,11 @@ void sfml::draw_hotbar(const hud& h)
     if (h.bar.empty())
         return;
 
-    ui_elem_manager::resource slot       (ui_elem("slot"));
-    ui_elem_manager::resource slot_left  (ui_elem("slot-left"));
-    ui_elem_manager::resource slot_right (ui_elem("slot-right"));
-    ui_elem_manager::resource slot_sep   (ui_elem("slot-sep"));
-    ui_elem_manager::resource slot_actv  (ui_elem("slot-active"));
+    auto slot       (ui_elem("slot"));
+    auto slot_left  (ui_elem("slot-left"));
+    auto slot_right (ui_elem("slot-right"));
+    auto slot_sep   (ui_elem("slot-sep"));
+    auto slot_actv  (ui_elem("slot-active"));
 
     if (slot == nullptr || slot_actv == nullptr)
         return;
@@ -856,6 +863,7 @@ void sfml::draw_hotbar(const hud& h)
                 (*temp).add_custom_block(c, m.model, std::vector<light>(prefab, prefab + 6));
             }
 
+
             gl::vbo mesh ((*temp).make_buffer());
 
             glPushMatrix();
@@ -868,6 +876,7 @@ void sfml::draw_hotbar(const hud& h)
             glRotatef( 30, 0, 0, 1);
             glTranslatef(-8.0f, -8.0f, -8.0f);
             draw(mesh);
+            glCheck(glDisable(GL_CULL_FACE));
             glPopMatrix();
 
             }
@@ -887,6 +896,8 @@ void sfml::draw_hotbar(const hud& h)
         }
         pen_x += size_slot + size_sep;
     }
+
+    app_.resetGLStates();
 
     if (h.active_slot < h.bar.size())
     {
