@@ -11,7 +11,7 @@ Copyright: 2013, Nocte <nocte@hippie.nu>
 License: GPL-3.0
 
 Files: data/font/default.ttf
-Copyright: Jura font, copyright Daniel Johnson
+Copyright: Play font, copyright Jonas Hecksher
 License: OFL-1.1
 
 Files: data/font/armata.otf
@@ -28,10 +28,6 @@ License: Expat
 
 Files: libs/lz4/*
 Copyright: 2011, Yann Collet
-License: BSD-2-clause
-
-Files: libs/noisepp/*
-Copyright: 2008, Urs C. Hanselmann
 License: BSD-2-clause
 
 License: AGPL-3.0
