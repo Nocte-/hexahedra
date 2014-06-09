@@ -115,13 +115,12 @@ chunk_index flip5 (chunk_index i)
 
 } // anonymous namespace
 
-typedef vertex_1<vtx_xyz<int16_t> > occ_cube_vtx;
-
 class terrain_mesher_ogl3 : public terrain_mesher_i
 {
 public:
-    terrain_mesher_ogl3()
-        : empty_(true)
+    terrain_mesher_ogl3(vec3i offset)
+		: terrain_mesher_i{offset}
+		, empty_{true}
     {
     }
 
@@ -141,8 +140,8 @@ public:
     {
         empty_ = false;
 
-        vector3<uint16_t> offset (i);
-        offset *= chunk_size;
+        vec3i offset (offset_ + i);
+        offset *= 16;
         std::array<uint8_t, 2> light;
         for (auto& part : model)
         {
@@ -154,96 +153,96 @@ public:
             light[0] = l[0].artificial;
             light[1] = (l[0].ambient << 4) + l[0].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(b.y, b.z), part.textures[0], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(a.y, b.z), part.textures[0], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(a.y, a.z), part.textures[0], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(b.y, a.z), part.textures[0], light);
 
             // Face: -x
             light[0] = l[1].artificial;
             light[1] = (l[1].ambient << 4) + l[1].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(a.y, b.z), part.textures[1], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(b.y, b.z), part.textures[1], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(b.y, a.z), part.textures[1], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(a.y, a.z), part.textures[1], light);
 
             // Face: +y
             light[0] = l[2].artificial;
             light[1] = (l[2].ambient << 4) + l[2].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(a.x, a.z), part.textures[2], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(a.x, b.z), part.textures[2], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(b.x, b.z), part.textures[2], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(b.x, a.z), part.textures[2], light);
 
             // Face: -y
             light[0] = l[3].artificial;
             light[1] = (l[3].ambient << 4) + l[3].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(b.x, b.z), part.textures[3], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(a.x, b.z), part.textures[3], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(a.x, a.z), part.textures[3], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(b.x, a.z), part.textures[3], light);
 
             // Face: +z
             light[0] = l[4].artificial;
             light[1] = (l[4].ambient << 4) + l[4].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(a.x, a.y), part.textures[4], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
                                  vector2<uint8_t>(b.x, a.y), part.textures[4], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(b.x, b.y), part.textures[4], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
                                  vector2<uint8_t>(a.x, b.y), part.textures[4], light);
 
             // Face: -z
             light[0] = l[5].artificial;
             light[1] = (l[5].ambient << 4) + l[5].sunlight;
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(a.x, b.y), part.textures[5], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
                                  vector2<uint8_t>(b.x, b.y), part.textures[5], light);
 
-            custom_.emplace_back(vector3<uint16_t>(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(b.x, a.y), part.textures[5], light);
 
-            custom_.emplace_back(vector3<uint16_t>(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
                                  vector2<uint8_t>(a.x, a.y), part.textures[5], light);
 
         }
@@ -259,11 +258,11 @@ public:
               { {0, 1, 1}, {0, 0, 1}, {1, 0, 1}, {1, 1, 1} },
               { {0, 0, 0}, {0, 1, 0}, {1, 1, 0}, {1, 0, 0} } };
 
-        optimized_render_surface ors (optimize_greedy(rs_));
+		optimized_render_surface ors (optimize_greedy(rs_));
         std::vector<ogl3_terrain_vertex> data_;
         data_.swap(custom_);
 
-        for (int dir(0); dir < 6; ++dir)
+        for (int dir = 0; dir < 6; ++dir)
         {
             std::function<chunk_index(chunk_index)> transform;
             switch (dir)
@@ -280,42 +279,41 @@ public:
 
             for (auto& lyr : ors.dirs[dir])
             {
-                uint8_t z (lyr.first);
+                uint8_t z = lyr.first;
 
-                for (auto j (lyr.second.begin()); j != lyr.second.end(); ++j)
+                for (auto j = lyr.second.begin(); j != lyr.second.end(); ++j)
                 {
-                    auto& elem (j->second);
+                    auto& elem = j->second;
                     if (elem.texture == 0)
                         continue;
 
-                    auto tx (elem.texture - 1);
+                    auto tx = elem.texture - 1;
                     std::array<uint8_t, 2> light;
                     light[0] = elem.light_art;
                     light[1] = (elem.light_amb << 4) + elem.light_sun;
 
-                    chunk_index p;
-                    p = transform(chunk_index(j->first.x,j->first.y + elem.size.y - 1,z));
-
+                    vec3i p = offset_ + transform(chunk_index(j->first.x,j->first.y + elem.size.y - 1,z));
+					
                     data_.emplace_back(
-                        vector3<uint16_t>(p.x+o[0][0], p.y+o[0][1], p.z+o[0][2]) * 16,
+                        vec3i(p.x+o[0][0], p.y+o[0][1], p.z+o[0][2]) * 16,
                         vector2<uint8_t>(0, 0), tx, light);
 
-                    p = transform(chunk_index(j->first.x, j->first.y,z));
+                    p = offset_ + transform(chunk_index(j->first.x, j->first.y,z));
 
                     data_.emplace_back(
-                        vector3<uint16_t>(p.x+o[1][0], p.y+o[1][1], p.z+o[1][2]) * 16,
+                        vec3i(p.x+o[1][0], p.y+o[1][1], p.z+o[1][2]) * 16,
                         vector2<uint8_t>(0, 16*elem.size.y), tx, light);
 
-                    p = transform(chunk_index(j->first.x + elem.size.x - 1,j->first.y,z));
+                    p = offset_ + transform(chunk_index(j->first.x + elem.size.x - 1,j->first.y,z));
 
                     data_.emplace_back(
-                        vector3<uint16_t>(p.x+o[2][0], p.y+o[2][1], p.z+o[2][2]) * 16,
+                        vec3i(p.x+o[2][0], p.y+o[2][1], p.z+o[2][2]) * 16,
                         vector2<uint8_t>(16 * elem.size.x, 16 * elem.size.y), tx, light);
 
-                    p = transform(chunk_index(j->first.x + elem.size.x - 1,j->first.y + elem.size.y - 1,z));
+                    p = offset_ + transform(chunk_index(j->first.x + elem.size.x - 1,j->first.y + elem.size.y - 1,z));
 
                     data_.emplace_back(
-                        vector3<uint16_t>(p.x+o[3][0], p.y+o[3][1], p.z+o[3][2]) * 16,
+                        vec3i(p.x+o[3][0], p.y+o[3][1], p.z+o[3][2]) * 16,
                         vector2<uint8_t>(16 * elem.size.x, 0), tx, light);
                 }
             }
@@ -343,54 +341,42 @@ sfml_ogl3::sfml_ogl3(sf::RenderWindow& win, scene& s)
     : sfml(win, s)
     , textures_ready_(false)
 {
-    terrain_shader_.load(resource_file(res_shader, "terrain_gl3"));
-
+    load_shader(terrain_shader_, "terrain_gl3");
     terrain_shader_.bind_attribute(0, "position");
     terrain_shader_.bind_attribute(1, "uv");
     terrain_shader_.bind_attribute(2, "texture");
     terrain_shader_.bind_attribute(3, "data");
 
-    if (!terrain_shader_.link())
-    {
-        std::cerr << "Could not link GLSL!" << std::endl;
-        std::cout << terrain_shader_.info_log() << std::endl;
-    }
-
     terrain_shader_.use();
+    if (!terrain_matrix_.bind(terrain_shader_, "matrix"))
+        throw std::runtime_error("uniform 'matrix' not found in terrain shader");
+
+	terrain_camera_.bind(terrain_shader_, "camera");
     tex_.bind(terrain_shader_, "tex");
     fog_color_.bind(terrain_shader_, "fog_color");
-    fog_density_.bind(terrain_shader_, "fog_density");
+    fog_distance_.bind(terrain_shader_, "fog_distance");
     ambient_light_.bind(terrain_shader_, "amb_color");
     sunlight_.bind(terrain_shader_, "sun_color");
     artificial_light_.bind(terrain_shader_, "art_color");
     tex_ = 0;
     terrain_shader_.stop_using();
 
-    // Note: using gl2 for the time being.
-    model_shader_.load(resource_file(res_shader, "model_gl2"));
-    if (!model_shader_.link())
-    {
-        std::cerr << "Could not link model shader" << std::endl;
-        std::cout << model_shader_.info_log() << std::endl;
-        throw(0);
-    }
+    load_shader(model_shader_, "model_gl2");
+    model_shader_.bind_attribute(0, "position");
+    model_shader_.bind_attribute(1, "uv");
+    model_shader_.bind_attribute(2, "normal");
+    model_shader_.use();
+    if (!model_matrix_.bind(model_shader_, "matrix"))
+        throw std::runtime_error("uniform 'matrix' not found in model shader");
+
+    model_tex_.bind(model_shader_, "tex");
+    model_tex_ = 1;
+    model_shader_.stop_using();
 
     mrfixit_ = models("mrfixit");
 
     resize(width_, height_);
     sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);
-
-    const int16_t l (-10), h (266);
-
-    static const int16_t cube[24*3] = {
-        l,l,l,  h,l,l,  h,h,l,  l,h,l,
-        h,l,l,  h,l,h,  h,h,h,  h,h,l,
-        l,h,h,  h,h,h,  h,l,h,  l,l,h,
-        l,h,l,  l,h,h,  l,l,h,  l,l,l,
-        l,l,l,  h,l,l,  h,l,h,  l,l,h,
-        l,h,h,  h,h,h,  h,h,l,  l,h,l };
-
-    occlusion_block_ = gl::vbo(cube, 24, sizeof(occ_cube_vtx));
 }
 
 sfml_ogl3::~sfml_ogl3()
@@ -449,10 +435,9 @@ void sfml_ogl3::ambient_color(const color& rgb)
     terrain_shader_.stop_using();
 }
 
-std::unique_ptr<terrain_mesher_i>
-sfml_ogl3::make_terrain_mesher()
+renderer_i::terrain_mesher_ptr sfml_ogl3::make_terrain_mesher(vec3i offset)
 {
-    return std::unique_ptr<terrain_mesher_i>(new terrain_mesher_ogl3);
+	return std::unique_ptr<terrain_mesher_i>(new terrain_mesher_ogl3(offset));
 }
 
 void sfml_ogl3::prepare(const player& plr)
@@ -496,9 +481,12 @@ void sfml_ogl3::prepare(const player& plr)
     sky_color(sky_grad(count));
     ambient_color(0.7f * color(0.6f, 0.7f, 1.0f));//amb_grad(count));
     sun_color(0.7f * sun_grad(count));
+
     terrain_shader_.use();
     artificial_light_ = color(.65f,.6f,.3f); // art_grad(count);
-    fog_density_ = 2.2f / (float)(scene_.view_distance() * chunk_size * 20);
+    fog_distance_ = scene_.view_distance() * chunk_size * 16.f;
+	terrain_camera_ = camera_.position();
+	terrain_matrix_ = camera_.mvp_matrix();	
     terrain_shader_.stop_using();
 
     sfml::prepare(plr);
@@ -512,80 +500,57 @@ void sfml_ogl3::opaque_pass()
     glCheck(glActiveTexture(GL_TEXTURE0));
     texarr_.bind();
     terrain_shader_.use();
-    enable_vertex_attributes<ogl3_terrain_vertex>();
-
+    enable_attrib_array<ogl3_terrain_vertex>();
+	
     frustum clip (camera_.mvp_matrix());
     const float sphere_diam (16.f * 13.86f);
 
     scene_.for_each_opaque_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
         vec3f offset (vec3i(pos - chunk_offset_));
-        offset *= 256.f;
+        offset *= chunk_size * 16.f;
 
-        if (clip.is_inside(vec3f(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
+        //if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
-            glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
             bind_attributes<ogl3_terrain_vertex>();
             vbo.draw();
         }
     });
 
-    disable_vertex_attributes<ogl3_terrain_vertex>();
+    disable_attrib_array<ogl3_terrain_vertex>();
     terrain_shader_.stop_using();
     texarr_.unbind();
     gl::vbo::unbind();
 }
 
-void sfml_ogl3::draw_model(const wfpos& p, uint16_t m) const
+void sfml_ogl3::draw_model(const wfpos& p, uint16_t m)
 {
-    static  GLfloat zero[4] = { 0, 0, 0, 0 },
-                         one[4] = { 1, 1, 1, 1 },
-                         ambientcol[4] = { 0.5f, 0.5f, 0.5f, 1 },
-                         diffusecol[4] = { 1.0f, 1.0f, 1.0f, 1 },
-                         lightdir[4] = { 0, 0, 1, 0 };
-
-    glCheck(glLightModelfv(GL_LIGHT_MODEL_AMBIENT, zero));
-    glCheck(glMaterialfv(GL_FRONT, GL_SPECULAR, zero));
-    glCheck(glMaterialfv(GL_FRONT, GL_EMISSION, zero));
-    glCheck(glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, one));
-    glCheck(glLightfv(GL_LIGHT0, GL_SPECULAR, zero));
-    glCheck(glLightfv(GL_LIGHT0, GL_AMBIENT, ambientcol));
-    glCheck(glLightfv(GL_LIGHT0, GL_DIFFUSE, diffusecol));
-    glCheck(glLightfv(GL_LIGHT0, GL_POSITION, lightdir));
-
     vector offset (p.relative_to(chunk_offset_ * chunk_size));
-    //trace("%1%", p);
-    //trace("%1% -> %2%", world_offset_, offset);
-
-    //std::cout << "draw model at " << p.pos << " => " << offset << std::endl;
     offset *= 16.f;
 
-    //gl::guard_matrix();
-    glCheck(glMatrixMode(GL_MODELVIEW));
-    auto mtx (translate(camera_.model_view_matrix(), offset));
-    glCheck(glLoadMatrixf(mtx.as_ptr()));
-    glCheck(glColor3f(1, 1, 1));
+    glCheck(glActiveTexture(GL_TEXTURE1));
+
+    model_shader_.use();
+    model_matrix_ = camera_.projection_matrix() * translate(camera_.model_view_matrix(), offset);
+    model_tex_ = 1;
+
     mrfixit_->triangles.bind();
     mrfixit_->vertices.bind();
-
-    hexa::bind_attributes_ogl2<model::vertex>();
-
-    gl::enable ({GL_LIGHTING, GL_LIGHT0, GL_NORMALIZE, GL_TEXTURE_2D});
-    gl::client_states ecs (hexa::client_states<model::vertex>());
+    enable_attrib_array<model::vertex>();
+    bind_attributes<model::vertex>();
 
     for (auto& mesh : mrfixit_->meshes)
     {
         mesh.tex->bind();
-        //glBindTexture(GL_TEXTURE_2D, mesh.tex.id());
         mrfixit_->triangles.draw(mesh.first_triangle, mesh.nr_of_triangles);
     }
-    gl::disable ({ GL_LIGHTING, GL_LIGHT0 });
 
+    disable_attrib_array<model::vertex>();
     mrfixit_->triangles.unbind();
     mrfixit_->vertices.unbind();
     texture::unbind();
+    model_shader_.stop_using();
 }
 
 void sfml_ogl3::transparent_pass()
@@ -593,81 +558,68 @@ void sfml_ogl3::transparent_pass()
     if (!texarr_)
         return;
 
-    enable_vertex_attributes<ogl3_terrain_vertex>();
     frustum clip (camera_.mvp_matrix());
 
     glCheck(glDepthMask(GL_FALSE));
     glCheck(glActiveTexture(GL_TEXTURE0));
     texarr_.bind();
     terrain_shader_.use();
+    enable_attrib_array<ogl3_terrain_vertex>();
+
     const float sphere_diam (16.f * 13.86f);
 
     scene_.for_each_transparent_vbo([&](const chunk_coordinates& pos, const gl::vbo& vbo)
     {
         vec3f offset (vec3i(pos - chunk_offset_));
-        offset *= 256.f;
+        offset *= chunk_size * 16.f;
 
-        if (clip.is_inside(vec3f(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
+        if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
-            glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
             bind_attributes<ogl3_terrain_vertex>();
             vbo.draw();
         }
     });
 
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
-    disable_vertex_attributes<ogl3_terrain_vertex>();
+    disable_attrib_array<ogl3_terrain_vertex>();
     terrain_shader_.stop_using();
     gl::vbo::unbind();
     glCheck(glDepthMask(GL_TRUE));
 }
 
 
-bool debug_mode = false;
+bool debug_mode = true;
 
 void sfml_ogl3::handle_occlusion_queries()
 {
-    glCheck(glDisable(GL_TEXTURE_2D));
+    frustum clip {camera_.mvp_matrix()};
+    const float sphere_diam {18.f * 13.86f};
 
-    frustum clip (camera_.mvp_matrix());
-
-    const float sphere_diam (16.f * 13.86f);
-
-    if (!debug_mode)
-        glCheck(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
-
-    glCheck(glDisable(GL_CULL_FACE));
-    enable_vertex_attributes<occ_cube_vtx>();
+    gl::enable(GL_BLEND);
+    glCheck(glBlendFunc(GL_ZERO, GL_ONE));
+	glCheck(glDisable(GL_CULL_FACE));
+	
+    occlusion_shader_.use();
+    enable_attrib_array<occ_cube_vtx>();
 
     scene_.for_each_occlusion_query([&](const chunk_coordinates& pos, gl::occlusion_query& qry)
     {
-        vec3f offset (vec3i(pos - chunk_offset_));
+        vec3f offset {vec3i(pos - chunk_offset_)};
         offset *= 256.f;
 
-        if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
+        if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
-            glLoadMatrixf(mtx.as_ptr());
+            auto mtx (camera_.projection_matrix() * translate(camera_.model_view_matrix(), offset));
+            occlusion_matrix_ = mtx;
 
-            switch (qry.state())
-            {
-
+            switch (qry.state()) {
             case gl::occlusion_query::inactive:
                 break;
 
             case gl::occlusion_query::busy:
-                occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
-                glColor3f(1.f, 0.f, 0.f);
-                occlusion_block_.draw();
-                break;
-
             case gl::occlusion_query::visible:
                 occlusion_block_.bind();
                 bind_attributes<occ_cube_vtx>();
-                glColor3f(0.f, 1.f, 0.f);
                 occlusion_block_.draw();
                 break;
 
@@ -675,41 +627,39 @@ void sfml_ogl3::handle_occlusion_queries()
                 qry.begin_query();
                 occlusion_block_.bind();
                 bind_attributes<occ_cube_vtx>();
-                glColor3f(1.f, 1.f, 1.f);
                 occlusion_block_.draw();
                 qry.end_query();
             }
         }
     });
 
+    glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+    disable_attrib_array<occ_cube_vtx>();
     gl::vbo::unbind();
-    disable_vertex_attributes<occ_cube_vtx>();
-    glCheck(glEnable(GL_CULL_FACE));
-    glCheck(glEnable(GL_TEXTURE_2D));
-    glCheck(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-    glCheck(glLoadMatrixf(camera_.model_view_matrix().as_ptr()));
+	
+	terrain_matrix_ = camera_.mvp_matrix();		
+    occlusion_shader_.stop_using();
+	
+	glCheck(glEnable(GL_CULL_FACE));	
 }
 
-void sfml_ogl3::draw(const gl::vbo& v) const
+void sfml_ogl3::draw(const gl::vbo& v, const matrix4<float>& mtx)
 {
-    glCheck(glPushAttrib(GL_ALL_ATTRIB_BITS));
-    glCheck(glPushClientAttrib(GL_CLIENT_VERTEX_ARRAY_BIT));
     glCheck(glEnable(GL_TEXTURE_2D));
-    glCheck(glEnable(GL_CULL_FACE));
-
+    glCheck(glActiveTexture(GL_TEXTURE0));
     texarr_.bind();
     terrain_shader_.use();
-    enable_vertex_attributes<ogl3_terrain_vertex>();
-
+    terrain_matrix_ = mtx;
+	terrain_camera_ = vec3f{0,0,0};
+	
+    enable_attrib_array<ogl3_terrain_vertex>();
     v.bind();
     bind_attributes<ogl3_terrain_vertex>();
     v.draw();
     v.unbind();
-
+    disable_attrib_array<ogl3_terrain_vertex>();
     terrain_shader_.stop_using();
     texarr_.unbind();
-    glCheck(glPopClientAttrib());
-    glCheck(glPopAttrib());
 }
 
 } // namespace hexa

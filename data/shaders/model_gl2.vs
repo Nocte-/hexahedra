@@ -1,13 +1,21 @@
 #version 120
 
-attribute vec3 pos;
-attribute vec2 tex_coord;
-attribute vec3 normal;
+uniform mat4  matrix;
 
-void main(void)
-{
-    gl_Position = gl_ModelViewProjectionMatrix * vec4(pos,1);
-    gl_TexCoord[0] = vec4(tex_coord, 1, 1);
-    gl_FrontColor = gl_Color * (clamp(dot(normalize(gl_NormalMatrix * normal), gl_LightSource[0].position.xyz), 0.0, 1.0) * gl_LightSource[0].diffuse + gl_LightSource[0].ambient);
+attribute vec3  postion;
+attribute vec2  uv;
+attribute vec3  normal;
+
+varying vec2  frag_uv;
+varying float frag_diffuse;
+
+const float light_ambient = 0.1;
+const vec3  light_direction = normalize(vec3(1.0, 1.0, 1.0));
+
+void main(void) {
+    gl_Position = matrix * vec4(postion,1);
+    frag_uv = uv;
+    frag_diffuse = min(1.0, 
+                       light_ambient + max(0.0, dot(normal, light_direction)));
 }
 

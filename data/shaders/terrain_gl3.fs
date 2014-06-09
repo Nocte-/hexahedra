@@ -3,23 +3,14 @@
 
 uniform sampler2DArray tex; 
 uniform vec3 fog_color;
-uniform float fog_density;
 
-in vec3 ex_TexCoord;
-in vec3 ex_Light;
+in vec3 frag_uvw;
+in vec3 frag_light;
+in float frag_fog;
 out vec4 fragColor;
 
-vec4 fog(vec4 color, float depth)
-{
-    const float e = 2.718281828;
-    float f = pow(e, -pow(depth * fog_density, 2));
-    return mix(vec4(fog_color, 1.0), color, f);
-}
-
-void main() 
-{ 
-    vec4 color = texture(tex, ex_TexCoord) * vec4(ex_Light, 1.0);
-    float z = 1.0 - (gl_FragCoord.z / gl_FragCoord.w);
-    fragColor = fog(color, z);
+void main() { 
+    vec4 color = vec4(texture(tex, frag_uvw)) * vec4(frag_light, 1.0);
+    fragColor = mix(color, vec4(fog_color, 1.0), frag_fog);
 }
 

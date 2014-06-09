@@ -16,9 +16,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #include "sfml_ogl2.hpp"
 
 #include <list>
@@ -71,7 +70,9 @@ typedef vertex_1<vtx_xyz<int16_t> > occ_cube_vtx;
 class terrain_mesher_ogl2 : public terrain_mesher_i
 {
 public:
-    terrain_mesher_ogl2 () : empty_(true)
+	terrain_mesher_ogl2(vec3i offset)
+		: terrain_mesher_i{offset}
+		, empty_{true}
     { }
 
     static vector3<uint8_t> light_to_rgb (light l)
@@ -287,8 +288,8 @@ public:
 //---------------------------------------------------------------------------
 
 sfml_ogl2::sfml_ogl2(sf::RenderWindow& app, scene& s)
-    : sfml(app, s)
-    , textures_ready_(false)
+    : sfml{app, s}
+	, textures_ready_{false}
 {
     static const int16_t cube[24*3] = {
         0  , 0  , 0   ,   256, 0  , 0   ,   256, 256, 0   ,   0  , 256, 0   ,
@@ -299,16 +300,23 @@ sfml_ogl2::sfml_ogl2(sf::RenderWindow& app, scene& s)
         0  , 256, 256 ,   256, 256, 256 ,   256, 256, 0   ,   0  , 256, 0    };
 
     occlusion_block_ = gl::vbo(cube, 24, sizeof(occ_cube_vtx));
+
+    load_shader(terrain_shader_, "terrain_" + gl_id());
+    terrain_shader_.bind_attribute(0, "position");
+    terrain_shader_.bind_attribute(1, "uv");
+    terrain_shader_.bind_attribute(2, "color");
+
+    load_shader(model_shader_, "model_" + gl_id());
+
 }
 
 sfml_ogl2::~sfml_ogl2()
 {
 }
 
-std::unique_ptr<terrain_mesher_i>
-sfml_ogl2::make_terrain_mesher()
+renderer_i::terrain_mesher_ptr sfml_ogl2::make_terrain_mesher(vec3i offset)
 {
-    return std::unique_ptr<terrain_mesher_i>(new terrain_mesher_ogl2);
+	return std::unique_ptr<terrain_mesher_i>(new terrain_mesher_ogl2(offset));
 }
 
 void sfml_ogl2::load_textures(const std::vector<std::string>& name_list)
@@ -317,13 +325,13 @@ void sfml_ogl2::load_textures(const std::vector<std::string>& name_list)
 
     sf::Image atlas;
     temp_img_.create(512, 512, sf::Color::Transparent);
-    fs::path unknown_file (resource_file(res_block_texture, "unknown"));
+	fs::path unknown_file {resource_file(res_block_texture, "unknown")};
 
-    unsigned int x (0), y (0);
+    unsigned int x =0, y =0;
 
     for (auto& name : name_list)
     {
-        fs::path file (resource_file(res_block_texture, name));
+		fs::path file {resource_file(res_block_texture, name)};
 
         sf::Image tile;
         if (fs::is_regular_file(file))
@@ -332,9 +340,9 @@ void sfml_ogl2::load_textures(const std::vector<std::string>& name_list)
         }
         else
         {
-            std::string clip (name.begin(), find_last(name, ".").begin());
+			std::string clip {name.begin(), find_last(name, ".").begin()};
 
-            fs::path clipfile (resource_file(res_block_texture, clip));
+			fs::path clipfile {resource_file(res_block_texture, clip)};
             if (fs::is_regular_file(clipfile))
                 tile.loadFromFile(clipfile.string());
             else
@@ -405,10 +413,6 @@ void sfml_ogl2::opaque_pass()
     glFogf(GL_FOG_DENSITY, 2.2f / (float)(scene_.view_distance() * chunk_size * 4));
     glHint(GL_FOG_HINT, GL_NICEST);
 
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
     frustum clip (camera_.mvp_matrix());
     const float sphere_diam (16.f * 13.86f);
 
@@ -420,20 +424,17 @@ void sfml_ogl2::opaque_pass()
         vec3f offset (vec3i(pos - chunk_offset_));
         offset *= 256.f;
 
-        if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
+		if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
+            auto mtx = translate(camera_.model_view_matrix(), offset);
             glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
-            bind_attributes_ogl2<ogl2_terrain_vertex>();
+            bind_attributes<ogl2_terrain_vertex>();
             vbo.draw();
         }
     });
 
     glDisable(GL_TEXTURE_2D);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_FOG);
 }
 
@@ -446,10 +447,6 @@ void sfml_ogl2::transparent_pass()
     const float sphere_diam (16.f * 13.86f);
 
     glEnable(GL_FOG);
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-
     glEnable(GL_TEXTURE_2D);
     texture_atlas_.bind();
 
@@ -458,20 +455,17 @@ void sfml_ogl2::transparent_pass()
         vec3f offset (vec3i(pos - chunk_offset_));
         offset *= 256.f;
 
-        if (clip.is_inside(vector3<float>(offset.x + 128.f, offset.y + 128.f, offset.z + 128.f), sphere_diam))
+		if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
+            auto mtx = translate(camera_.model_view_matrix(), offset);
             glLoadMatrixf(mtx.as_ptr());
             vbo.bind();
-            bind_attributes_ogl2<ogl2_terrain_vertex>();
+            bind_attributes<ogl2_terrain_vertex>();
             vbo.draw();
         }
     });
 
     gl::vbo::unbind();
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
     glDisable(GL_TEXTURE_2D);
     glDisable(GL_FOG);
 }
@@ -485,20 +479,19 @@ void sfml_ogl2::handle_occlusion_queries()
 
     frustum clip (camera_.mvp_matrix());
 
-    const float sphere_diam (16.f * 13.86f);
+    const float sphere_diam = 16.f * 13.86f;
 
     glCheck(glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE));
     glCheck(glDisable(GL_CULL_FACE));
-    glEnableClientState(GL_VERTEX_ARRAY);
 
     scene_.for_each_occlusion_query([&](const chunk_coordinates& pos, gl::occlusion_query& qry)
     {
-        vec3f offset (vec3i(pos - chunk_offset_));
+		vec3f offset {vec3i{pos - chunk_offset_}};
         offset *= 256.f;
 
-        if (clip.is_inside(vector3<float>(offset.x + 128, offset.y + 128, offset.z + 128), sphere_diam))
+		if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
         {
-            auto mtx (translate(camera_.model_view_matrix(), offset));
+            auto mtx = translate(camera_.model_view_matrix(), offset);
             glLoadMatrixf(mtx.as_ptr());
 
             switch (qry.state())
@@ -509,14 +502,14 @@ void sfml_ogl2::handle_occlusion_queries()
 
             case gl::occlusion_query::busy:
                 occlusion_block_.bind();
-                bind_attributes_ogl2<occ_cube_vtx>();
+                bind_attributes<occ_cube_vtx>();
                 glColor3f(1.f, 0.f, 0.f);
                 occlusion_block_.draw();
                 break;
 
             case gl::occlusion_query::visible:
                 occlusion_block_.bind();
-                bind_attributes_ogl2<occ_cube_vtx>();
+                bind_attributes<occ_cube_vtx>();
                 glColor3f(0.f, 1.f, 0.f);
                 occlusion_block_.draw();
                 break;
@@ -524,7 +517,7 @@ void sfml_ogl2::handle_occlusion_queries()
             default:
                 qry.begin_query();
                 occlusion_block_.bind();
-                bind_attributes_ogl2<occ_cube_vtx>();
+                bind_attributes<occ_cube_vtx>();
                 glColor3f(1.f, 1.f, 1.f);
                 occlusion_block_.draw();
                 qry.end_query();
@@ -534,10 +527,9 @@ void sfml_ogl2::handle_occlusion_queries()
 
     gl::vbo::unbind();
     glCheck(glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE));
-    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
-void sfml_ogl2::draw(const gl::vbo& v) const
+void sfml_ogl2::draw(const gl::vbo& v, const matrix4<float>& mtx)
 {
     if (!texture_atlas_)
         return;
@@ -547,7 +539,7 @@ void sfml_ogl2::draw(const gl::vbo& v) const
 
     texture_atlas_.bind();
     v.bind();
-    bind_attributes_ogl2<ogl2_terrain_vertex>();
+    bind_attributes<ogl2_terrain_vertex>();
     v.draw();
     v.unbind();
     texture_atlas_.unbind();
@@ -556,7 +548,7 @@ void sfml_ogl2::draw(const gl::vbo& v) const
     glCheck(glPopAttrib());
 }
 
-void sfml_ogl2::draw_model(const wfpos& p, uint16_t m) const
+void sfml_ogl2::draw_model(const wfpos& p, uint16_t m)
 {
     (void)p; (void)m;
 }

@@ -40,6 +40,7 @@ namespace hexa {
 scene::scene (main_game& g)
     : game_     (g)
     , threads_  (4)
+	, chunk_offset_(world_chunk_center)
 {
     terrain_.on_before_update.connect([&](chunk_coordinates, chunk_data& d)
     {
@@ -150,7 +151,7 @@ scene::set (chunk_coordinates pos, const surface_data& surface,
         return;
 
     std::unique_lock<std::mutex> locked (pending_lock_);
-    pending_.emplace_back(threads_.enqueue([=]{ return build_mesh(pos, surface, light); }));
+    pending_.emplace_back(threads_.enqueue([&,pos]{ return build_mesh(pos, surface, light); }));
 }
 
 void
@@ -240,7 +241,7 @@ scene::post_render()
         auto& qry (p.second.occ_qry);
         if (qry.is_result_available())
         {
-            if (qry.result() > 4)
+            if (qry.result() > 32)
             {
                 qry.set_state(gl::occlusion_query::visible);
                 chunk_became_visible(p.first);
@@ -265,8 +266,9 @@ scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
                    const light_data& lm) const
 {
     // Request two mesher objects from the renderer.
-    auto opaque_mesh      (game_.make_terrain_mesher());
-    auto transparent_mesh (game_.make_terrain_mesher());
+	vec3i offset { vec3i{pos - chunk_offset_} * chunk_size };
+    auto opaque_mesh      = game_.make_terrain_mesher(offset);
+    auto transparent_mesh = game_.make_terrain_mesher(offset);
 
     // Sanity check, light map should be the same size as the surface.
     assert(lm.opaque.size() == count_faces(surfaces.opaque));
@@ -274,19 +276,17 @@ scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
 
     // Pass the opaque surfaces and light intensities to the mesher.
     {
-    auto lmi (lm.opaque.begin());
-    auto check (surfaces.opaque.size()); (void)check;
+    auto lmi = lm.opaque.begin();
     for(const faces& f : surfaces.opaque)
     {
-        assert(surfaces.opaque.size() == check);
-        auto pos (f.pos);
-        const material& m (material_prop[f.type]);
+        auto pos = f.pos;
+        const material& m = material_prop[f.type];
 
         if (m.is_custom_block())
         {
             assert(f.dirs == 0x3f);
             std::vector<light> intensities (6);
-            for (int d (0); d < 6; ++d)
+            for (int d = 0; d < 6; ++d)
             {
                 if (lmi == lm.opaque.end())
                 {
@@ -300,7 +300,7 @@ scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
         }
         else
         {
-            for (int d (0); d < 6; ++d)
+            for (int d = 0; d < 6; ++d)
             {
                 if (!f[d])
                     continue;
@@ -327,14 +327,14 @@ scene::build_mesh (chunk_coordinates pos, const surface_data& surfaces,
     auto lmi (lm.transparent.begin());
     for(const faces& f : surfaces.transparent)
     {
-        auto pos (f.pos);
+        auto pos = f.pos;
         const material& m (material_prop[f.type]);
-        for (int d (0); d < 6; ++d)
+        for (int d = 0; d < 6; ++d)
         {
             if (!f[d])
                 continue;
 
-            uint16_t tex (m.textures[d]);
+            uint16_t tex = m.textures[d];
             assert(lmi != lm.transparent.end());
             transparent_mesh->add_face(pos, (direction_type)d, tex, *lmi);
             ++lmi;

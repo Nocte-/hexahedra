@@ -16,13 +16,14 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "shader.hpp"
 
 #include <hexa/algorithm.hpp>
 #include <hexa/color.hpp>
+#include <hexa/log.hpp>
 
 #include "opengl.hpp"
 
@@ -31,7 +32,7 @@ namespace fs = boost::filesystem;
 namespace hexa {
 
 shader::shader()
-    : id_ (0)
+    : id_ {0}
 { }
 
 void shader::load(type t, const std::string& code)
@@ -40,13 +41,13 @@ void shader::load(type t, const std::string& code)
     if (id_ == 0)
         throw shader_error("glCreateShader failed");
 
-    const char* ptr (code.c_str());
+    const char* ptr = code.c_str();
     glCheck(glShaderSource(id_, 1, &ptr, nullptr));
     glCheck(glCompileShader(id_));
 }
 
 shader::shader(shader&& move)
-    : id_ (move.id_)
+    : id_ {move.id_}
 {
     move.id_ = 0;
 }
@@ -60,7 +61,7 @@ shader::~shader()
 std::string shader::info_log() const
 {
     char temp[4096];
-    int len (0);
+    int len {0};
     glCheck(glGetShaderInfoLog(id_, 4096, &len, temp));
     return std::string(temp, len);
 }
@@ -68,8 +69,8 @@ std::string shader::info_log() const
 /////////////////////////////////////////////////////////////////////////////
 
 uniform_variable::uniform_variable()
-    : id_    (0)
-    , bound_ (false)
+    : id_    {0}
+    , bound_ {false}
 { }
 
 bool uniform_variable::bind(const shader_program& prog, const std::string& name)
@@ -80,6 +81,7 @@ bool uniform_variable::bind(const shader_program& prog, const std::string& name)
     {
         id_ = 0;
         bound_ = false;
+        log_msg("Warning, could not bind uniform '%1%'", name);
     }
     return bound_;
 }
@@ -168,6 +170,12 @@ void uniform_variable::operator= (const color& c)
         glCheck(glUniform3f(id_, c[0], c[1], c[2]));
 }
 
+void uniform_variable::operator= (const matrix4<float>& m)
+{
+    if (bound_)
+        glCheck(glUniformMatrix4fv(id_, 1, GL_FALSE, m.as_ptr()));
+}
+
 /////////////////////////////////////////////////////////////////////////////
 
 shader_program::shader_program()
@@ -225,6 +233,12 @@ shader_program::bind_attribute(unsigned int index, const std::string& name)
 {
     assert(id_ != 0);
     glCheck(glBindAttribLocation(id_, index, name.c_str()));
+}
+
+unsigned int shader_program::get_attribute(const std::string& name) const
+{
+    assert(id_ != 0);
+    return glGetAttribLocation(id_, name.c_str());
 }
 
 bool shader_program::link() const

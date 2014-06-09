@@ -67,7 +67,7 @@ public:
     renderer_i& renderer()  { return *renderer_; }
 
     std::unique_ptr<terrain_mesher_i>
-                make_terrain_mesher();
+                make_terrain_mesher(vec3i offset);
 
 public:
     std::string name() const override { return "main game"; }

@@ -51,16 +51,15 @@ public:
     sfml_ogl2(sf::RenderWindow& win, scene& s);
     ~sfml_ogl2();
 
-    std::unique_ptr<terrain_mesher_i>
-         make_terrain_mesher();
+    terrain_mesher_ptr make_terrain_mesher(vec3i offset) override;
 
     void prepare(const player& plr);
     void opaque_pass();
     void transparent_pass();
     void handle_occlusion_queries();
 
-    void draw(const gl::vbo& v) const;
-    void draw_model(const wfpos& p, uint16_t m) const;
+    void draw(const gl::vbo& v, const matrix4<float>& mtx) override;
+    void draw_model(const wfpos& p, uint16_t m) override;
 
     void sun_color(const color&);
     void sky_color(const color&);
@@ -68,11 +67,14 @@ public:
 
     void load_textures(const std::vector<std::string>& name_list);
 
+protected:
+    virtual std::string gl_id() const override
+        { return "gl2"; }
+
 private:
     sf::Image temp_img_;
     texture   texture_atlas_;
     bool      textures_ready_;
-    gl::vbo   occlusion_block_;
 };
 
 } // namespace hexa

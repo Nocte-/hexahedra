@@ -47,6 +47,7 @@
 #include "opengl_vertex.hpp"
 #include "player.hpp"
 #include "renderer_i.hpp"
+#include "sfml_resource_manager.hpp"
 #include "shader.hpp"
 #include "texture.hpp"
 #include "visibility_test.hpp"
@@ -69,9 +70,6 @@ public:
     void display();
 
     virtual void resize(unsigned int w, unsigned int h);
-    void waiting_screen() const;
-    void process (const event& ev);
-    void process (const sf::Event& ev);
 
     void highlight_face(const pos_dir<world_coordinates>& face,
                         const color_alpha& hl_color);
@@ -81,10 +79,15 @@ public:
                                 const color_alpha& hl_color);
 
 protected:
+    typedef vertex_1<vtx_xyz<int16_t> > occ_cube_vtx;
+
     void draw_chunk_cube(const chunk_coordinates& pos);
     void draw_chunk_face(const chunk_coordinates& pos, direction_type dir);
     void draw_bar(float x, float y, int index, int width, double ratio);
     void draw_hotbar (const hud &h);
+
+    virtual std::string gl_id() const = 0;
+    void load_shader (shader_program& shader, const std::string& name);
 
 protected:
     camera          camera_;
@@ -102,6 +105,14 @@ protected:
     texture sun_;
     texture moon_;
     texture star_;
+
+    shader_program          terrain_shader_;
+    shader_program          model_shader_;
+    model_manager::resource mrfixit_;
+
+    shader_program          occlusion_shader_;
+    uniform_variable        occlusion_matrix_;
+    gl::vbo                 occlusion_block_;
 
     std::shared_ptr<sf::Font> ui_font_;
 

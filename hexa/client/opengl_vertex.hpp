@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 /** Example code:
@@ -45,7 +44,7 @@ auto buffer (gl::make_vbo(vertices));
 
 // Draw the model.
 buffer.bind();
-bind_attributes<vtx>();
+bind_attributes<vtx>({0, 1, 2});
 buffer.draw_triangles();
 
  * @endcode
@@ -78,6 +77,12 @@ template <>
 struct gl_type<int16_t> { GLenum operator()() { return GL_SHORT; } };
 
 template <>
+struct gl_type<uint32_t> { GLenum operator()() { return GL_UNSIGNED_INT; } };
+
+template <>
+struct gl_type<int32_t> { GLenum operator()() { return GL_INT; } };
+
+template <>
 struct gl_type<float> { GLenum operator()() { return GL_FLOAT; } };
 
 
@@ -100,16 +105,6 @@ struct vtx_uv : public vector2<t>
     {
         glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
     }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-        glTexCoordPointer(2, gl_type<t>()(), stride, (GLvoid*)o);
-    }
-
-    static int client_state()
-    {
-        return GL_TEXTURE_COORD_ARRAY;
-    }
 };
 
 /** Vertex 3D coordinates */
@@ -124,16 +119,6 @@ struct vtx_xyz : public vector3<t>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
-    }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-        glVertexPointer(3, gl_type<t>()(), stride, (GLvoid*)o);
-    }
-
-    static int client_state()
-    {
-        return GL_VERTEX_ARRAY;
     }
 };
 
@@ -150,16 +135,6 @@ struct vtx_normal : public vector3<t>
     {
         glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
     }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-        glNormalPointer(gl_type<t>()(), stride, (GLvoid*)o);
-    }
-
-    static int client_state()
-    {
-        return GL_NORMAL_ARRAY;
-    }
 };
 
 /** Vertex color */
@@ -174,16 +149,6 @@ struct vtx_rgb : public vector3<t>
     {
         glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride, (GLvoid*)o);
     }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-        glColorPointer(3, gl_type<t>()(), stride, (GLvoid*)o);
-    }
-
-    static int client_state()
-    {
-        return GL_COLOR_ARRAY;
-    }
 };
 
 /** Scalar value */
@@ -196,15 +161,6 @@ struct vtx_scalar
     static void bind(size_t i, size_t o, size_t stride)
     {
         glVertexAttribIPointer(i, 1, gl_type<t>()(), stride, (GLvoid*)o);
-    }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-    }
-
-    static int client_state()
-    {
-        return 0;
     }
 
     t value;
@@ -232,15 +188,6 @@ struct vtx_array : public std::array<t, count>
     {
         glVertexAttribIPointer(i, count, gl_type<t>()(), stride, (GLvoid*)o);
     }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-    }
-
-    static int client_state()
-    {
-        return 0;
-    }
 };
 
 /** Array of normalized scalars.
@@ -267,15 +214,6 @@ struct vtx_normalized_array : public std::array<t, count>
     {
         glVertexAttribPointer(i, count, gl_type<t>()(), true, stride, (GLvoid*)o);
     }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-    }
-
-    static int client_state()
-    {
-        return 0;
-    }
 };
 
 /** Vertex data padding.
@@ -286,15 +224,6 @@ struct vtx_padding : public std::array<char, count>
 {
     static void bind(size_t i, size_t o, size_t stride)
     {
-    }
-
-    static void bind_ogl2(size_t o, size_t stride)
-    {
-    }
-
-    static int client_state()
-    {
-        return 0;
     }
 };
 
@@ -553,80 +482,48 @@ void bind_attributes()
 }
 
 template <class vertex_t>
-void bind_attributes_ogl2()
+void bind_attributes(const std::vector<int>& attrs)
 {
     size_t offset (0), size (sizeof(vertex_t));
-    vertex_t::value_type_1::bind_ogl2(offset, size);
+    vertex_t::value_type_1::bind(attrs[0], offset, size);
 
     if (vertex_t::element_count > 1)
     {
         offset += sizeof(typename vertex_t::value_type_1);
-        vertex_t::value_type_2::bind_ogl2(offset, size);
+        vertex_t::value_type_2::bind(attrs[1], offset, size);
     }
 
     if (vertex_t::element_count > 2)
     {
         offset += sizeof(typename vertex_t::value_type_2);
-        vertex_t::value_type_3::bind_ogl2(offset, size);
+        vertex_t::value_type_3::bind(attrs[2], offset, size);
     }
 
     if (vertex_t::element_count > 3)
     {
         offset += sizeof(typename vertex_t::value_type_3);
-        vertex_t::value_type_4::bind_ogl2(offset, size);
+        vertex_t::value_type_4::bind(attrs[3], offset, size);
     }
 
     if (vertex_t::element_count > 4)
     {
         offset += sizeof(typename vertex_t::value_type_4);
-        vertex_t::value_type_5::bind_ogl2(offset, size);
+        vertex_t::value_type_5::bind(attrs[4], offset, size);
     }
 }
 
-template <typename vertex_t>
-void enable_vertex_attributes()
+template <class Vertex>
+void enable_attrib_array()
 {
-    for (int i {0}; i < vertex_t::element_count; ++i)
+    for (int i = 0; i < Vertex::element_count; ++i)
         glEnableVertexAttribArray(i);
 }
 
-template <typename vertex_t>
-void disable_vertex_attributes()
+template <class Vertex>
+void disable_attrib_array()
 {
-    for (int i {0}; i < vertex_t::element_count; ++i)
+    for (int i = 0; i < Vertex::element_count; ++i)
         glDisableVertexAttribArray(i);
 }
 
-template <typename vertex_t>
-std::vector<int> client_states()
-{
-    std::vector<int> result;
-
-    if (vertex_t::value_type_1::client_state())
-        result.push_back(vertex_t::value_type_1::client_state());
-
-    if (vertex_t::element_count > 1 && vertex_t::value_type_2::client_state())
-        result.push_back(vertex_t::value_type_2::client_state());
-
-    if (vertex_t::element_count > 2 && vertex_t::value_type_3::client_state())
-        result.push_back(vertex_t::value_type_3::client_state());
-
-    if (vertex_t::element_count > 3 && vertex_t::value_type_4::client_state())
-        result.push_back(vertex_t::value_type_4::client_state());
-
-    if (vertex_t::element_count > 4 && vertex_t::value_type_5::client_state())
-        result.push_back(vertex_t::value_type_5::client_state());
-
-    return result;
-}
-
-template <typename vertex_t>
-void enable_client_states()
-{
-    for (auto i : client_states<vertex_t>())
-        glEnableClientState(i);
-}
-
-
 } // namespace hexa
-

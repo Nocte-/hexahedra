@@ -41,13 +41,12 @@
 #include "texture.hpp"
 #include "types.hpp"
 #include "vbo.hpp"
-#include "sfml_resource_manager.hpp"
 
 namespace hexa {
 
 class player;
 
-typedef vertex_4< vtx_xyz<uint16_t>,        // Position
+typedef vertex_4< vtx_xyz<int32_t>,         // Position
                   vtx_uv<uint8_t>,          // Texture coordinates
                   vtx_scalar<uint16_t>,     // Texture index
                   vtx_array<uint8_t, 2> >   // Light values, 4 nibbles
@@ -71,30 +70,32 @@ public:
 
     void load_textures(const std::vector<std::string>& name_list);
 
-    std::unique_ptr<terrain_mesher_i>
-         make_terrain_mesher();
+    terrain_mesher_ptr make_terrain_mesher(vec3i offset);
 
-    void draw(const gl::vbo& v) const;
-    void draw_model(const wfpos& p, uint16_t m) const;
+    void draw(const gl::vbo& v, const matrix4<float>& mtx) override;
+    void draw_model(const wfpos& p, uint16_t m) override;
+
+protected:
+    virtual std::string gl_id() const override
+        { return "gl3"; }
 
 private:
     std::list<sf::Image> textures_;
     std::atomic<bool>    textures_ready_;
+    texture_array        texarr_;
 
-    texture_array texarr_;
-
-    shader_program      terrain_shader_;
+    uniform_variable    terrain_matrix_;
+	uniform_variable    terrain_camera_;
     uniform_variable    tex_;
     uniform_variable    fog_color_;
-    uniform_variable    fog_density_;
+    uniform_variable    fog_distance_;
     uniform_variable    ambient_light_;
     uniform_variable    sunlight_;
     uniform_variable    artificial_light_;
 
-    gl::vbo             occlusion_block_;
-    shader_program      model_shader_;
-
-    model_manager::resource    mrfixit_;
+    uniform_variable    model_matrix_;
+	uniform_variable    model_camera_;
+    uniform_variable    model_tex_;
 
     struct animated_texture
     {

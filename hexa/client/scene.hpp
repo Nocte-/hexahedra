@@ -76,6 +76,11 @@ public:
     {
         return terrain_.view_radius();
     }
+	
+	void set_chunk_offset(chunk_coordinates new_offset)
+	{
+		chunk_offset_ = new_offset;
+	}
 
     void
     move_camera_to (chunk_coordinates pos);
@@ -183,6 +188,7 @@ private:
     main_game&  game_;
     dsmap       terrain_;
     threadpool  threads_;
+	chunk_coordinates	chunk_offset_;
 
     std::array<std::vector<world_vector>, 6>    edge_of_view_;
 

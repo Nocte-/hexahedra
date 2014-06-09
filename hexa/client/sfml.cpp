@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "sfml.hpp"
@@ -48,6 +48,7 @@
 #include <hexa/basic_types.hpp>
 #include <hexa/block_types.hpp>
 #include <hexa/log.hpp>
+#include <hexa/matrix.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
 
@@ -84,7 +85,10 @@ static double tot_elapsed (0);
 
 struct star
 {
-    star(double x, double y, float m) : pos (x, y), mag(m) { }
+    star(float x, float y, float m)
+        : pos {x, y}
+        , mag{m}
+    { }
 
     yaw_pitch pos;
     float     mag;
@@ -167,7 +171,7 @@ void opengl_cube(float size)
     // Draw a cube
     glBegin(GL_QUADS);
 
-    float zero (-0.001f);
+    float zero {-0.001f};
     size += 0.001f;
 
     glVertex3f(size, zero, zero);
@@ -217,30 +221,12 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
     , width_  (win.getSize().x)
     , height_ (win.getSize().y)
     , app_    (win)
-
-    //, GwenRenderer(app_)
-    //, Skin(&GwenRenderer)
 {
-    /*
-    Skin.Init( "DefaultSkin.png" );
-    Skin.SetDefaultFont( L"default.ttf", 15 );
-    pCanvas = new Gwen::Controls::Canvas( &Skin );
-    pCanvas->SetSize( win.getSize().x, win.getSize().y );
-    GwenInput.Initialize(pCanvas);
-
-    auto btn = new Gwen::Controls::Button(pCanvas);
-    btn->SetText(L"Testje test");
-    btn->SetPos(20, 200);
-
-    auto tf = new Gwen::Controls::TextBox(pCanvas);
-    tf->SetSize(200, 20);
-    tf->SetPos(20, 240);
-    tf->SetText("Lawl");
-    tf->SetKeyboardInputEnabled(true);
-    tf->Focus();
-*/
     app_.setVerticalSyncEnabled(global_settings["vsync"].as<bool>());
     init_opengl();
+
+    load_shader(occlusion_shader_, "occ_qry");
+    occlusion_matrix_.bind(occlusion_shader_, "matrix");
 
     ui_img_ = images("ui");
     if (ui_img_ == nullptr)
@@ -272,21 +258,21 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
     ui_elem_[0].setOrigin(8, 8);
 
     std::vector<char> buf (2000000);
-    fs::path datadir (global_settings["datadir"].as<std::string>());
-    std::ifstream bsc ((datadir / "bsc5").string(), std::ios::binary);
+    fs::path datadir {global_settings["datadir"].as<std::string>()};
+    std::ifstream bsc {(datadir / "bsc5").string(), std::ios::binary};
     if (bsc)
     {
         bsc.read(&buf[0], 1800000);
-        const char* c (&buf[28]);
-        for (int i (0); i < 9090; ++i)
+        const char* c = &buf[28];
+        for (int i = 0; i < 9090; ++i)
         {
-            std::vector<char> twist1 (c + 4, c + 12), twist2(c+12, c + 20), twist3(c + 22, c + 24);
+            std::vector<char> twist1 {c + 4, c + 12}, twist2{c+12, c + 20}, twist3{c + 22, c + 24};
             std::reverse(twist1.begin(), twist1.end());
             std::reverse(twist2.begin(), twist2.end());
             std::reverse(twist3.begin(), twist3.end());
-            double* x ((double*)&twist1[0]);
-            double* y ((double*)&twist2[0]);
-            uint16_t* z ((uint16_t*)&twist3[0]);
+            double* x {(double*)&twist1[0]};
+            double* y {(double*)&twist2[0]};
+            uint16_t* z {(uint16_t*)&twist3[0]};
 
             if (*z < 400)
                 stars.emplace_back(*x, *y, 400 - *z);
@@ -296,10 +282,22 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
     }
     else
     {
-        double m (pi<double>() / 10000.);
+        double m {pi<double>() / 10000.};
         for (int i = 0 ; i < 2000 ; ++i)
             stars.emplace_back((rand() % 10000) * m , (rand() % 10000) * m * 2., 30 + rand() % 300);
     }
+
+    const int16_t l {-10}, h {266};
+
+    static const int16_t cube[24*3] = {
+        l,l,l,  h,l,l,  h,h,l,  l,h,l,
+        h,l,l,  h,l,h,  h,h,h,  h,h,l,
+        l,h,h,  h,h,h,  h,l,h,  l,l,h,
+        l,h,l,  l,h,h,  l,l,h,  l,l,l,
+        l,l,l,  h,l,l,  h,l,h,  l,l,h,
+        l,h,h,  h,h,h,  h,h,l,  l,h,l };
+
+    occlusion_block_ = gl::vbo{cube, 24, sizeof(occ_cube_vtx)};
 }
 
 sfml::~sfml()
@@ -308,25 +306,25 @@ sfml::~sfml()
 
 void sfml::draw_chunk_face (const chunk_coordinates& p, direction_type d)
 {
-    vec3i offset (p - chunk_offset_);
+    vec3i offset {p - chunk_offset_};
     opengl_cube_face(256.0f, offset, d);
 }
 
 void sfml::draw_chunk_cube (const chunk_coordinates& p)
 {
-    vec3i offset (p - chunk_offset_);
+    vec3i offset {p - chunk_offset_};
     opengl_cube(256.0f, offset);
 }
 
 void sfml::prepare(const player& plr)
 {
-    const float eye_height (1.7f);
+    const float eye_height = 1.7f;
     camera_wpos_ = wfpos(plr.position(), vector(0,0,0));
 
-    vector c (plr.rel_world_position(chunk_offset_ * chunk_size));
+	vector c = plr.rel_world_position(chunk_offset_ * chunk_size);
     c.z += eye_height;
 
-    float bob (0.0f), rock (0.0f);
+    float bob = 0.0f, rock = 0.0f;
     if (!plr.is_airborne)
     {
         bob  = std::abs(std::sin(tot_elapsed * 10.)) * length(plr.velocity) * 0.016;
@@ -345,10 +343,6 @@ void sfml::prepare(const player& plr)
     glCheck(glDisable(GL_COLOR_MATERIAL));
     glCheck(glEnable(GL_NORMALIZE));
     glCheck(glDisable(GL_FOG));
-
-    glCheck(glDisableClientState(GL_VERTEX_ARRAY));
-    glCheck(glDisableClientState(GL_COLOR_ARRAY));
-    glCheck(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
 
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
     glCheck(glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT));
@@ -369,7 +363,7 @@ void sfml::prepare(const player& plr)
     skydome lulz;
     std::vector<color> colors;
 
-    skylight pretty (yaw_pitch(-0.5f * pi<float>(), hack), 1.9f);
+	skylight pretty {yaw_pitch(-0.5f * pi<float>(), hack), 1.9f};
 
     for(auto p : lulz.vertices())
     {
@@ -384,7 +378,7 @@ void sfml::prepare(const player& plr)
         colors.push_back(xyY_to_srgb(t));
     }
 
-    color amb (pretty(normalize(vector(1.0f, 1.0f, 0.4f))));
+	color amb {pretty(normalize(vector(1.0f, 1.0f, 0.4f)))};
 
     amb.Y() *= 2.5f;
     amb.x() -= 0.33f;
@@ -408,6 +402,7 @@ void sfml::prepare(const player& plr)
     }
     glCheck(glEnd());
 
+    if(false)
     {
     glRotatef(hack * 57.2957795, 0, -1, 0);
     float sun_size(5);
@@ -417,7 +412,7 @@ void sfml::prepare(const player& plr)
 
     textures("star")->bind();
 
-    double x (clamp(-3.0 * std::cos(hack), 0.0, 1.0));
+    double x = clamp(-3.0 * std::cos(hack), 0.0, 1.0);
 
     glBegin(GL_QUADS);
     glColor4f(1,1,1,x);
@@ -471,7 +466,7 @@ void sfml::prepare(const player& plr)
 
     glCheck(glEnableClientState(GL_VERTEX_ARRAY));
     glCheck(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
-    bind_attributes_ogl2<sunvtx>();
+    bind_attributes<sunvtx>();
 
     glColor4f(1,1,1,1);
     sunvbo.draw();
@@ -483,15 +478,10 @@ void sfml::prepare(const player& plr)
 
     texture::unbind();
 
-    camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
+	camera_ = camera(vec3f{0, 0, 0}, plr.head_angle(), rock,
                      1.22173048f, (float)width_ / (float)height_, 2.0f, 16000.f);
 
     camera_.move_to((c + vector(0, 0, bob)) * 16.f);
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(camera_.projection_matrix().as_ptr());
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(camera_.model_view_matrix().as_ptr());
 
     glCheck(glEnable(GL_CULL_FACE));
     glCheck(glEnable(GL_DEPTH_TEST));
@@ -561,17 +551,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     glCheck(glLoadIdentity());
 
     app_.resetGLStates();
-
-    // Doesn't work in OpenGL 2?
-    //app_.draw(ui_elem_[0]);
-
-    // Band-aid fix:
-    sf::Sprite a;
-    a.setTexture(*ui_img_);
-    a.setTextureRect(sf::IntRect(0, 0, 16, 16));
-    a.setOrigin(8,8);
-    a.setPosition(width_ * 0.5, height_ * 0.5);
-    app_.draw(a);
+    app_.draw(ui_elem_[0]);
 
     std::vector<std::string> msgs;
     if (h.show_input())
@@ -581,13 +561,13 @@ void sfml::draw_ui(double elapsed, const hud& h)
 
     if (!msgs.empty())
     {
-        float height (20 * msgs.size());
-        sf::RectangleShape bg ({ width_ - 20.0f, height });
+        float height = 20 * msgs.size();
+		sf::RectangleShape bg({ width_ - 20.0f, height });
         bg.setPosition(5, height_ - (80 + height));
         bg.setFillColor(sf::Color(0, 0, 0, 170));
         app_.draw(bg);
 
-        float y (height_ - (80 + height));
+        float y = height_ - (80 + height);
         for (auto& line : msgs)
         {
             std::string msg;
@@ -729,11 +709,6 @@ void sfml::draw_ui(double elapsed, const hud& h)
     app_.popGLStates();
 }
 
-void sfml::waiting_screen() const
-{
-
-}
-
 void sfml::display()
 {
     app_.display();
@@ -753,27 +728,18 @@ void sfml::resize(unsigned int w, unsigned int h)
     ui_elem_[0].setPosition(w * 0.5, h * 0.5);
 }
 
-void sfml::process(const event &ev)
-{
-}
-
-void sfml::process(const sf::Event &ev)
-{
-    //GwenInput.ProcessMessage(*const_cast<sf::Event*>(&ev));
-}
-
 void sfml::draw_hotbar(const hud& h)
 {
-    static const light prefab[6] = { 5, 5, 9, 9, 15, 15 };
+    static const light prefab[6] = { 3, 3, 8, 8, 15, 15 };
 
     if (h.bar.empty())
         return;
 
-    auto slot       (ui_elem("slot"));
-    auto slot_left  (ui_elem("slot-left"));
-    auto slot_right (ui_elem("slot-right"));
-    auto slot_sep   (ui_elem("slot-sep"));
-    auto slot_actv  (ui_elem("slot-active"));
+    auto slot       = ui_elem("slot");
+    auto slot_left  = ui_elem("slot-left");
+    auto slot_right = ui_elem("slot-right");
+    auto slot_sep   = ui_elem("slot-sep");
+    auto slot_actv  = ui_elem("slot-active");
 
     if (slot == nullptr || slot_actv == nullptr)
         return;
@@ -819,7 +785,7 @@ void sfml::draw_hotbar(const hud& h)
         pen_x += size_left;
     }
 
-    for (size_t cnt (0); cnt < h.bar.size(); ++cnt)
+    for (size_t cnt = 0; cnt < h.bar.size(); ++cnt)
     {
         slot->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot);
@@ -846,45 +812,48 @@ void sfml::draw_hotbar(const hud& h)
         {
         case hotbar_slot::material:
             {
-            auto     temp (make_terrain_mesher());
-            uint16_t mat_idx (find_material(curr_slot.name));
-            const    material& m (material_prop[mat_idx]);
-            chunk_index c (0,0,0);
-
-            float scale (1.25f);
+			auto     temp = make_terrain_mesher({0,0,0});
+            uint16_t mat_idx = find_material(curr_slot.name);
+            const    material& m = material_prop[mat_idx];
+            chunk_index c {0,0,0};
+            float scale = 1.2f;
             if (m.model.empty())
             {
-                for (int i (0); i < 6; ++i)
+                for (int i = 0; i < 6; ++i)
                     (*temp).add_face(c, direction_type(i), m.textures[i], prefab[i]);
             }
             else
             {
-                scale = 1.7f;
+                scale = 1.6f;
                 (*temp).add_custom_block(c, m.model, std::vector<light>(prefab, prefab + 6));
             }
 
 
-            gl::vbo mesh ((*temp).make_buffer());
+            gl::vbo mesh {(*temp).make_buffer()};
+            gl::enable({GL_BLEND, GL_CULL_FACE});
+            glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-            glPushMatrix();
-            glLoadIdentity();
-
-            glTranslatef(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f);
-            glScalef(scale, scale, 0.0f);
-            glRotatef( 90, 1, 0, 0);
-            glRotatef( 30, 1, 0, 0);
-            glRotatef( 30, 0, 0, 1);
-            glTranslatef(-8.0f, -8.0f, -8.0f);
-            draw(mesh);
-            glCheck(glDisable(GL_CULL_FACE));
-            glPopMatrix();
+            auto p = matrix4<float>::identity();
+            p(0,0) = 2.0f / hotbar_.getSize().x;
+            p(1,1) = 2.0f / hotbar_.getSize().y;
+            p(2,2) = 0.01f;
+            p(0,3) = -1;
+            p(1,3) = -1;
+            auto mtx =   p
+                       * matrix4<float>::translation(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f)
+                       * rotate_x<float>(-0.5)
+                       * rotate_y<float>(0.5)
+                       * matrix4<float>::scale3(scale)
+                       * matrix4<float>::flip()
+                       * matrix4<float>::translation(-8.0f, -8.0f, -8.0f);
+            draw(mesh, mtx);
 
             }
             break;
 
         case hotbar_slot::item:
             {
-            auto icon (sprites(curr_slot.name));
+            auto icon = sprites(curr_slot.name);
             if (icon)
             {
                 (*icon).setPosition(pen_x + size_slot * 0.5 - 16,
@@ -907,6 +876,17 @@ void sfml::draw_hotbar(const hud& h)
 
     hotbar_.display();
 }
+
+void sfml::load_shader (shader_program& shader, const std::string& name)
+{
+    shader.load(resource_file(res_shader, name));
+    if (!shader.link())
+    {
+        log_msg(shader.info_log());
+        throw std::runtime_error("cannot link shader " + name);
+    }
+}
+
 
 } // namespace hexa
 

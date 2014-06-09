@@ -17,9 +17,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <list>
@@ -30,6 +29,7 @@
 
 #include <hexa/basic_types.hpp>
 #include <hexa/color.hpp>
+#include <hexa/matrix.hpp>
 #include <hexa/wfpos.hpp>
 
 #include "scene.hpp"
@@ -54,11 +54,11 @@ public:
 
 public:
     renderer_i (scene& s)
-        : scene_(s)
-        , chunk_offset_(world_chunk_center)
+        : scene_{s}
+        , chunk_offset_{world_chunk_center}
     { }
 
-    virtual ~renderer_i() {}
+    virtual ~renderer_i() { }
 
     virtual void load_textures(const std::vector<std::string>& textures) = 0;
     virtual void prepare(const player& plr) = 0;
@@ -73,17 +73,17 @@ public:
     virtual void ambient_color(const color&) = 0;
     virtual void sun_color(const color&) = 0;
 
-    virtual terrain_mesher_ptr make_terrain_mesher() { return nullptr; }
+    virtual terrain_mesher_ptr make_terrain_mesher(vec3i offset) 
+		{ return nullptr; }
 
-    virtual void draw(const gl::vbo& v) const = 0;
-    virtual void draw_model(const wfpos& p, uint16_t m) const = 0;
+    virtual void draw(const gl::vbo& v, const matrix4<float>& mtx) = 0;
+    virtual void draw_model(const wfpos& p, uint16_t m) = 0;
 
     virtual void offset (chunk_coordinates pos)
         { chunk_offset_ = pos; }
 
-    chunk_coordinates offset() const { return chunk_offset_; }
-
-    virtual void waiting_screen() const = 0;
+    chunk_coordinates offset() const
+        { return chunk_offset_; }
 
     virtual void process (const event& ev) { }
     virtual void process (const sf::Event& ev) { }

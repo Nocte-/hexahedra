@@ -755,9 +755,9 @@ player& main_game::get_player()
 }
 
 std::unique_ptr<terrain_mesher_i>
-main_game::make_terrain_mesher()
+main_game::make_terrain_mesher(vec3i offset)
 {
-    return renderer().make_terrain_mesher();
+    return renderer().make_terrain_mesher(offset);
 }
 
 void main_game::walk(float dir, float speed)
@@ -765,7 +765,7 @@ void main_game::walk(float dir, float speed)
     if (player_entity_ == 0xffffffff)
         return;
 
-    vector2<float> move (std::sin(dir), std::cos(dir));
+    vec2f move (std::sin(dir), std::cos(dir));
 
     const float walk_force (1.0f);
     float magnitude (walk_force * speed);
@@ -865,6 +865,7 @@ void main_game::greeting (deserializer<packet>& p)
     player_entity_ = mesg.entity_id;
 
     renderer().offset(mesg.position >> cnkshift);
+    entities_.make(player_entity_);
     player_.move_to(mesg.position, vector3<float>(.5f, .5f, 5.f));
 
     log_msg("MOTD: %1%", mesg.motd);

@@ -17,9 +17,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <array>
@@ -29,6 +28,7 @@
 #include <boost/filesystem/path.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
+#include <hexa/matrix.hpp>
 
 namespace hexa {
 
@@ -47,7 +47,7 @@ public:
 
     shader();
     shader(shader&& move);
-    ~shader(); 
+    ~shader();
 
     void load(type t, const std::string& code);
     GLuint id() const { return id_; }
@@ -81,6 +81,8 @@ public:
     void operator= (const std::array<float, 4>& ints);
     void operator= (const color& val);
 
+    void operator= (const matrix4<float>& mtx);
+
 private:
     GLint id_;
     bool  bound_;
@@ -100,6 +102,7 @@ public:
     GLuint fs_id() const { return fragment_.id(); }
 
     void bind_attribute(unsigned int index, const std::string& name);
+    unsigned int get_attribute(const std::string& name) const;
 
     bool link() const;
     std::string info_log() const;
