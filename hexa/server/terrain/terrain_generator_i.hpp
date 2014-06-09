@@ -30,7 +30,8 @@
 #include "../world_terraingen_access.hpp"
 #include "../world_subsection.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class world;
 
@@ -42,19 +43,19 @@ class world;
 class terrain_generator_i
 {
 public:
-    terrain_generator_i (world& w)
-        : w_ (w)
-    { }
+    terrain_generator_i(world& w)
+        : w_(w)
+    {
+    }
 
-    virtual ~terrain_generator_i() { }
+    virtual ~terrain_generator_i() {}
 
     /** Generate part of the world.
      * @param data  Limited access to the world data
      * @param pos   The chunk coordinates
      * @param cnk   The chunk to fill */
-    virtual void generate (world_terraingen_access& data,
-                           const chunk_coordinates& pos,
-                           chunk& cnk) = 0;
+    virtual void generate(world_terraingen_access& data,
+                          const chunk_coordinates& pos, chunk& cnk) = 0;
 
     /** Estimate the height of the terrain at a given map position.
      * @param data  Limited access to the world data
@@ -64,32 +65,26 @@ public:
      *             first generator.  Generators can safely ignore this value.
      * @return All chunks with a z ordinate of this value or more are
      *         guarateed to be only air. */
-    virtual chunk_height
-    estimate_height (world_terraingen_access& data,
-                     map_coordinates xy,
-                     chunk_height prev) const
+    virtual chunk_height estimate_height(world_terraingen_access& data,
+                                         map_coordinates xy,
+                                         chunk_height prev) const
     {
         return undefined_height;
     }
 
     /** If this module can also generate area data, it should return the
      ** names of the areas in this function. */
-    virtual std::vector<std::string>
-    area_generator() const
-    {
-        return { };
-    }
+    virtual std::vector<std::string> area_generator() const { return {}; }
 
-
-    virtual bool
-    generate (world_terraingen_access& data, const std::string& type,
-              map_coordinates pos, area_data& area) const
+    virtual bool generate(world_terraingen_access& data,
+                          const std::string& type, map_coordinates pos,
+                          area_data& area) const
     {
         return false;
     }
 
 protected:
-    world&  w_;
+    world& w_;
 };
 
 } // namespace hexa

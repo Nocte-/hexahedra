@@ -19,14 +19,14 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "lz4/lz4.h"
 #include "basic_types.hpp"
 #include "serialize.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** A buffer holding compressed data. */
 class compressed_data
@@ -35,99 +35,100 @@ class compressed_data
 
 public:
     /** The buffer with the compressed data. */
-    buf_t       buf;
+    buf_t buf;
     /** The length of the uncompressed data. */
-    uint16_t    unpacked_len;
+    uint16_t unpacked_len;
 
 public:
-    typedef buf_t::iterator         iterator;
-    typedef buf_t::const_iterator   const_iterator;
+    typedef buf_t::iterator iterator;
+    typedef buf_t::const_iterator const_iterator;
 
 public:
-    compressed_data() : unpacked_len(0) { }
+    compressed_data()
+        : unpacked_len{0}
+    {
+    }
 
     compressed_data(const compressed_data&) = default;
 
-	compressed_data(compressed_data&& m)
-		: buf(std::move(m.buf))
-		, unpacked_len(m.unpacked_len)
-	{
-		m.unpacked_len = 0;
-	}
-
-    compressed_data& operator= (const compressed_data&) = default;
-
-    compressed_data& operator= (compressed_data&& m)
+    compressed_data(compressed_data&& m)
+        : buf{std::move(m.buf)}
+        , unpacked_len{m.unpacked_len}
     {
-        if (&m != this)
-        {
+        m.unpacked_len = 0;
+    }
+
+    compressed_data& operator=(const compressed_data&) = default;
+
+    compressed_data& operator=(compressed_data&& m)
+    {
+        if (&m != this) {
             buf = std::move(m.buf);
             unpacked_len = m.unpacked_len;
-			m.unpacked_len = 0;
+            m.unpacked_len = 0;
         }
         return *this;
     }
 
-    void resize(size_t len)
+    void resize(size_t len) { buf.resize(len); }
+
+    bool empty() const { return buf.empty(); }
+
+    char* ptr()
     {
-        buf.resize(len);
+        assert(!buf.empty());
+        return &buf[0];
+    }
+    const char* ptr() const
+    {
+        assert(!buf.empty());
+        return &buf[0];
     }
 
-    bool empty() const
-    {
-        return buf.empty();
-    }
-
-    char*       ptr()       { assert(!buf.empty()) ; return &buf[0]; }
-    const char* ptr() const { assert(!buf.empty()) ; return &buf[0]; }
-
-    size_t         size() const  { return buf.size(); }
-    iterator       begin()       { return buf.begin(); }
+    size_t size() const { return buf.size(); }
+    iterator begin() { return buf.begin(); }
     const_iterator begin() const { return buf.begin(); }
-    iterator       end()         { return buf.end(); }
-    const_iterator end() const   { return buf.end(); }
+    iterator end() { return buf.end(); }
+    const_iterator end() const { return buf.end(); }
 
-    bool operator== (const compressed_data& compare) const
+    bool operator==(const compressed_data& compare) const
     {
-        return    unpacked_len == compare.unpacked_len
-               && buf          == compare.buf;
+        return unpacked_len == compare.unpacked_len && buf == compare.buf;
     }
 
-    template <class archive>
-    archive& serialize(archive& ar) const
+    template <typename Archive>
+    Archive& serialize(Archive& ar) const
     {
         return ar(unpacked_len)(buf);
     }
 
-    template <class archive>
-    archive& serialize(archive& ar)
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
     {
         return ar(unpacked_len)(buf);
     }
 };
 
-
 /** Compress a buffer
  * \param in   The data to be compressed.  Note that this buffer must be
  *             smaller than 65536 bytes.
  * \return The compressed data.  */
-template <class input_t>
-compressed_data compress (const input_t& in)
+template <typename T>
+compressed_data compress(const T& in)
 {
-    size_t byte_size (in.size() * sizeof(typename input_t::value_type));
+    size_t byte_size = in.size() * sizeof(typename T::value_type);
     if (byte_size > 0xffff)
         throw std::runtime_error("too much data for compression");
 
     compressed_data out;
-    if (byte_size > 0)
-    {
-        auto in_ptr(reinterpret_cast<const char*>(&*in.begin()));
+    if (byte_size > 0) {
+        auto in_ptr = reinterpret_cast<const char*>(&*in.begin());
 
         out.resize(byte_size + 16);
         std::fill(out.begin(), out.end(), 0);
         out.unpacked_len = byte_size;
 
-        int compressed_length (LZ4_compress(in_ptr, out.ptr(), byte_size));
+        int compressed_length = LZ4_compress(in_ptr, out.ptr(), byte_size);
         if (compressed_length <= 0)
             throw std::runtime_error("lz4 compression failed");
 
@@ -137,23 +138,21 @@ compressed_data compress (const input_t& in)
     return out;
 }
 
-
 /** Decompress a buffer.
  * \param in    The compressed data
  * \param out   Where to put the decompressed data
  * \return \a out */
 template <class output_t>
-output_t& decompress (const compressed_data& in, output_t& out)
+output_t& decompress(const compressed_data& in, output_t& out)
 {
-    uint16_t byte_size (in.unpacked_len);
+    uint16_t byte_size = in.unpacked_len;
 
     // Make room for the unpacked data
     out.resize(byte_size / sizeof(typename output_t::value_type));
     std::fill(out.begin(), out.end(), 0);
-    if (byte_size > 0)
-    {
-        auto out_ptr (reinterpret_cast<char*>(&*out.begin()));
-        int output_length (LZ4_uncompress(in.ptr(), out_ptr, byte_size));
+    if (byte_size > 0) {
+        auto out_ptr = reinterpret_cast<char*>(&*out.begin());
+        int output_length = LZ4_uncompress(in.ptr(), out_ptr, byte_size);
         if (output_length < 0)
             throw std::runtime_error("lz4 decompression failed");
 
@@ -163,21 +162,17 @@ output_t& decompress (const compressed_data& in, output_t& out)
     return out;
 }
 
-
 template <class output_t>
-output_t decompress_as (const compressed_data& in)
+output_t decompress_as(const compressed_data& in)
 {
     output_t out;
     decompress(in, out);
     return out;
 }
 
-
-inline
-binary_data decompress (const compressed_data& in)
+inline binary_data decompress(const compressed_data& in)
 {
     return decompress_as<binary_data>(in);
 }
 
 } // namespace hexa
-

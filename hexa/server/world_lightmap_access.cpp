@@ -23,26 +23,27 @@
 
 #include "world.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-namespace {
+namespace
+{
 
 static const chunk dummy_;
-
 }
 
-world_lightmap_access::world_lightmap_access(world &w)
+world_lightmap_access::world_lightmap_access(world& w)
     : w_(w)
     , cached_pos_(-1, -1, -1)
     , cached_cnk_(dummy_)
-{ }
+{
+}
 
 world_lightmap_access::~world_lightmap_access()
 {
 }
 
-const chunk&
-world_lightmap_access::get_chunk (const chunk_coordinates& pos)
+const chunk& world_lightmap_access::get_chunk(const chunk_coordinates& pos)
 {
     if (pos == cached_pos_)
         return cached_cnk_;
@@ -54,10 +55,9 @@ world_lightmap_access::get_chunk (const chunk_coordinates& pos)
 }
 
 const surface_data&
-world_lightmap_access::get_surface (const chunk_coordinates& pos)
+world_lightmap_access::get_surface(const chunk_coordinates& pos)
 {
     return w_.get_surface(pos);
 }
 
 } // namespace hexa
-

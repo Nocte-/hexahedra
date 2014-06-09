@@ -29,12 +29,14 @@
 #include "opengl.hpp"
 #include <hexa/log.hpp>
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 occlusion_query::occlusion_query(bool activate)
-    : id_ (0)
-    , state_ (activate ? idle : inactive)
+    : id_(0)
+    , state_(activate ? idle : inactive)
 {
 }
 
@@ -46,8 +48,7 @@ occlusion_query::~occlusion_query()
 
 occlusion_query& occlusion_query::operator=(occlusion_query&& move) noexcept
 {
-    if (&move != this)
-    {
+    if (&move != this) {
         if (id_ != 0)
             glCheck(glDeleteQueries(1, &id_));
 
@@ -64,7 +65,7 @@ bool occlusion_query::is_result_available() const
     if (id_ == 0 || state_ != busy)
         return false;
 
-    GLuint temp (0);
+    GLuint temp(0);
     glCheck(glGetQueryObjectuiv(id_, GL_QUERY_RESULT_AVAILABLE, &temp));
 
     return temp == GL_TRUE;
@@ -74,7 +75,7 @@ unsigned int occlusion_query::result()
 {
     assert(state_ != inactive);
     assert(id_ != 0);
-    GLuint count (0);
+    GLuint count(0);
     glCheck(glGetQueryObjectuiv(id_, GL_QUERY_RESULT, &count));
 
     return count;
@@ -102,13 +103,11 @@ void occlusion_query::end_query() const
 
 void occlusion_query::dispose()
 {
-    if (id_ != 0)
-    {
+    if (id_ != 0) {
         state_ = disposed;
         glCheck(glDeleteQueries(1, &id_));
         id_ = 0;
     }
 }
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

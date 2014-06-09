@@ -16,71 +16,62 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #include "ray_bundle.hpp"
 #include <boost/range/algorithm.hpp>
 
 using namespace std;
 using namespace boost::range;
 
-namespace hexa {
+namespace hexa
+{
 
 void ray_bundle::add(ray_bundle::value_type ray, float w)
 {
     // If this is the first ray in the bundle, just add it.
-    if (trunk.empty() && branches.empty())
-    {
+    if (trunk.empty() && branches.empty()) {
         trunk = move(ray);
         weight = w;
         return;
     }
 
     // If not, merge it.
-    auto cursor (begin(ray));
-    auto j      (begin(trunk));
+    auto cursor(begin(ray));
+    auto j(begin(trunk));
 
     // Follow the ray along the trunk, and stop when we reach the end
     // of either the trunk or the ray, or when the ray diverges from
     // the trunk.
-    while (j != end(trunk) && cursor != end(ray) && *j == *cursor)
-    {
+    while (j != end(trunk) && cursor != end(ray) && *j == *cursor) {
         ++j;
         ++cursor;
     }
 
     ray.erase(begin(ray), cursor);
 
-    if (j == end(trunk))
-    {
+    if (j == end(trunk)) {
         // The end of the trunk was reached.  The ray's weight also
         // counts for the total weight.
         weight += w;
 
-        if (!ray.empty())
-        {
+        if (!ray.empty()) {
             // There's still a bit of ray left.  See if it continues
             // along one of the branches.
-            auto k (find(branches, ray[0]));
-            if (k == end(branches))
-            {
+            auto k(find(branches, ray[0]));
+            if (k == end(branches)) {
                 // Nope.  The remaining ray becomes a new branch.
                 branches.emplace_back(ray_bundle(move(ray), w));
-            }
-            else
-            {
+            } else {
                 // It does.  Recurse down this branch.
                 k->add(move(ray), w);
             }
         }
-    }
-    else
-    {
+    } else {
         // The ray diverged from the trunk halfway.  Fork the trunk at
         // this point.  One branch is the rest of the trunk, the other
         // is the remaining part of the ray.
-        ray_bundle split (value_type(j, end(trunk)), weight);
+        ray_bundle split(value_type(j, end(trunk)), weight);
         std::swap(branches, split.branches);
         trunk.erase(j, end(trunk));
         branches.emplace_back(move(split));
@@ -102,9 +93,8 @@ void ray_bundle::normalize_weight()
 void ray_bundle::multiply_weight(float factor)
 {
     weight *= factor;
-    for (auto& branch : branches) 
+    for (auto& branch : branches)
         branch.multiply_weight(factor);
 }
 
 } // namespace hexa
-

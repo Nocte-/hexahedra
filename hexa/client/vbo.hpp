@@ -28,8 +28,10 @@
 #include <GL/gl.h>
 #include <hexa/compiler_fix.hpp>
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 /** An OpenGL VBO. */
 class vbo
@@ -48,18 +50,20 @@ public:
     template <typename vtx>
     vbo(const std::vector<vtx>& init)
         : vbo(&init[0], init.size(), sizeof(vtx))
-    { }
+    {
+    }
 
     vbo(const vbo&) = delete;
 
     vbo(vbo&& move)
-        : id_ (move.id_), count_ (move.count_)
+        : id_(move.id_)
+        , count_(move.count_)
     {
         move.id_ = 0;
         move.count_ = 0;
     }
 
-    vbo& operator= (vbo&& move) noexcept;
+    vbo& operator=(vbo&& move) noexcept;
 
     ~vbo();
 
@@ -78,24 +82,23 @@ public:
      *  This function must be called before specifying the vertex data
      *  layout (using the bind_attributes function in opengl_vertex.hpp),
      *  and calling draw(). */
-    void   bind() const;
+    void bind() const;
 
+    void bind_pixel_buffer() const;
 
-    void   bind_pixel_buffer() const;
-
-    void   unbind_pixel_buffer() const;
+    void unbind_pixel_buffer() const;
 
     /** Draw this VBO as an array of quads.
      *  The VBO must have been bound first, and the vertex data layout must
      *  have been specified (using the bind_attributes function in
      *  opengl_vertex.hpp). */
-    void   draw() const;
+    void draw() const;
 
     /** Draw this VBO as an array of triangles.
      *  The VBO must have been bound first, and the vertex data layout must
      *  have been specified (using the bind_attributes function in
      *  opengl_vertex.hpp). */
-    void   draw_triangles() const;
+    void draw_triangles() const;
 
     /** Unbind this VBO. */
     static void unbind();
@@ -113,6 +116,5 @@ vbo make_vbo(const std::vector<t>& buf)
 {
     return vbo(&buf[0], buf.size(), sizeof(t));
 }
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

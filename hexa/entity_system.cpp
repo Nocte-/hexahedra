@@ -23,7 +23,8 @@
 
 #include "basic_types.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 entity_system::entity_system()
 {
@@ -45,11 +46,10 @@ entity_system::entity_system()
     register_component<std::string>("name");
     register_component<yaw_pitch>("lookat");
     register_component<last_known_phys>("lagcomp");
-    auto check (register_component<hotbar>("hotbar"));
+    auto check(register_component<hotbar>("hotbar"));
 
     if (check != c_hotbar)
         throw std::runtime_error("could not register component hotbar");
 }
 
 } // namespace hexa
-

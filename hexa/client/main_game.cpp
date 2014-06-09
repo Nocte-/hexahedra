@@ -77,49 +77,48 @@ namespace pt = boost::property_tree;
 
 using boost::format;
 
-namespace hexa {
+namespace hexa
+{
 
 extern po::variables_map global_settings;
 
-main_game::main_game (game& the_game, const std::string& host, uint16_t port,
-                      unsigned int vd)
-    : game_state     (the_game)
-    , udp_client     (host, port)
-    , old_chunk_pos_ (0, 0, 0)
-    , old_position_  (0, 0, 0)
-    , old_fraction_  (0, 0, 0)
-    , scene_         (*this)
-    , stop_          (false)
-    , in_action_     (false)
-    , asio_          ([=]{io_.run();})
-    , player_entity_ (0xffffffff)
+main_game::main_game(game& the_game, const std::string& host, uint16_t port,
+                     unsigned int vd)
+    : game_state(the_game)
+    , udp_client(host, port)
+    , old_chunk_pos_(0, 0, 0)
+    , old_position_(0, 0, 0)
+    , old_fraction_(0, 0, 0)
+    , scene_(*this)
+    , stop_(false)
+    , in_action_(false)
+    , asio_([=] { io_.run(); })
+    , player_entity_(0xffffffff)
     , waiting_for_data_(true)
     , loading_screen_(false)
-    , singleplayer_  (host.empty())
-    , show_ui_       (true)
-    , ignore_text_   (0)
+    , singleplayer_(host.empty())
+    , show_ui_(true)
+    , ignore_text_(0)
 {
-    if (singleplayer_)
-    {
-        try
-        {
+    if (singleplayer_) {
+        try {
             log_msg("Launching server...");
-            fs::path dir (executable_path().parent_path());
+            fs::path dir(executable_path().parent_path());
             log_msg("Path is %1%", dir);
-            server_process_ = start_process(dir / "hexahedra-server", { "--mode=singleplayer" });
+            server_process_ = start_process(dir / "hexahedra-server",
+                                            {"--mode=singleplayer"});
             log_msg("Done.");
             boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
-        }
-        catch (std::runtime_error& e)
-        {
-            log_msg("Cannot launch server (%1%), attempt to connect to multiplayer localhost",
+        } catch (std::runtime_error& e) {
+            log_msg("Cannot launch server (%1%), attempt to connect to "
+                    "multiplayer localhost",
                     e.what());
 
             singleplayer_ = false;
         }
     }
 
-    std::string host_ext (singleplayer_ ? "local" : host);
+    std::string host_ext(singleplayer_ ? "local" : host);
 
     game_.relative_mouse(true);
     setup_renderer();
@@ -127,8 +126,7 @@ main_game::main_game (game& the_game, const std::string& host, uint16_t port,
     scene_.view_distance(vd);
 
     log_msg("Trying to connect to %1%:%2% ...", host_ext, port);
-    if (!connect())
-    {
+    if (!connect()) {
         if (singleplayer_)
             terminate_process(server_process_);
 
@@ -147,23 +145,24 @@ main_game::~main_game()
         terminate_process(server_process_);
 }
 
-void main_game::setup_world (const std::string& host, uint16_t port)
+void main_game::setup_world(const std::string& host, uint16_t port)
 {
-    fs::path user_dir (global_settings["userdir"].as<std::string>());
-    fs::path data_dir (global_settings["datadir"].as<std::string>());
+    fs::path user_dir(global_settings["userdir"].as<std::string>());
+    fs::path data_dir(global_settings["datadir"].as<std::string>());
 
-    fs::path gameroot (user_dir / "games");
-    std::string host_id ((format("%1%.%2%") % host % port).str());
-    fs::path gamepath (gameroot / host_id);
+    fs::path gameroot(user_dir / "games");
+    std::string host_id((format("%1%.%2%") % host % port).str());
+    fs::path gamepath(gameroot / host_id);
 
-    if (   !fs::exists(gamepath)
-        && !fs::create_directories(gamepath))
-    {
-        throw std::runtime_error((format("error: cannot create directory '%1%'") % gamepath.string()).str());
+    if (!fs::exists(gamepath) && !fs::create_directories(gamepath)) {
+        throw std::runtime_error(
+            (format("error: cannot create directory '%1%'")
+             % gamepath.string()).str());
     }
 
-    storage_ = std::make_unique<persistence_leveldb>(gamepath / "world.leveldb");
-    map_     = std::make_unique<chunk_cache>(*storage_);
+    storage_
+        = std::make_unique<persistence_leveldb>(gamepath / "world.leveldb");
+    map_ = std::make_unique<chunk_cache>(*storage_);
 }
 
 void main_game::setup_renderer()
@@ -172,22 +171,18 @@ void main_game::setup_renderer()
 
     extern po::variables_map global_settings;
 
-    std::string ogl_version ((const char*)glGetString(GL_VERSION));
+    std::string ogl_version((const char*)glGetString(GL_VERSION));
     log_msg("OpenGL version: %1%", ogl_version);
-    int ogl_major (ogl_version[0] - '0'), ogl_minor (ogl_version[2] - '0');
-    if (ogl_major == 1 && ogl_minor < 5)
-    {
+    int ogl_major(ogl_version[0] - '0'), ogl_minor(ogl_version[2] - '0');
+    if (ogl_major == 1 && ogl_minor < 5) {
         throw std::runtime_error("Sorry, you need at least OpenGL 1.5");
     }
 
-    if (   (ogl_major == 1 && ogl_minor >= 5) || ogl_major == 2
-        || global_settings.count("ogl2"))
-    {
+    if ((ogl_major == 1 && ogl_minor >= 5) || ogl_major == 2
+        || global_settings.count("ogl2")) {
         // OpenGL 1.5 or 2.x
         renderer_ = std::make_unique<sfml_ogl2>(window(), scene_);
-    }
-    else
-    {
+    } else {
         // OpenGL 3 or newer
         renderer_ = std::make_unique<sfml_ogl3>(window(), scene_);
     }
@@ -198,7 +193,7 @@ void main_game::set_view_distance(unsigned int d)
     scene_.view_distance(d);
 }
 
-void main_game::resize (unsigned int w, unsigned int h)
+void main_game::resize(unsigned int w, unsigned int h)
 {
     trace("window resize %1%x%2%", w, h);
     renderer().resize(w, h);
@@ -220,23 +215,27 @@ void main_game::player_controls()
     // Translate the key press status of the WSAD keys to an angle
     // and a speed, each encoded in 8 bits.
 
-    int y (1);
-    if (key_pressed(key::w)) ++y;
-    if (key_pressed(key::s)) --y;
+    int y(1);
+    if (key_pressed(key::w))
+        ++y;
+    if (key_pressed(key::s))
+        --y;
 
-    int x (1);
-    if (key_pressed(key::d)) ++x;
-    if (key_pressed(key::a)) --x;
+    int x(1);
+    if (key_pressed(key::d))
+        ++x;
+    if (key_pressed(key::a))
+        --x;
 
-    static const std::array<uint8_t, 9> dirs {{ 0xA0, 0x80, 0x60, 0xC0, 0x00, 0x40, 0xE0, 0x00, 0x20 }};
-    int index (x + y * 3);
+    static const std::array<uint8_t, 9> dirs{
+        {0xA0, 0x80, 0x60, 0xC0, 0x00, 0x40, 0xE0, 0x00, 0x20}};
+    int index(x + y * 3);
 
     mesg.position = player_.get_wfpos();
     mesg.move_dir = dirs[index];
     mesg.move_speed = (index == 4 ? 0x00 : 0xff);
 
-    if (mesg.move_dir != last.move_dir || mesg.move_speed != last.move_speed )
-    {
+    if (mesg.move_dir != last.move_dir || mesg.move_speed != last.move_speed) {
         send(serialize_packet(mesg), mesg.method());
         last = mesg;
 
@@ -245,15 +244,13 @@ void main_game::player_controls()
                  float(mesg.move_speed) / 256.f);
     }
 
-    msg::look_at look (player_.head_angle());
-    if (look.look != last_look.look)
-    {
+    msg::look_at look(player_.head_angle());
+    if (look.look != last_look.look) {
         send(serialize_packet(look), look.method());
         last_look = look;
 
-        if (player_entity_ != 0xffffffff)
-        {
-            auto lock (entities_.acquire_write_lock());
+        if (player_entity_ != 0xffffffff) {
+            auto lock(entities_.acquire_write_lock());
             entities_.set(player_entity_, entity_system::c_lookat, look.look);
         }
     }
@@ -267,27 +264,20 @@ void main_game::update(double time_delta)
     hud_.time_tick(time_delta);
     elapsed_ = time_delta;
 
-    if (!waiting_for_data_)
-    {
-        auto lock (entities_.acquire_write_lock());
-        double delta (time_delta);
+    if (!waiting_for_data_) {
+        auto lock(entities_.acquire_write_lock());
+        double delta(time_delta);
         system_lag_compensate(entities_, time_delta, player_entity_);
 
-        while (delta > 0)
-        {
+        while (delta > 0) {
             constexpr double max_step = 0.05;
             double step;
-            if (delta > max_step)
-            {
+            if (delta > max_step) {
                 step = max_step;
                 delta -= max_step;
-            }
-            else if (delta < 0.001)
-            {
+            } else if (delta < 0.001) {
                 break;
-            }
-            else
-            {
+            } else {
                 step = delta;
                 delta = 0;
             }
@@ -295,19 +285,18 @@ void main_game::update(double time_delta)
             system_gravity(entities_, step);
             system_walk(entities_, step);
             system_motion(entities_, step);
-            system_terrain_collision(entities_,
-                [&](chunk_coordinates c) -> boost::optional<const surface_data&>
-                {
+            system_terrain_collision(
+                entities_,
+                [&](chunk_coordinates c)
+                    -> boost::optional<const surface_data&> {
                     if (!map_->is_surface_available(c))
                         return boost::optional<const surface_data&>();
 
                     return map_->get_surface(c);
                 },
-                [&](chunk_coordinates c)
-                {
+                [&](chunk_coordinates c) {
                     return is_air_chunk(c, map_->get_coarse_height(c));
-                }
-            );
+                });
 
             system_terrain_friction(entities_, step);
         }
@@ -320,120 +309,113 @@ void main_game::update(double time_delta)
 
 void main_game::render()
 {
-    if (player_entity_ != 0xffffffff)
-    {
-        try
-        {
-            auto lock (entities_.acquire_read_lock());
-            wfpos pp (entities_.get<wfpos>(player_entity_, entity_system::c_position));
+    if (player_entity_ != 0xffffffff) {
+        try {
+            auto lock(entities_.acquire_read_lock());
+            wfpos pp(entities_.get<wfpos>(player_entity_,
+                                          entity_system::c_position));
             pp.normalize();
             player_.move_to(pp);
-            player_.velocity = entities_.get<vector>(player_entity_, entity_system::c_velocity);
-            player_.is_airborne = (entities_.get<vector>(player_entity_, entity_system::c_impact).z == 0);
-            hud_.local_height = map().get_coarse_height(pp.int_pos() / chunk_size);
-        }
-        catch(...)
-        {
+            player_.velocity = entities_.get<vector>(
+                player_entity_, entity_system::c_velocity);
+            player_.is_airborne
+                = (entities_.get<vector>(player_entity_,
+                                         entity_system::c_impact).z == 0);
+            hud_.local_height
+                = map().get_coarse_height(pp.int_pos() / chunk_size);
+        } catch (...) {
         }
     }
 
     scene_.pre_render();
 
     {
-    std::unique_lock<std::mutex> scene_lock (scene_.lock);
+        std::unique_lock<std::mutex> scene_lock(scene_.lock);
 
-    renderer().prepare(player_);
-    renderer().opaque_pass();
-    {
-    auto lock (entities_.acquire_read_lock());
-
-    entities_.for_each<wfpos>(entity_system::c_position,
-        [&](es::storage::iterator i,
-            wfpos& p) -> uint64_t
-    {
-        p.normalize();
-        renderer().draw_model(p, 0);
-
-        if (entities_.entity_has_component(i, entity_system::c_name))
+        renderer().prepare(player_);
+        renderer().opaque_pass();
         {
+            auto lock(entities_.acquire_read_lock());
 
-        }
+            entities_.for_each<wfpos>(entity_system::c_position,
+                                      [&](es::storage::iterator i, wfpos& p)
+                                          -> uint64_t {
+                p.normalize();
+                renderer().draw_model(p, 0);
 
-        return 0;
-    });
-    } // entities_ lock
+                if (entities_.entity_has_component(i, entity_system::c_name)) {
+                }
 
-    renderer().handle_occlusion_queries();
-    renderer().transparent_pass();
+                return 0;
+            });
+        } // entities_ lock
+
+        renderer().handle_occlusion_queries();
+        renderer().transparent_pass();
 
     } // scene_.lock
 
-    if (show_ui_)
-    {
-    // The block highlight color blinks smoothly.
-    float alpha (std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.12f);
-    color_alpha hl_color (1,1,1, alpha);
+    if (show_ui_) {
+        // The block highlight color blinks smoothly.
+        float alpha(std::sin(game_.total_time_passed() * 4.) * 0.02f + 0.12f);
+        color_alpha hl_color(1, 1, 1, alpha);
 
-    world_coordinates offset (renderer().offset() * chunk_size);
-    vector origin (player_.rel_world_position(offset));
-    origin.z += 1.7f; // Dirty hack to get to the eye level, TODO
+        world_coordinates offset(renderer().offset() * chunk_size);
+        vector origin(player_.rel_world_position(offset));
+        origin.z += 1.7f; // Dirty hack to get to the eye level, TODO
 
-    auto line (voxel_raycast(origin, origin + from_spherical(player_.head_angle()) * 20.f));
-    for (auto i (std::next(line.begin())); i != line.end(); ++i)
-    {
-        world_coordinates block_pos (*i + offset);
-        auto cpos (block_pos / chunk_size);
+        auto line(voxel_raycast(
+            origin, origin + from_spherical(player_.head_angle()) * 20.f));
+        for (auto i(std::next(line.begin())); i != line.end(); ++i) {
+            world_coordinates block_pos(*i + offset);
+            auto cpos(block_pos / chunk_size);
 
-        if (!map().is_surface_available(cpos))
-            continue;
-
-        auto& surf (map().get_surface(cpos));
-
-        // Look for the current block in both the transparent and opaque
-        // surfaces.
-        auto found (boost::range::find(surf.opaque, block_pos % chunk_size));
-        if (found == surf.opaque.end())
-        {
-            found = boost::range::find(surf.transparent, block_pos % chunk_size);
-            if (found == surf.transparent.end())
+            if (!map().is_surface_available(cpos))
                 continue;
-        }
 
-        auto coll_block (found->type);
-        assert(coll_block != 0); // No need to check for air blocks.
+            auto& surf(map().get_surface(cpos));
 
-        // If it's a normal block, we found an intersection.
-        auto& coll_material (material_prop[coll_block]);
-        if (!coll_material.is_custom_block())
-        {
-            renderer().highlight_face({offset + *i, offset + *(i-1)},
-                                      hl_color);
-            break;
-        }
+            // Look for the current block in both the transparent and opaque
+            // surfaces.
+            auto found(
+                boost::range::find(surf.opaque, block_pos % chunk_size));
+            if (found == surf.opaque.end()) {
+                found = boost::range::find(surf.transparent,
+                                           block_pos % chunk_size);
+                if (found == surf.transparent.end())
+                    continue;
+            }
 
-        // It's a custom model; we'll need to do a detailed raycast
-        // against every component.
-        ray<float> pr ((origin - vector(*i)) * 16.f, player_.head_angle());
-        bool intersected (false);
-        for (auto& part : coll_material.model)
-        {
-            intersected = ray_box_intersection(pr, part.bounding_box());
-            if (intersected)
-            {
-                renderer().highlight_custom_block(offset + *i,
-                                                  coll_material.model,
-                                                  hl_color);
+            auto coll_block(found->type);
+            assert(coll_block != 0); // No need to check for air blocks.
+
+            // If it's a normal block, we found an intersection.
+            auto& coll_material(material_prop[coll_block]);
+            if (!coll_material.is_custom_block()) {
+                renderer().highlight_face({offset + *i, offset + *(i - 1)},
+                                          hl_color);
                 break;
             }
+
+            // It's a custom model; we'll need to do a detailed raycast
+            // against every component.
+            ray<float> pr((origin - vector(*i)) * 16.f, player_.head_angle());
+            bool intersected(false);
+            for (auto& part : coll_material.model) {
+                intersected = ray_box_intersection(pr, part.bounding_box());
+                if (intersected) {
+                    renderer().highlight_custom_block(
+                        offset + *i, coll_material.model, hl_color);
+                    break;
+                }
+            }
+
+            if (intersected)
+                break;
         }
-
-        if (intersected)
-            break;
-    }
     }
 
-    if (show_ui_)
-    {
+    if (show_ui_) {
         renderer().draw_ui(elapsed_, hud_);
         player_.hotbar_needs_update = false;
         hud_.hotbar_needs_update = false;
@@ -452,7 +434,7 @@ bool main_game::process_event(const event& ev)
     return true;
 }
 
-bool main_game::process_event (const sf::Event& ev)
+bool main_game::process_event(const sf::Event& ev)
 {
     if (!game_.mouse_is_relative())
         renderer().process(ev);
@@ -460,81 +442,97 @@ bool main_game::process_event (const sf::Event& ev)
     return true;
 }
 
-void main_game::process_event_captured (const event& ev)
+void main_game::process_event_captured(const event& ev)
 {
-    auto& p (player_);
-    auto old_active_slot (hud_.active_slot);
+    auto& p(player_);
+    auto old_active_slot(hud_.active_slot);
 
-    switch (ev.type)
-    {
+    switch (ev.type) {
     case event::window_close:
         stop();
         break;
 
     case event::key_up:
-        switch (ev.keycode)
-        {
-            case key::space:
-                action_stop(0); break;
+        switch (ev.keycode) {
+        case key::space:
+            action_stop(0);
+            break;
 
-            case key::esc:
-                game_.relative_mouse(false);
+        case key::esc:
+            game_.relative_mouse(false);
 
-            default: ; // do nothing
+        default:
+            ; // do nothing
         }
         break;
 
     case event::key_down:
-        switch (ev.keycode)
-        {
+        switch (ev.keycode) {
         case key::esc:
-            if (hud_.show_input())
-            {
+            if (hud_.show_input()) {
                 hud_.set_input(std::u32string());
                 hud_.show_input(false);
-            }
-            else
-            {
+            } else {
                 stop();
             }
             break;
 
-        case key::num0: hud_.active_slot = 1; break;
-        case key::num1: hud_.active_slot = 2; break;
-        case key::num2: hud_.active_slot = 3; break;
-        case key::num3: hud_.active_slot = 4; break;
-        case key::num4: hud_.active_slot = 5; break;
-        case key::num5: hud_.active_slot = 6; break;
-        case key::num6: hud_.active_slot = 7; break;
-        case key::num7: hud_.active_slot = 8; break;
-        case key::num8: hud_.active_slot = 9; break;
-        case key::num9: hud_.active_slot =10; break;
+        case key::num0:
+            hud_.active_slot = 1;
+            break;
+        case key::num1:
+            hud_.active_slot = 2;
+            break;
+        case key::num2:
+            hud_.active_slot = 3;
+            break;
+        case key::num3:
+            hud_.active_slot = 4;
+            break;
+        case key::num4:
+            hud_.active_slot = 5;
+            break;
+        case key::num5:
+            hud_.active_slot = 6;
+            break;
+        case key::num6:
+            hud_.active_slot = 7;
+            break;
+        case key::num7:
+            hud_.active_slot = 8;
+            break;
+        case key::num8:
+            hud_.active_slot = 9;
+            break;
+        case key::num9:
+            hud_.active_slot = 10;
+            break;
 
-        //case key::space:
+        // case key::space:
         //    action(0); break;
 
         case key::l_bracket:
-            if (!hud_.show_input())
-            {
-                auto vd (scene_.view_distance());
-                if (vd > 4)
-                {
+            if (!hud_.show_input()) {
+                auto vd(scene_.view_distance());
+                if (vd > 4) {
                     --vd;
                     scene_.view_distance(vd);
-                    hud_.console_message((format("View distance decreased to %1%.") % (vd * chunk_size)).str());
+                    hud_.console_message(
+                        (format("View distance decreased to %1%.")
+                         % (vd * chunk_size)).str());
                 }
             }
             break;
 
         case key::r_bracket:
-            if (!hud_.show_input())
-            {
-                auto vd (scene_.view_distance());
-                if (vd < 64)
-                {
+            if (!hud_.show_input()) {
+                auto vd(scene_.view_distance());
+                if (vd < 64) {
                     ++vd;
                     scene_.view_distance(vd);
-                    hud_.console_message((format("View distance increased to %1%.") % (vd * chunk_size)).str());
+                    hud_.console_message(
+                        (format("View distance increased to %1%.")
+                         % (vd * chunk_size)).str());
                 }
             }
             break;
@@ -555,8 +553,7 @@ void main_game::process_event_captured (const event& ev)
 
         case key::t:
         case key::slash:
-            if (!hud_.show_input())
-            {
+            if (!hud_.show_input()) {
                 hud_.show_input(true);
                 hud_.set_cursor(0);
                 hud_.set_input(std::u32string());
@@ -566,12 +563,10 @@ void main_game::process_event_captured (const event& ev)
             break;
 
         case key::backspace:
-            if (hud_.show_input())
-            {
-                auto str (hud_.get_input());
-                auto pos (hud_.get_cursor());
-                if (pos > 0)
-                {
+            if (hud_.show_input()) {
+                auto str(hud_.get_input());
+                auto pos(hud_.get_cursor());
+                if (pos > 0) {
                     --pos;
                     str.erase(str.begin() + pos);
                     hud_.set_input(str);
@@ -580,24 +575,22 @@ void main_game::process_event_captured (const event& ev)
             }
             break;
 
-
         case key::enter:
-            if (hud_.show_input())
-            {
+            if (hud_.show_input()) {
                 console_input(hud_.get_input());
                 hud_.show_input(false);
             }
             break;
 
-        default: ; // do nothing
-
+        default:
+            ; // do nothing
         }
         break;
 
     case event::key_text:
-        if (ignore_text_ != ev.code && hud_.show_input() && std::isprint(ev.code))
-        {
-            std::u32string str (hud_.get_input());
+        if (ignore_text_ != ev.code && hud_.show_input()
+            && std::isprint(ev.code)) {
+            std::u32string str(hud_.get_input());
             str.insert(str.begin() + hud_.get_cursor(), ev.code);
             hud_.set_input(str);
             hud_.set_cursor(hud_.get_cursor() + 1);
@@ -605,12 +598,10 @@ void main_game::process_event_captured (const event& ev)
         ignore_text_ = 0;
         break;
 
-    case event::mouse_move_rel:
-        {
-        const float rate_of_turn (0.001f); // radians per pixel
+    case event::mouse_move_rel: {
+        const float rate_of_turn(0.001f); // radians per pixel
         p.turn_head(vector2<float>(ev.xy) * rate_of_turn);
-        }
-        break;
+    } break;
 
     case event::mouse_button_down:
         action(ev.code + 1);
@@ -621,14 +612,11 @@ void main_game::process_event_captured (const event& ev)
         break;
 
     case event::mouse_wheel:
-        if (ev.delta > 0)
-        {
+        if (ev.delta > 0) {
             hud_.active_slot++;
             if (hud_.active_slot >= hud_.bar.size())
                 hud_.active_slot = 0;
-        }
-        else
-        {
+        } else {
             if (hud_.active_slot == 0)
                 hud_.active_slot = hud_.bar.size() - 1;
             else
@@ -656,25 +644,25 @@ void main_game::process_event_captured (const event& ev)
         hud_.hotbar_needs_update = true;
 }
 
-void main_game::process_event_uncaptured (const event& ev)
+void main_game::process_event_uncaptured(const event& ev)
 {
-    switch (ev.type)
-    {
-        case event::window_close:
-            stop();
-            break;
+    switch (ev.type) {
+    case event::window_close:
+        stop();
+        break;
 
-        case event::key_up:
-            switch (ev.keycode)
-            {
-                case key::esc:
-                    game_.relative_mouse(true);
+    case event::key_up:
+        switch (ev.keycode) {
+        case key::esc:
+            game_.relative_mouse(true);
 
-                default: ; // do nothing
-            }
-            break;
+        default:
+            ; // do nothing
+        }
+        break;
 
-        default: ; // do nothing
+    default:
+        ; // do nothing
     }
 }
 
@@ -692,10 +680,10 @@ double main_game::elapsed_time()
 
 game_state::transition main_game::next_state() const
 {
-    if (!loading_screen_)
-    {
+    if (!loading_screen_) {
         loading_screen_ = true;
-        return game_state::transition(game_.make_state<loading_screen>(waiting_for_data_), false);
+        return game_state::transition(
+            game_.make_state<loading_screen>(waiting_for_data_), false);
     }
     assert(stop_);
     return game_state::transition();
@@ -709,7 +697,7 @@ void main_game::player_motion()
     old_chunk_pos_ = player_.position() / chunk_size;
 }
 
-void main_game::console_input(const std::u32string &msg)
+void main_game::console_input(const std::u32string& msg)
 {
     msg::console m;
     m.text = utf32_to_utf8(msg);
@@ -718,7 +706,7 @@ void main_game::console_input(const std::u32string &msg)
 
 void main_game::login()
 {
-    clock_ = boost::thread([&]{ bg_thread(); });
+    clock_ = boost::thread([&] { bg_thread(); });
 
     msg::login m;
 
@@ -729,7 +717,7 @@ void main_game::login()
     else
         method = "ecdh";
 
-    auto plr_info (get_player_info());
+    auto plr_info(get_player_info());
     std::stringstream json;
     pt::ptree info;
     info.put("name", plr_info.name);
@@ -745,7 +733,7 @@ void main_game::login()
 
 void main_game::request_chunk(const chunk_coordinates& pos)
 {
-    boost::mutex::scoped_lock lock (requests_lock_);
+    boost::mutex::scoped_lock lock(requests_lock_);
     requests_.insert(pos);
 }
 
@@ -754,8 +742,7 @@ player& main_game::get_player()
     return player_;
 }
 
-std::unique_ptr<terrain_mesher_i>
-main_game::make_terrain_mesher(vec3i offset)
+std::unique_ptr<terrain_mesher_i> main_game::make_terrain_mesher(vec3i offset)
 {
     return renderer().make_terrain_mesher(offset);
 }
@@ -765,25 +752,26 @@ void main_game::walk(float dir, float speed)
     if (player_entity_ == 0xffffffff)
         return;
 
-    vec2f move (std::sin(dir), std::cos(dir));
+    vec2f move(std::sin(dir), std::cos(dir));
 
-    const float walk_force (1.0f);
-    float magnitude (walk_force * speed);
-    auto lock (entities_.acquire_write_lock());
+    const float walk_force(1.0f);
+    float magnitude(walk_force * speed);
+    auto lock(entities_.acquire_write_lock());
     entities_.set(player_entity_, entity_system::c_walk, move * magnitude);
 }
 
 void main_game::action(uint8_t code)
 {
-    msg::button_press msg (code, hud_.active_slot, player_.head_angle(), player_.get_wfpos());
+    msg::button_press msg(code, hud_.active_slot, player_.head_angle(),
+                          player_.get_wfpos());
     send(serialize_packet(msg), msg.method());
 
-    if (code == 0 && player_entity_ != 0xffffffff)
-    {
-        auto lock (entities_.acquire_write_lock());
-        if (entities_.get<vector>(player_entity_, entity_system::c_impact).z > 0)
-        {
-            auto v (entities_.get<vector>(player_entity_, entity_system::c_velocity));
+    if (code == 0 && player_entity_ != 0xffffffff) {
+        auto lock(entities_.acquire_write_lock());
+        if (entities_.get<vector>(player_entity_, entity_system::c_impact).z
+            > 0) {
+            auto v(entities_.get<vector>(player_entity_,
+                                         entity_system::c_velocity));
             v.z = 6.0f;
             entities_.set(player_entity_, entity_system::c_velocity, v);
         }
@@ -792,69 +780,80 @@ void main_game::action(uint8_t code)
 
 void main_game::action_stop(uint8_t code)
 {
-    msg::button_release msg (code);
+    msg::button_release msg(code);
     send(serialize_packet(msg), msg.method());
 }
 
-void main_game::receive (const packet& p)
+void main_game::receive(const packet& p)
 {
-    auto archive (make_deserializer(p));
+    auto archive(make_deserializer(p));
 
-    unsigned int mt (p.message_type());
+    unsigned int mt(p.message_type());
 
-    try
-    {
-        switch(p.message_type())
-        {
+    try {
+        switch (p.message_type()) {
         case msg::handshake::msg_id:
-            handshake(archive); break;
+            handshake(archive);
+            break;
         case msg::greeting::msg_id:
-            greeting(archive); break;
+            greeting(archive);
+            break;
         case msg::kick::msg_id:
-            kick(archive); break;
+            kick(archive);
+            break;
         case msg::time_sync_response::msg_id:
-            time_sync_response(archive); break;
+            time_sync_response(archive);
+            break;
         case msg::define_resources::msg_id:
-            define_resources(archive); break;
+            define_resources(archive);
+            break;
         case msg::define_materials::msg_id:
-            define_materials(archive); break;
+            define_materials(archive);
+            break;
         case msg::entity_update::msg_id:
-            entity_update(archive); break;
+            entity_update(archive);
+            break;
         case msg::entity_update_physics::msg_id:
-            entity_update_physics(archive); break;
+            entity_update_physics(archive);
+            break;
         case msg::entity_delete::msg_id:
-            entity_delete(archive); break;
+            entity_delete(archive);
+            break;
         case msg::surface_update::msg_id:
-            surface_update(archive); break;
+            surface_update(archive);
+            break;
         case msg::lightmap_update::msg_id:
-            lightmap_update(archive); break;
+            lightmap_update(archive);
+            break;
         case msg::heightmap_update::msg_id:
-            heightmap_update(archive); break;
+            heightmap_update(archive);
+            break;
         case msg::player_configure_hotbar::msg_id:
-            configure_hotbar(archive); break;
+            configure_hotbar(archive);
+            break;
         case msg::global_config::msg_id:
-            global_config(archive); break;
+            global_config(archive);
+            break;
         case msg::print_msg::msg_id:
-            print_msg(archive); break;
+            print_msg(archive);
+            break;
 
         default:
             log_msg("Unknown packet type %1%", mt);
         }
-    }
-    catch (std::exception& e)
-    {
+    } catch (std::exception& e) {
         log_msg("Cannot parse packet type %1%: %2%", mt, e.what());
     }
 }
 
-void main_game::handshake (deserializer<packet>& p)
+void main_game::handshake(deserializer<packet>& p)
 {
     msg::handshake mesg;
     mesg.serialize(p);
-    log_msg("Connected to %1%", mesg.server_name );
+    log_msg("Connected to %1%", mesg.server_name);
 }
 
-void main_game::greeting (deserializer<packet>& p)
+void main_game::greeting(deserializer<packet>& p)
 {
     msg::greeting mesg;
     mesg.serialize(p);
@@ -876,7 +875,7 @@ void main_game::greeting (deserializer<packet>& p)
     send(serialize_packet(sync), sync.method());
 }
 
-void main_game::kick (deserializer<packet>& p)
+void main_game::kick(deserializer<packet>& p)
 {
     msg::kick mesg;
     mesg.serialize(p);
@@ -887,25 +886,26 @@ void main_game::kick (deserializer<packet>& p)
     disconnect();
 }
 
-void main_game::time_sync_response (deserializer<packet>& p)
+void main_game::time_sync_response(deserializer<packet>& p)
 {
     msg::time_sync_response mesg;
     mesg.serialize(p);
-    auto roundtrip (clock::time() - mesg.request);
+    auto roundtrip(clock::time() - mesg.request);
     clock::sync(mesg.response + roundtrip * 0.5);
 }
 
-void main_game::define_resources (deserializer<packet>& p)
+void main_game::define_resources(deserializer<packet>& p)
 {
     msg::define_resources msg;
     msg.serialize(p);
 
     renderer().load_textures(msg.textures);
 
-    log_msg("Registered %1% textures and %2% models", msg.textures.size(), msg.models.size());
+    log_msg("Registered %1% textures and %2% models", msg.textures.size(),
+            msg.models.size());
 }
 
-void main_game::define_materials (deserializer<packet>& p)
+void main_game::define_materials(deserializer<packet>& p)
 {
     msg::define_materials msg;
     msg.serialize(p);
@@ -916,18 +916,16 @@ void main_game::define_materials (deserializer<packet>& p)
     log_msg("Registered %1% materials", msg.materials.size());
 }
 
-void main_game::entity_update (deserializer<packet>& p)
+void main_game::entity_update(deserializer<packet>& p)
 {
     msg::entity_update msg;
     msg.serialize(p);
 
-    auto lock (entities_.acquire_write_lock());
+    auto lock(entities_.acquire_write_lock());
 
-    for (auto& upd : msg.updates)
-    {
-        auto e (entities_.make(upd.entity_id));
-        switch (upd.component_id)
-        {
+    for (auto& upd : msg.updates) {
+        auto e(entities_.make(upd.entity_id));
+        switch (upd.component_id) {
         case entity_system::c_position:
             entities_.set_position(e, deserialize_as<wfpos>(upd.data));
             break;
@@ -962,55 +960,51 @@ void main_game::entity_update (deserializer<packet>& p)
     }
 }
 
-void main_game::entity_update_physics (deserializer<packet>& p)
+void main_game::entity_update_physics(deserializer<packet>& p)
 {
     //////////////////////////////////////
-    //static bool first (true);
-    //if (!first) return;
-    //first = false;
+    // static bool first (true);
+    // if (!first) return;
+    // first = false;
 
     msg::entity_update_physics msg;
     msg.serialize(p);
 
-    //trace("Update entity physics");
-    int32_t lag_msec (clock::time() - msg.timestamp);
-    float   lag (lag_msec * 0.001f);
+    // trace("Update entity physics");
+    int32_t lag_msec(clock::time() - msg.timestamp);
+    float lag(lag_msec * 0.001f);
 
-    auto lock (entities_.acquire_write_lock());
+    auto lock(entities_.acquire_write_lock());
 
-    for (auto& upd : msg.updates)
-    {
-        auto e (entities_.make(upd.entity_id));
-        auto newpos (upd.pos + upd.velocity * lag);
+    for (auto& upd : msg.updates) {
+        auto e(entities_.make(upd.entity_id));
+        auto newpos(upd.pos + upd.velocity * lag);
 
-        //trace("Set entity %1% to position %2%", upd.entity_id, upd.pos);
-        //trace("  velocity %1%, lag %2%", upd.velocity, lag);
+        // trace("Set entity %1% to position %2%", upd.entity_id, upd.pos);
+        // trace("  velocity %1%, lag %2%", upd.velocity, lag);
 
-        if (   entities_.entity_has_component(e, entity_system::c_position)
-            && entities_.entity_has_component(e, entity_system::c_velocity))
-        {
-            last_known_phys info { newpos, upd.velocity };
+        if (entities_.entity_has_component(e, entity_system::c_position)
+            && entities_.entity_has_component(e, entity_system::c_velocity)) {
+            last_known_phys info{newpos, upd.velocity};
             entities_.set(e, entity_system::c_lag_comp, info);
-        }
-        else
-        {
+        } else {
             entities_.set_position(e, newpos);
             entities_.set_velocity(e, upd.velocity);
         }
     }
 }
 
-void main_game::entity_delete (deserializer<packet>& p)
+void main_game::entity_delete(deserializer<packet>& p)
 {
     msg::entity_delete msg;
     msg.serialize(p);
 
     log_msg("Delete entity %1%", msg.entity_id);
-    auto lock (entities_.acquire_write_lock());
+    auto lock(entities_.acquire_write_lock());
     entities_.delete_entity(msg.entity_id);
 }
 
-void main_game::surface_update (deserializer<packet>& p)
+void main_game::surface_update(deserializer<packet>& p)
 {
     waiting_for_data_ = false;
 
@@ -1020,20 +1014,16 @@ void main_game::surface_update (deserializer<packet>& p)
     trace("receive surface %1%", msg.position);
 
     map().store_surface(msg.position, msg.terrain);
-    if (msg.light.unpacked_len > 0)
-    {
+    if (msg.light.unpacked_len > 0) {
         map().store_lightmap(msg.position, msg.light);
-        scene_.set(msg.position,
-                   map().get_surface(msg.position),
+        scene_.set(msg.position, map().get_surface(msg.position),
                    map().get_lightmap(msg.position));
-    }
-    else
-    {
+    } else {
         assert(false);
     }
 }
 
-void main_game::lightmap_update (deserializer<packet>& p)
+void main_game::lightmap_update(deserializer<packet>& p)
 {
     msg::lightmap_update msg;
     msg.serialize(p);
@@ -1042,43 +1032,40 @@ void main_game::lightmap_update (deserializer<packet>& p)
 
     map().store_lightmap(msg.position, msg.data);
 
-    scene_.set(msg.position,
-               map().get_surface(msg.position),
+    scene_.set(msg.position, map().get_surface(msg.position),
                map().get_lightmap(msg.position));
 }
 
-void main_game::heightmap_update (deserializer<packet>& p)
+void main_game::heightmap_update(deserializer<packet>& p)
 {
     msg::heightmap_update msg;
     msg.serialize(p);
 
-    for (auto& r : msg.data)
-    {
-        auto old_height (map().get_coarse_height(r.pos));
-        if (r.height != old_height)
-        {
+    for (auto& r : msg.data) {
+        auto old_height(map().get_coarse_height(r.pos));
+        if (r.height != old_height) {
             map().store_coarse_height(r.pos, r.height);
             scene_.set_coarse_height(r.pos, r.height, old_height);
         }
     }
 }
 
-void main_game::configure_hotbar (deserializer<packet>& p)
+void main_game::configure_hotbar(deserializer<packet>& p)
 {
     msg::player_configure_hotbar msg;
     msg.serialize(p);
 
-    //hud_.hotbar = msg.slots;
-    //hud_.hotbar_needs_update = true;
+    // hud_.hotbar = msg.slots;
+    // hud_.hotbar_needs_update = true;
 }
 
-void main_game::global_config (deserializer<packet>& p)
+void main_game::global_config(deserializer<packet>& p)
 {
     msg::global_config msg;
     msg.serialize(p);
 }
 
-void main_game::print_msg (deserializer<packet>& p)
+void main_game::print_msg(deserializer<packet>& p)
 {
     msg::print_msg msg;
     msg.serialize(p);
@@ -1088,59 +1075,48 @@ void main_game::print_msg (deserializer<packet>& p)
 
 void main_game::bg_thread()
 {
-    static size_t count (0);
-    while(!stop_)
-    {
+    static size_t count(0);
+    while (!stop_) {
         boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         poll(0);
         ++count;
 
         // Every 2 seconds, see if we can get flush some chunks from memory.
-        if (count % 2000 == 0)
-        {
+        if (count % 2000 == 0) {
             map().cleanup();
         }
 
-        boost::mutex::scoped_lock lock (requests_lock_);
-        if (!requests_.empty())
-        {
+        boost::mutex::scoped_lock lock(requests_lock_);
+        if (!requests_.empty()) {
             std::unordered_set<map_coordinates> missing_height;
 
             msg::request_surfaces req;
-            //for (auto& pos : requests_)
-            size_t count2 (0);
-            for (auto i (requests_.begin()); i != requests_.end(); )
-            {
-                if (++count2 > 2000)
-                {
+            // for (auto& pos : requests_)
+            size_t count2(0);
+            for (auto i(requests_.begin()); i != requests_.end();) {
+                if (++count2 > 2000) {
                     log_msg("Warning: request queue full");
                     break;
                 }
 
-                auto& pos (*i);
-                if (!map().is_coarse_height_available(pos))
-                {
+                auto& pos(*i);
+                if (!map().is_coarse_height_available(pos)) {
                     missing_height.insert(pos);
                     req.requests.emplace_back(pos, 0);
-                }
-                else if (is_air_chunk(pos, map().get_coarse_height(pos)))
-                {
+                } else if (is_air_chunk(pos, map().get_coarse_height(pos))) {
                     trace("Tried to send request for air chunk");
-                }
-                else if (map().is_surface_available(pos))
-                {
-                    trace("Request for surface I already have, %1%", map().get_surface(pos).version);
-                    req.requests.emplace_back(pos, map().get_surface(pos).version);
-                }
-                else
-                {
+                } else if (map().is_surface_available(pos)) {
+                    trace("Request for surface I already have, %1%",
+                          map().get_surface(pos).version);
+                    req.requests.emplace_back(pos,
+                                              map().get_surface(pos).version);
+                } else {
                     req.requests.emplace_back(pos, 0);
                 }
                 i = requests_.erase(i);
             }
 
-            if (!missing_height.empty())
-            {
+            if (!missing_height.empty()) {
                 msg::request_heights rqh;
                 copy(missing_height, std::back_inserter(rqh.requests));
                 send(serialize_packet(rqh), rqh.method());
@@ -1157,4 +1133,3 @@ void main_game::on_disconnect()
 }
 
 } // namespace hexa
-

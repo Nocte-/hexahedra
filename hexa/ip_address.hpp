@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <algorithm>
@@ -29,13 +28,14 @@
 #include <string>
 
 #ifdef WIN32
-# include <windows.h>
-# include <in6addr.h>
+#include <windows.h>
+#include <in6addr.h>
 #else
-# include <netinet/in.h>
+#include <netinet/in.h>
 #endif
 
-namespace hexa {
+namespace hexa
+{
 
 class ip_address : private std::array<uint16_t, 8>
 {
@@ -59,17 +59,16 @@ public:
     bool is_unspecified() const;
     bool is_loopback() const;
 
-    bool operator== (const ip_address& c) const
+    bool operator==(const ip_address& c) const
     {
-        for (int i (0); i < 8; ++i)
+        for (int i = 0; i < 8; ++i)
             if ((*this)[i] != c[i])
                 return false;
 
         return true;
     }
 
-    bool operator!= (const ip_address& c) const
-        { return !operator==(c); }
+    bool operator!=(const ip_address& c) const { return !operator==(c); }
 
 public:
     static ip_address unspecified();
@@ -84,4 +83,3 @@ namespace std
 string to_string(const hexa::ip_address& addr);
 
 } // namespace std
-

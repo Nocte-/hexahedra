@@ -18,7 +18,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "server_list.hpp"
 
 #include <sstream>
@@ -33,27 +33,28 @@
 using namespace boost::network;
 using namespace boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
-bool check_version (const std::string& version)
+bool check_version(const std::string& version)
 {
     if (version.empty())
         return true;
 
-    uint32_t maj (0), min (0), pat (0);
+    uint32_t maj(0), min(0), pat(0);
 
-    if (sscanf(version.c_str(), "%u.%u.%u", &maj, &min, &pat) != 3)
-    {
+    if (sscanf(version.c_str(), "%u.%u.%u", &maj, &min, &pat) != 3) {
         if (sscanf(version.c_str(), "%u.%u", &maj, &min) != 2)
             return false;
 
         pat = 0;
     }
 
-    return      PROJECT_VERSION_MAJOR > maj
-            || (PROJECT_VERSION_MAJOR == maj &&
-               (    PROJECT_VERSION_MINOR > min
-                || (PROJECT_VERSION_MINOR == min && PROJECT_VERSION_PATCH >= pat)));
+    return PROJECT_VERSION_MAJOR > maj
+           || (PROJECT_VERSION_MAJOR == maj
+               && (PROJECT_VERSION_MINOR > min
+                   || (PROJECT_VERSION_MINOR == min
+                       && PROJECT_VERSION_PATCH >= pat)));
 }
 
 std::vector<server_info> get_server_list(const std::string& json_uri)
@@ -64,16 +65,15 @@ std::vector<server_info> get_server_list(const std::string& json_uri)
     return result;
 #endif
 
-    http::client::request rq (json_uri);
+    http::client::request rq(json_uri);
     rq << header("Connection", "close");
     http::client temp_client;
 
     ptree tree;
-    std::string body (http::body(temp_client.get(rq)));
-    std::stringstream str (body);
+    std::string body(http::body(temp_client.get(rq)));
+    std::stringstream str(body);
     read_json(str, tree);
-    for (auto& n : tree.get_child("servers"))
-    {
+    for (auto& n : tree.get_child("servers")) {
         if (!check_version(n.second.get<std::string>("client_version", "")))
             continue;
 
@@ -92,4 +92,3 @@ std::vector<server_info> get_server_list(const std::string& json_uri)
 }
 
 } // namespace hexa
-

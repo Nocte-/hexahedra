@@ -27,30 +27,35 @@
 #include "hotbar_slot.hpp"
 #include "vector3.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** */
 class player_base
 {
 public:
-    vector3<double>      world_position() const
-        { return position + position_fraction; }
+    vector3<double> world_position() const
+    {
+        return position + position_fraction;
+    }
 
-    vector3<float>       rel_world_position(const world_vector& o) const
-        { return vector3<int32_t>(position - o) + position_fraction; }
+    vector3<float> rel_world_position(const world_vector& o) const
+    {
+        return vector3<int32_t>(position - o) + position_fraction;
+    }
 
-    chunk_coordinates   chunk_position() const
-        { return position >> cnkshift; }
+    chunk_coordinates chunk_position() const { return position >> cnkshift; }
 
-    vector3<float>       position_relative_in_chunk() const
-        { return (position % chunk_size) + position_fraction; }
+    vector3<float> position_relative_in_chunk() const
+    {
+        return (position % chunk_size) + position_fraction;
+    }
 
 public:
-    world_coordinates           position;
-    vector3<float>              position_fraction;
-    yaw_pitch                   head_angle;
-    std::vector<hotbar_slot>    hotbar;
+    world_coordinates position;
+    vector3<float> position_fraction;
+    yaw_pitch head_angle;
+    std::vector<hotbar_slot> hotbar;
 };
 
 } // namespace hexa
-

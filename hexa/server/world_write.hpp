@@ -31,7 +31,8 @@
 #include <hexa/trace.hpp>
 #include "random.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class world;
 
@@ -49,8 +50,8 @@ class world_write
     friend class world;
 
 protected:
-    world_write (world& w);
-    void add (const chunk_coordinates& pos, chunk& cnk);
+    world_write(world& w);
+    void add(const chunk_coordinates& pos, chunk& cnk);
 
 public:
     world_write(const world_write&) = delete;
@@ -60,7 +61,8 @@ public:
         : w_(m.w_)
         , lock_(std::move(m.lock_))
         , cnks_(std::move(m.cnks_))
-    { }
+    {
+    }
 #else
     world_write(world_write&&) = default;
 #endif
@@ -68,19 +70,19 @@ public:
 
     chunk& get_chunk(const chunk_coordinates& pos)
     {
-        auto found (cnks_.find(pos));
+        auto found(cnks_.find(pos));
         if (found == cnks_.end())
             throw std::runtime_error("no write access to chunk");
 
         return found->second;
     }
 
-    bool has_chunk (const chunk_coordinates& pos) const
+    bool has_chunk(const chunk_coordinates& pos) const
     {
         return cnks_.count(pos) > 0;
     }
 
-    block& operator[] (const world_coordinates& pos)
+    block& operator[](const world_coordinates& pos)
     {
         return get_chunk(pos >> cnkshift)[pos % chunk_size];
     }

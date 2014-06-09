@@ -25,7 +25,8 @@
 #include <vector>
 #include "terrain_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Replace the top number of blocks with a different material.
  *  This generator uses a "biome" map to look up the replacement materials.
@@ -34,26 +35,26 @@ class soil_generator : public terrain_generator_i
 {
 public:
     /** The following configuration elements are used:
-     * - 'surface_map': The area that holds the surface height map (default: 'surface')
-     * - 'distribution_map': The area with the biome classification. (default: 'biome')
-     * - 'original_material': The name of the material that will be replaced (default: 'stone')
+     * - 'surface_map': The area that holds the surface height map (default:
+     * 'surface')
+     * - 'distribution_map': The area with the biome classification. (default:
+     * 'biome')
+     * - 'original_material': The name of the material that will be replaced
+     * (default: 'stone')
      * - 'replace': An array of an array of material names.  The value
      *   returned by 'distribution_map' will be used as the index.  The
      *   indexed array is then used as a column of different materials, the
      *   one at the first position will be the topmost block. */
-    soil_generator(world& w,
-                   const boost::property_tree::ptree& conf);
+    soil_generator(world& w, const boost::property_tree::ptree& conf);
 
-    void generate (world_terraingen_access& data,
-                   const chunk_coordinates& pos,
-                   chunk& cnk) override;
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override;
 
 private:
-    int     surfacemap_;
-    int     biome_map_;
-    block   original_;
+    int surfacemap_;
+    int biome_map_;
+    block original_;
     std::vector<std::vector<block>> replace_;
 };
 
 } // namespace hexa
-

@@ -18,7 +18,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "vao.hpp"
 
 #include <GL/gl.h>
@@ -26,17 +26,19 @@
 
 #include <stdexcept>
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 vao::vao()
-    : vao_id_ (0)
+    : vao_id_(0)
 {
 }
 
 vao::vao(const void* data, size_t count, size_t vertex_size)
-    : vao_id_ (0)
-    , vbo_    (data, count, vertex_size)
+    : vao_id_(0)
+    , vbo_(data, count, vertex_size)
 {
     if (count == 0)
         return;
@@ -49,13 +51,13 @@ vao::vao(const void* data, size_t count, size_t vertex_size)
     assert(glGetError() == GL_NO_ERROR);
 }
 
-vao& vao::operator= (vao&& move)
+vao& vao::operator=(vao&& move)
 {
     if (vao_id_)
         glDeleteVertexArrays(1, &vao_id_);
 
     vao_id_ = move.vao_id_;
-    vbo_    = std::move(move.vbo_);
+    vbo_ = std::move(move.vbo_);
     move.vao_id_ = 0;
 
     return *this;
@@ -86,6 +88,5 @@ void vao::unbind()
     glBindVertexArray(0);
     vbo::unbind();
 }
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

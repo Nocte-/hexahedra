@@ -18,17 +18,17 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "frustum.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-frustum::frustum (const matrix4<float>& mtx)
+frustum::frustum(const matrix4<float>& mtx)
 {
     float planes[6][4];
 
-    for (int i (0); i < 4; ++i)
-    {
+    for (int i(0); i < 4; ++i) {
         planes[0][i] = mtx(3, i) + mtx(0, i); // Left
         planes[1][i] = mtx(3, i) - mtx(0, i); // Right
         planes[2][i] = mtx(3, i) + mtx(1, i); // Bottom
@@ -37,10 +37,9 @@ frustum::frustum (const matrix4<float>& mtx)
         planes[5][i] = mtx(3, i) - mtx(2, i); // Far
     }
 
-    for (int i (0); i < 6; ++i)
-    {
-        vector t (planes[i]);
-        const float inv_len (-1.f / length(t));
+    for (int i(0); i < 6; ++i) {
+        vector t(planes[i]);
+        const float inv_len(-1.f / length(t));
 
         (*this)[i].normal = t * inv_len;
         (*this)[i].distance = planes[i][3] * inv_len;
@@ -48,4 +47,3 @@ frustum::frustum (const matrix4<float>& mtx)
 }
 
 } // namespace hexa
-

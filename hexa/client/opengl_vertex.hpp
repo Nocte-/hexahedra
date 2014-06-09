@@ -50,41 +50,64 @@ buffer.draw_triangles();
  * @endcode
  */
 
-
 #include <array>
 #include <initializer_list>
 #include <boost/fusion/algorithm.hpp>
 #include <GL/glew.h>
 #include <GL/gl.h>
 
-namespace hexa {
+namespace hexa
+{
 
 // Map C++ types to OpenGL enumerations
 
 template <class t>
-struct gl_type { GLenum operator()() { return 0; } };
+struct gl_type
+{
+    GLenum operator()() { return 0; }
+};
 
 template <>
-struct gl_type<uint8_t> { GLenum operator()() { return GL_UNSIGNED_BYTE; } };
+struct gl_type<uint8_t>
+{
+    GLenum operator()() { return GL_UNSIGNED_BYTE; }
+};
 
 template <>
-struct gl_type<int8_t> { GLenum operator()() { return GL_BYTE; } };
+struct gl_type<int8_t>
+{
+    GLenum operator()() { return GL_BYTE; }
+};
 
 template <>
-struct gl_type<uint16_t> { GLenum operator()() { return GL_UNSIGNED_SHORT; } };
+struct gl_type<uint16_t>
+{
+    GLenum operator()() { return GL_UNSIGNED_SHORT; }
+};
 
 template <>
-struct gl_type<int16_t> { GLenum operator()() { return GL_SHORT; } };
+struct gl_type<int16_t>
+{
+    GLenum operator()() { return GL_SHORT; }
+};
 
 template <>
-struct gl_type<uint32_t> { GLenum operator()() { return GL_UNSIGNED_INT; } };
+struct gl_type<uint32_t>
+{
+    GLenum operator()() { return GL_UNSIGNED_INT; }
+};
 
 template <>
-struct gl_type<int32_t> { GLenum operator()() { return GL_INT; } };
+struct gl_type<int32_t>
+{
+    GLenum operator()() { return GL_INT; }
+};
 
 template <>
-struct gl_type<float> { GLenum operator()() { return GL_FLOAT; } };
-
+struct gl_type<float>
+{
+    GLenum operator()() { return GL_FLOAT; }
+};
 
 //---------------------------------------------------------------------------
 
@@ -96,14 +119,24 @@ struct gl_type<float> { GLenum operator()() { return GL_FLOAT; } };
 template <class t = float>
 struct vtx_uv : public vector2<t>
 {
-    vtx_uv() { }
-    vtx_uv(const vector2<t>& init) : vector2<t> (init) { }
-    vtx_uv(std::initializer_list<t> init) : vector2<t> (init) { }
-    vtx_uv(const t* init) : vector2<t> (init) { }
+    vtx_uv() {}
+    vtx_uv(const vector2<t>& init)
+        : vector2<t>(init)
+    {
+    }
+    vtx_uv(std::initializer_list<t> init)
+        : vector2<t>(init)
+    {
+    }
+    vtx_uv(const t* init)
+        : vector2<t>(init)
+    {
+    }
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
+        glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o);
     }
 };
 
@@ -111,14 +144,24 @@ struct vtx_uv : public vector2<t>
 template <class t = float>
 struct vtx_xyz : public vector3<t>
 {
-    vtx_xyz() { }
-    vtx_xyz(const vector3<t>& init) : vector3<t> (init) { }
-    vtx_xyz(std::initializer_list<t> init) : vector3<t> (init) { }
-    vtx_xyz(const t* init) : vector3<t> (init) { }
+    vtx_xyz() {}
+    vtx_xyz(const vector3<t>& init)
+        : vector3<t>(init)
+    {
+    }
+    vtx_xyz(std::initializer_list<t> init)
+        : vector3<t>(init)
+    {
+    }
+    vtx_xyz(const t* init)
+        : vector3<t>(init)
+    {
+    }
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
+        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o);
     }
 };
 
@@ -126,14 +169,24 @@ struct vtx_xyz : public vector3<t>
 template <class t = float>
 struct vtx_normal : public vector3<t>
 {
-    vtx_normal() { }
-    vtx_normal(const vector3<t>& init) : vector3<t> (init) { }
-    vtx_normal(std::initializer_list<t> init) : vector3<t> (init) { }
-    vtx_normal(const t* init) : vector3<t> (init) { }
+    vtx_normal() {}
+    vtx_normal(const vector3<t>& init)
+        : vector3<t>(init)
+    {
+    }
+    vtx_normal(std::initializer_list<t> init)
+        : vector3<t>(init)
+    {
+    }
+    vtx_normal(const t* init)
+        : vector3<t>(init)
+    {
+    }
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride, (GLvoid*)o);
+        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o);
     }
 };
 
@@ -141,13 +194,20 @@ struct vtx_normal : public vector3<t>
 template <class t = uint8_t>
 struct vtx_rgb : public vector3<t>
 {
-    vtx_rgb() { }
-    vtx_rgb(const vector3<t>& init) : vector3<t> (init) { }
-    vtx_rgb(const t* init) : vector3<t> (init) { }
+    vtx_rgb() {}
+    vtx_rgb(const vector3<t>& init)
+        : vector3<t>(init)
+    {
+    }
+    vtx_rgb(const t* init)
+        : vector3<t>(init)
+    {
+    }
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride, (GLvoid*)o);
+        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride,
+                              (GLvoid*)o);
     }
 };
 
@@ -155,8 +215,11 @@ struct vtx_rgb : public vector3<t>
 template <class t = float>
 struct vtx_scalar
 {
-    vtx_scalar() { }
-    vtx_scalar(t init) : value (init) { }
+    vtx_scalar() {}
+    vtx_scalar(t init)
+        : value(init)
+    {
+    }
 
     static void bind(size_t i, size_t o, size_t stride)
     {
@@ -170,11 +233,14 @@ struct vtx_scalar
 template <class t, size_t count>
 struct vtx_array : public std::array<t, count>
 {
-    vtx_array() { }
-    vtx_array(const std::array<t, count>& init) : std::array<t, count>(init) { }
+    vtx_array() {}
+    vtx_array(const std::array<t, count>& init)
+        : std::array<t, count>(init)
+    {
+    }
     vtx_array(const t* init)
     {
-        for (size_t i (0); i < count; ++i)
+        for (size_t i(0); i < count; ++i)
             (*this)[i] = init[i];
     }
 
@@ -196,11 +262,14 @@ struct vtx_array : public std::array<t, count>
 template <class t, size_t count>
 struct vtx_normalized_array : public std::array<t, count>
 {
-    vtx_normalized_array() { }
-    vtx_normalized_array(const std::array<t, count>& init) : std::array<t, count>(init) { }
+    vtx_normalized_array() {}
+    vtx_normalized_array(const std::array<t, count>& init)
+        : std::array<t, count>(init)
+    {
+    }
     vtx_normalized_array(const t* init)
     {
-        for (size_t i (0); i < count; ++i)
+        for (size_t i(0); i < count; ++i)
             (*this)[i] = init[i];
     }
 
@@ -212,7 +281,8 @@ struct vtx_normalized_array : public std::array<t, count>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, count, gl_type<t>()(), true, stride, (GLvoid*)o);
+        glVertexAttribPointer(i, count, gl_type<t>()(), true, stride,
+                              (GLvoid*)o);
     }
 };
 
@@ -222,9 +292,7 @@ struct vtx_normalized_array : public std::array<t, count>
 template <size_t count>
 struct vtx_padding : public std::array<char, count>
 {
-    static void bind(size_t i, size_t o, size_t stride)
-    {
-    }
+    static void bind(size_t i, size_t o, size_t stride) {}
 };
 
 //---------------------------------------------------------------------------
@@ -232,95 +300,94 @@ struct vtx_padding : public std::array<char, count>
 namespace ogl
 {
 
-    /*
+/*
 
 template <typename Head>
 class vertex : public Head
 {
 public:
-    vertex (const Head& init)
-        : Head(init)
-    { }
+vertex (const Head& init)
+    : Head(init)
+{ }
 
-    static void bind_ogl2()
-    {
-        _bind_ogl2(0, sizeof(Head));
-    }
+static void bind_ogl2()
+{
+    _bind_ogl2(0, sizeof(Head));
+}
 
-    static void bind_ogl3()
-    {
-        _bind_ogl3(0, 0, sizeof(Head));
-    }
+static void bind_ogl3()
+{
+    _bind_ogl3(0, 0, sizeof(Head));
+}
 
-    static void enable_client_states()
-    {
-        Head::enable_client_state();
-    }
+static void enable_client_states()
+{
+    Head::enable_client_state();
+}
 
-    static void disable_client_states()
-    {
-        Head::disable_client_state();
-    }
+static void disable_client_states()
+{
+    Head::disable_client_state();
+}
 
 protected:
-    static void _bind_ogl2(size_t offset, size_t size)
-    {
-        Head::bind_ogl2(offset, size);
-    }
+static void _bind_ogl2(size_t offset, size_t size)
+{
+    Head::bind_ogl2(offset, size);
+}
 
-    static void _bind_ogl3(size_t count, size_t offset, size_t size)
-    {
-        Head::bind_ogl3(count, offset, size);
-    }
+static void _bind_ogl3(size_t count, size_t offset, size_t size)
+{
+    Head::bind_ogl3(count, offset, size);
+}
 };
 
 template <typename Head, typename... Tail>
 class vertex : public Head, public vertex<Tail...>
 {
 public:
-    vertex (const Head& init, const Tail&... rest)
-        : Head(init)
-        , vertex<Tail...>(rest)
-    { }
+vertex (const Head& init, const Tail&... rest)
+    : Head(init)
+    , vertex<Tail...>(rest)
+{ }
 
-    static void bind_ogl2()
-    {
-        _bind_ogl2(0, sizeof(vertex<Head, Tail...>));
-    }
+static void bind_ogl2()
+{
+    _bind_ogl2(0, sizeof(vertex<Head, Tail...>));
+}
 
-    static void bind_ogl3()
-    {
-        _bind_ogl3(0, 0, sizeof(vertex<Head, Tail...>));
-    }
+static void bind_ogl3()
+{
+    _bind_ogl3(0, 0, sizeof(vertex<Head, Tail...>));
+}
 
-    static void enable_client_states()
-    {
-        Head::enable_client_state();
-        vertex<Tail...>::enable_client_states();
-    }
+static void enable_client_states()
+{
+    Head::enable_client_state();
+    vertex<Tail...>::enable_client_states();
+}
 
-    static void disable_client_states()
-    {
-        Head::disable_client_state();
-        vertex<Tail...>::disable_client_states();
-    }
+static void disable_client_states()
+{
+    Head::disable_client_state();
+    vertex<Tail...>::disable_client_states();
+}
 
 protected:
-    static void _bind_ogl2(size_t offset, size_t size)
-    {
-        Head::bind_ogl2(offset, size);
-        vertex<Tail...>::_bind_ogl2(offset + sizeof(Head), size);
-    }
+static void _bind_ogl2(size_t offset, size_t size)
+{
+    Head::bind_ogl2(offset, size);
+    vertex<Tail...>::_bind_ogl2(offset + sizeof(Head), size);
+}
 
-    static void _bind_ogl3(size_t count, size_t offset, size_t size)
-    {
-        Head::bind_ogl3(count, offset, size);
-        vertex<Tail...>::_bind_ogl2(count + 1, offset + sizeof(Head), size);
-    }
+static void _bind_ogl3(size_t count, size_t offset, size_t size)
+{
+    Head::bind_ogl3(count, offset, size);
+    vertex<Tail...>::_bind_ogl2(count + 1, offset + sizeof(Head), size);
+}
 };
 
 */
-
 }
 
 /** OpenGL vertex type.
@@ -339,13 +406,15 @@ public:
     typedef elem1 value_type_5;
 
 public:
-    vertex_1 () {}
+    vertex_1() {}
 
-    vertex_1 (elem1 i1)
-        : e1 (i1) { }
+    vertex_1(elem1 i1)
+        : e1(i1)
+    {
+    }
 
 public:
-    elem1   e1;
+    elem1 e1;
 };
 
 template <class elem1, class elem2>
@@ -361,14 +430,17 @@ public:
     typedef elem2 value_type_5;
 
 public:
-    vertex_2 () { }
+    vertex_2() {}
 
-    vertex_2 (elem1 i1, elem2 i2 = elem2())
-        : e1 (i1), e2 (i2) { }
+    vertex_2(elem1 i1, elem2 i2 = elem2())
+        : e1(i1)
+        , e2(i2)
+    {
+    }
 
 public:
-    elem1   e1;
-    elem2   e2;
+    elem1 e1;
+    elem2 e2;
 };
 
 template <class elem1, class elem2, class elem3>
@@ -384,15 +456,19 @@ public:
     typedef elem3 value_type_5;
 
 public:
-    vertex_3 () { }
+    vertex_3() {}
 
-    vertex_3 (elem1 i1, elem2 i2, elem3 i3 = elem3())
-        : e1 (i1), e2 (i2), e3 (i3) { }
+    vertex_3(elem1 i1, elem2 i2, elem3 i3 = elem3())
+        : e1(i1)
+        , e2(i2)
+        , e3(i3)
+    {
+    }
 
 public:
-    elem1   e1;
-    elem2   e2;
-    elem3   e3;
+    elem1 e1;
+    elem2 e2;
+    elem3 e3;
 };
 
 template <class elem1, class elem2, class elem3, class elem4>
@@ -408,16 +484,21 @@ public:
     typedef elem4 value_type_5;
 
 public:
-    vertex_4 () { }
+    vertex_4() {}
 
-    vertex_4 (elem1 i1, elem2 i2, elem3 i3, elem4 i4 = elem4())
-        : e1 (i1), e2 (i2), e3 (i3), e4 (i4) { }
+    vertex_4(elem1 i1, elem2 i2, elem3 i3, elem4 i4 = elem4())
+        : e1(i1)
+        , e2(i2)
+        , e3(i3)
+        , e4(i4)
+    {
+    }
 
 public:
-    elem1   e1;
-    elem2   e2;
-    elem3   e3;
-    elem4   e4;
+    elem1 e1;
+    elem2 e2;
+    elem3 e3;
+    elem4 e4;
 };
 
 template <class elem1, class elem2, class elem3, class elem4, class elem5>
@@ -433,17 +514,23 @@ public:
     typedef elem5 value_type_5;
 
 public:
-    vertex_5 () { }
+    vertex_5() {}
 
-    vertex_5 (elem1 i1, elem2 i2, elem3 i3, elem4 i4, elem5 i5 = elem5())
-        : e1 (i1), e2 (i2), e3 (i3), e4 (i4), e5(i5) { }
+    vertex_5(elem1 i1, elem2 i2, elem3 i3, elem4 i4, elem5 i5 = elem5())
+        : e1(i1)
+        , e2(i2)
+        , e3(i3)
+        , e4(i4)
+        , e5(i5)
+    {
+    }
 
 public:
-    elem1   e1;
-    elem2   e2;
-    elem3   e3;
-    elem4   e4;
-    elem5   e5;
+    elem1 e1;
+    elem2 e2;
+    elem3 e3;
+    elem4 e4;
+    elem5 e5;
 };
 
 #pragma pack(pop)
@@ -453,29 +540,25 @@ public:
 template <class vertex_t>
 void bind_attributes()
 {
-    size_t offset (0), size (sizeof(vertex_t));
+    size_t offset(0), size(sizeof(vertex_t));
     vertex_t::value_type_1::bind(0, offset, size);
 
-    if (vertex_t::element_count > 1)
-    {
+    if (vertex_t::element_count > 1) {
         offset += sizeof(typename vertex_t::value_type_1);
         vertex_t::value_type_2::bind(1, offset, size);
     }
 
-    if (vertex_t::element_count > 2)
-    {
+    if (vertex_t::element_count > 2) {
         offset += sizeof(typename vertex_t::value_type_2);
         vertex_t::value_type_3::bind(2, offset, size);
     }
 
-    if (vertex_t::element_count > 3)
-    {
+    if (vertex_t::element_count > 3) {
         offset += sizeof(typename vertex_t::value_type_3);
         vertex_t::value_type_4::bind(3, offset, size);
     }
 
-    if (vertex_t::element_count > 4)
-    {
+    if (vertex_t::element_count > 4) {
         offset += sizeof(typename vertex_t::value_type_4);
         vertex_t::value_type_5::bind(4, offset, size);
     }
@@ -484,29 +567,25 @@ void bind_attributes()
 template <class vertex_t>
 void bind_attributes(const std::vector<int>& attrs)
 {
-    size_t offset (0), size (sizeof(vertex_t));
+    size_t offset(0), size(sizeof(vertex_t));
     vertex_t::value_type_1::bind(attrs[0], offset, size);
 
-    if (vertex_t::element_count > 1)
-    {
+    if (vertex_t::element_count > 1) {
         offset += sizeof(typename vertex_t::value_type_1);
         vertex_t::value_type_2::bind(attrs[1], offset, size);
     }
 
-    if (vertex_t::element_count > 2)
-    {
+    if (vertex_t::element_count > 2) {
         offset += sizeof(typename vertex_t::value_type_2);
         vertex_t::value_type_3::bind(attrs[2], offset, size);
     }
 
-    if (vertex_t::element_count > 3)
-    {
+    if (vertex_t::element_count > 3) {
         offset += sizeof(typename vertex_t::value_type_3);
         vertex_t::value_type_4::bind(attrs[3], offset, size);
     }
 
-    if (vertex_t::element_count > 4)
-    {
+    if (vertex_t::element_count > 4) {
         offset += sizeof(typename vertex_t::value_type_4);
         vertex_t::value_type_5::bind(attrs[4], offset, size);
     }

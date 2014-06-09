@@ -52,7 +52,8 @@
 #include "texture.hpp"
 #include "visibility_test.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class game;
 class scene;
@@ -79,51 +80,49 @@ public:
                                 const color_alpha& hl_color);
 
 protected:
-    typedef vertex_1<vtx_xyz<int16_t> > occ_cube_vtx;
+    typedef vertex_1<vtx_xyz<int16_t>> occ_cube_vtx;
 
     void draw_chunk_cube(const chunk_coordinates& pos);
     void draw_chunk_face(const chunk_coordinates& pos, direction_type dir);
     void draw_bar(float x, float y, int index, int width, double ratio);
-    void draw_hotbar (const hud &h);
+    void draw_hotbar(const hud& h);
 
     virtual std::string gl_id() const = 0;
-    void load_shader (shader_program& shader, const std::string& name);
+    void load_shader(shader_program& shader, const std::string& name);
 
 protected:
-    camera          camera_;
-    wfpos           camera_wpos_;
-    color           horizon_color_;
+    camera camera_;
+    wfpos camera_wpos_;
+    color horizon_color_;
 
-    int     width_;
-    int     height_;
+    int width_;
+    int height_;
 
     sf::RenderWindow& app_;
 
-    std::array<sf::Sprite, 256>  ui_elem_;
+    std::array<sf::Sprite, 256> ui_elem_;
     std::shared_ptr<sf::Texture> ui_img_;
 
     texture sun_;
     texture moon_;
     texture star_;
 
-    shader_program          terrain_shader_;
-    shader_program          model_shader_;
+    shader_program terrain_shader_;
+    shader_program model_shader_;
     model_manager::resource mrfixit_;
 
-    shader_program          occlusion_shader_;
-    uniform_variable        occlusion_matrix_;
-    gl::vbo                 occlusion_block_;
+    shader_program occlusion_shader_;
+    uniform_variable occlusion_matrix_;
+    gl::vbo occlusion_block_;
 
     std::shared_ptr<sf::Font> ui_font_;
 
     sf::RenderTexture hotbar_;
 
-//    Gwen::Renderer::SFML2   GwenRenderer;
-//    Gwen::Input::SFML       GwenInput;
-//    Gwen::Skin::TexturedBase Skin;
-//    Gwen::Controls::Canvas* pCanvas;
-
+    //    Gwen::Renderer::SFML2   GwenRenderer;
+    //    Gwen::Input::SFML       GwenInput;
+    //    Gwen::Skin::TexturedBase Skin;
+    //    Gwen::Controls::Canvas* pCanvas;
 };
 
 } // namespace hexa
-

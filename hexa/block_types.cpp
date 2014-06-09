@@ -25,28 +25,31 @@
 
 using namespace boost::range;
 
-namespace hexa {
+namespace hexa
+{
 
-std::vector<material>                           material_prop;
-std::unordered_map<std::string, uint16_t>       texture_names;
-std::unordered_map<std::string, custom_block>   custom_blocks;
+std::vector<material> material_prop;
+std::unordered_map<std::string, uint16_t> texture_names;
+std::unordered_map<std::string, custom_block> custom_blocks;
 
-material& register_new_material (uint16_t type_id)
+material& register_new_material(uint16_t type_id)
 {
     if (type_id >= material_prop.size())
-        material_prop.resize(65536);//(type_id + 1);
+        material_prop.resize(65536); //(type_id + 1);
 
     return material_prop[type_id];
 }
 
 uint16_t find_material(const std::string& name, uint16_t default_material)
 {
-    auto found (find(material_prop, name));
-    return found == material_prop.end() ? default_material
-           : std::distance(material_prop.begin(), found);
+    auto found(find(material_prop, name));
+    return found == material_prop.end()
+               ? default_material
+               : std::distance(material_prop.begin(), found);
 }
 
-namespace {
+namespace
+{
 
 struct setup_materials
 {
@@ -60,8 +63,6 @@ struct setup_materials
 };
 
 static setup_materials init_;
-
 }
 
 } // namespace hexa
-

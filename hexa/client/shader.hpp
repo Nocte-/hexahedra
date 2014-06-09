@@ -30,14 +30,18 @@
 #include <GL/gl.h>
 #include <hexa/matrix.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class color;
 
 class shader_error : public std::runtime_error
 {
 public:
-    shader_error(const std::string& what) : std::runtime_error(what) {}
+    shader_error(const std::string& what)
+        : std::runtime_error(what)
+    {
+    }
 };
 
 class shader
@@ -68,24 +72,24 @@ public:
 
     bool is_bound() const { return bound_; }
 
-    void operator= (int val);
-    void operator= (const std::vector<int>& ints);
-    void operator= (const std::array<int, 2>& ints);
-    void operator= (const std::array<int, 3>& ints);
-    void operator= (const std::array<int, 4>& ints);
+    void operator=(int val);
+    void operator=(const std::vector<int>& ints);
+    void operator=(const std::array<int, 2>& ints);
+    void operator=(const std::array<int, 3>& ints);
+    void operator=(const std::array<int, 4>& ints);
 
-    void operator= (float val);
-    void operator= (const std::vector<float>& ints);
-    void operator= (const std::array<float, 2>& ints);
-    void operator= (const std::array<float, 3>& ints);
-    void operator= (const std::array<float, 4>& ints);
-    void operator= (const color& val);
+    void operator=(float val);
+    void operator=(const std::vector<float>& ints);
+    void operator=(const std::array<float, 2>& ints);
+    void operator=(const std::array<float, 3>& ints);
+    void operator=(const std::array<float, 4>& ints);
+    void operator=(const color& val);
 
-    void operator= (const matrix4<float>& mtx);
+    void operator=(const matrix4<float>& mtx);
 
 private:
     GLint id_;
-    bool  bound_;
+    bool bound_;
 };
 
 class shader_program
@@ -117,4 +121,3 @@ private:
 };
 
 } // namespace hexa
-

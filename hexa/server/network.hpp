@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <atomic>
@@ -37,7 +36,8 @@
 #include "udp_server.hpp"
 #include "player.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class packet;
 class server_entity_system;
@@ -53,17 +53,14 @@ public:
 public:
     struct job
     {
-        enum type_t
-        {
-            lightmap, surface_and_lightmap, entity_info, quit
-        };
+        enum type_t { lightmap, surface_and_lightmap, entity_info, quit };
 
-        type_t                  type;
-        chunk_coordinates       pos;
-        ENetPeer*               dest;
+        type_t type;
+        chunk_coordinates pos;
+        ENetPeer* dest;
     };
 
-    concurrent_queue<job>   jobs;
+    concurrent_queue<job> jobs;
 
 public:
     network(uint16_t port, world& storage, server_entity_system& entities,
@@ -74,59 +71,57 @@ public:
     void run();
     void stop();
 
-    void on_connect (ENetPeer* c);
-    void on_disconnect (ENetPeer* c);
-    void on_receive (ENetPeer* c, const packet& p);
+    void on_connect(ENetPeer* c);
+    void on_disconnect(ENetPeer* c);
+    void on_receive(ENetPeer* c, const packet& p);
 
-    bool send (uint32_t entity, const binary_data& msg,
-               msg::reliability method) const;
+    bool send(uint32_t entity, const binary_data& msg,
+              msg::reliability method) const;
 
-    void broadcast (const binary_data& msg,
-                    msg::reliability method) const;
+    void broadcast(const binary_data& msg, msg::reliability method) const;
 
 private:
     struct packet_info
     {
-        es::entity    plr;
-        ENetPeer*     conn;
+        es::entity plr;
+        ENetPeer* conn;
         const packet& p;
     };
 
-    void login          (packet_info& p);
-    void logout         (const packet_info& p);
-    void timesync       (const packet_info& p);
-    void req_heights    (const packet_info& p);
-    void req_chunks     (const packet_info& p);
-    void button_press   (const packet_info& p);
-    void button_release (const packet_info& p);
-    void look_at        (const packet_info& p);
-    void motion         (const packet_info& p);
-    void console        (const packet_info& p);
-    void unknown        (const packet_info& p);
+    void login(packet_info& p);
+    void logout(const packet_info& p);
+    void timesync(const packet_info& p);
+    void req_heights(const packet_info& p);
+    void req_chunks(const packet_info& p);
+    void button_press(const packet_info& p);
+    void button_release(const packet_info& p);
+    void look_at(const packet_info& p);
+    void motion(const packet_info& p);
+    void console(const packet_info& p);
+    void unknown(const packet_info& p);
 
 private:
     void tick();
-    void send_surface (const chunk_coordinates& pos);
-    void send_surface_queue (const chunk_coordinates& pos, ENetPeer* dest);
-    void send_surface (const chunk_coordinates& pos, ENetPeer* dest);
-    void send_coarse_height (chunk_coordinates pos);
-    void send_height  (const map_coordinates& pos, ENetPeer* dest);
-    void kick_player  (ENetPeer* dest, const std::string& kickmsg);
+    void send_surface(const chunk_coordinates& pos);
+    void send_surface_queue(const chunk_coordinates& pos, ENetPeer* dest);
+    void send_surface(const chunk_coordinates& pos, ENetPeer* dest);
+    void send_coarse_height(chunk_coordinates pos);
+    void send_height(const map_coordinates& pos, ENetPeer* dest);
+    void kick_player(ENetPeer* dest, const std::string& kickmsg);
 
-    void on_update_surface (const chunk_coordinates& pos);
+    void on_update_surface(const chunk_coordinates& pos);
 
 private:
-    world&                  world_;
-    server_entity_system&   es_;
-    lua&                    lua_;
-    threadpool              workers_;
+    world& world_;
+    server_entity_system& es_;
+    lua& lua_;
+    threadpool workers_;
 
     std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
     std::unordered_map<ENetPeer*, uint32_t> entities_;
     std::unordered_map<uint32_t, ENetPeer*> connections_;
 
-    std::atomic<bool>    running_;
+    std::atomic<bool> running_;
 };
 
 } // namespace hexa
-

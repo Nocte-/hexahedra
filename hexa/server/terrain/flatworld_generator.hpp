@@ -24,40 +24,35 @@
 
 #include "terrain_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** This generator will create an endless, flat world. */
 class flatworld_generator : public terrain_generator_i
 {
 public:
-    flatworld_generator (world& w, const boost::property_tree::ptree& conf);
+    flatworld_generator(world& w, const boost::property_tree::ptree& conf);
 
-    void generate (world_terraingen_access& data,
-                   const chunk_coordinates& pos,
-                   chunk& cnk) override;
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override;
 
-    chunk_height
-    estimate_height (world_terraingen_access&,
-                     map_coordinates,
-                     chunk_height) const override
+    chunk_height estimate_height(world_terraingen_access&, map_coordinates,
+                                 chunk_height) const override
     {
         return level_;
     }
 
-    std::vector<std::string>
-    area_generator() const override
+    std::vector<std::string> area_generator() const override
     {
-        return { "heightmap", "surface" };
+        return {"heightmap", "surface"};
     }
 
-    bool
-    generate (world_terraingen_access& data, const std::string& type, map_coordinates pos,
-              area_data& area) const override;
+    bool generate(world_terraingen_access& data, const std::string& type,
+                  map_coordinates pos, area_data& area) const override;
 
 private:
     chunk_height level_;
-    uint16_t     block_type_;
+    uint16_t block_type_;
 };
 
 } // namespace hexa
-

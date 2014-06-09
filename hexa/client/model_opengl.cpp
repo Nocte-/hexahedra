@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "model_opengl.hpp"
 
 #include <boost/range/algorithm.hpp>
@@ -26,20 +26,23 @@
 
 using namespace boost::range;
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 model::model(const hexa::model& init)
-    : vertices (gl::make_vbo(init.vertex_buffer))
-    , triangles (make_edge_buffer(init.edge_buffer))
+    : vertices(gl::make_vbo(init.vertex_buffer))
+    , triangles(make_edge_buffer(init.edge_buffer))
 {
     boost::range::copy(init.meshes, std::back_inserter(meshes));
 }
 
 model::mesh::mesh(const hexa::model::mesh& m)
-    : first_triangle (m.first_triangle)
-    , nr_of_triangles (m.nr_of_triangles)
-    , tex (textures(m.material))
-{ }
-
-}} // namespace hexa::gl
+    : first_triangle(m.first_triangle)
+    , nr_of_triangles(m.nr_of_triangles)
+    , tex(textures(m.material))
+{
+}
+}
+} // namespace hexa::gl

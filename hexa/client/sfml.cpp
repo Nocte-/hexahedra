@@ -77,21 +77,23 @@ namespace pt = boost::property_tree;
 
 //---------------------------------------------------------------------------
 
-namespace hexa {
+namespace hexa
+{
 
 extern po::variables_map global_settings;
 
-static double tot_elapsed (0);
+static double tot_elapsed(0);
 
 struct star
 {
     star(float x, float y, float m)
-        : pos {x, y}
+        : pos{x, y}
         , mag{m}
-    { }
+    {
+    }
 
     yaw_pitch pos;
-    float     mag;
+    float mag;
 };
 struct bsc_hdr
 {
@@ -105,20 +107,20 @@ struct bsc_hdr
 };
 struct bsc_rec
 {
-    float   catnr;
-    double  ascension;
-    double  declination;
-    char    spectral[2];
+    float catnr;
+    double ascension;
+    double declination;
+    char spectral[2];
     uint16_t magnitude;
-    float    prop_motion_asc;
-    float    prop_motion_dec;
+    float prop_motion_asc;
+    float prop_motion_dec;
 };
 static std::vector<star> stars;
 
+namespace
+{
 
-namespace {
-
-std::array<vector, 4> make_quad (yaw_pitch pos, float radius, float dist = 1.0f)
+std::array<vector, 4> make_quad(yaw_pitch pos, float radius, float dist = 1.0f)
 {
     std::array<vector, 4> quad;
 
@@ -127,9 +129,9 @@ std::array<vector, 4> make_quad (yaw_pitch pos, float radius, float dist = 1.0f)
     q.rotate(pos.y, vector(1, 0, 0));
 
     quad[0] = q * vector(-radius, -radius, dist);
-    quad[1] = q * vector( radius, -radius, dist);
-    quad[2] = q * vector( radius,  radius, dist);
-    quad[3] = q * vector(-radius,  radius, dist);
+    quad[1] = q * vector(radius, -radius, dist);
+    quad[2] = q * vector(radius, radius, dist);
+    quad[3] = q * vector(-radius, radius, dist);
 
     return quad;
 }
@@ -153,8 +155,8 @@ void init_opengl()
         log_msg("Found: Fragment shader");
 
     GLfloat fogColor[4] = {0.56f, 0.67f, 1.0f, 1.0f};
-    //GLfloat fogColor[4] = {0.8f, 0.3f, 0.5f, 1.0f};
-    //GLfloat fogColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+    // GLfloat fogColor[4] = {0.8f, 0.3f, 0.5f, 1.0f};
+    // GLfloat fogColor[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     glCheck(glClearDepth(1.0f));
     glCheck(glClearColor(fogColor[0], fogColor[1], fogColor[2], fogColor[3]));
@@ -171,7 +173,7 @@ void opengl_cube(float size)
     // Draw a cube
     glBegin(GL_QUADS);
 
-    float zero {-0.001f};
+    float zero{-0.001f};
     size += 0.001f;
 
     glVertex3f(size, zero, zero);
@@ -215,12 +217,11 @@ void opengl_cube(float size, vector3<int> pos)
 
 } // anonymous namespace
 
-
 sfml::sfml(sf::RenderWindow& win, scene& s)
-    : renderer_i (s)
-    , width_  (win.getSize().x)
-    , height_ (win.getSize().y)
-    , app_    (win)
+    : renderer_i(s)
+    , width_(win.getSize().x)
+    , height_(win.getSize().y)
+    , app_(win)
 {
     app_.setVerticalSyncEnabled(global_settings["vsync"].as<bool>());
     init_opengl();
@@ -236,20 +237,16 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
     if (ui_font_ == nullptr)
         throw std::runtime_error("No font found");
 
-    for (int y (0); y < 8; ++y)
-    {
-        for (int x (0); x < 16; ++x)
-        {
-            sf::Sprite& elem (ui_elem_[x + y * 16]);
+    for (int y(0); y < 8; ++y) {
+        for (int x(0); x < 16; ++x) {
+            sf::Sprite& elem(ui_elem_[x + y * 16]);
             elem.setTexture(*ui_img_);
             elem.setTextureRect(sf::IntRect(x * 16, y * 16, 16, 16));
         }
     }
-    for (int y (0); y < 4; ++y)
-    {
-        for (int x (0); x < 8; ++x)
-        {
-            sf::Sprite& elem (ui_elem_[128 + x + y * 8]);
+    for (int y(0); y < 4; ++y) {
+        for (int x(0); x < 8; ++x) {
+            sf::Sprite& elem(ui_elem_[128 + x + y * 8]);
             elem.setTexture(*ui_img_);
             elem.setTextureRect(sf::IntRect(x * 32, 128 + y * 32, 32, 32));
         }
@@ -257,45 +254,41 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
 
     ui_elem_[0].setOrigin(8, 8);
 
-    std::vector<char> buf (2000000);
-    fs::path datadir {global_settings["datadir"].as<std::string>()};
-    std::ifstream bsc {(datadir / "bsc5").string(), std::ios::binary};
-    if (bsc)
-    {
+    std::vector<char> buf(2000000);
+    fs::path datadir{global_settings["datadir"].as<std::string>()};
+    std::ifstream bsc{(datadir / "bsc5").string(), std::ios::binary};
+    if (bsc) {
         bsc.read(&buf[0], 1800000);
         const char* c = &buf[28];
-        for (int i = 0; i < 9090; ++i)
-        {
-            std::vector<char> twist1 {c + 4, c + 12}, twist2{c+12, c + 20}, twist3{c + 22, c + 24};
+        for (int i = 0; i < 9090; ++i) {
+            std::vector<char> twist1{c + 4, c + 12}, twist2{c + 12, c + 20},
+                twist3{c + 22, c + 24};
             std::reverse(twist1.begin(), twist1.end());
             std::reverse(twist2.begin(), twist2.end());
             std::reverse(twist3.begin(), twist3.end());
-            double* x {(double*)&twist1[0]};
-            double* y {(double*)&twist2[0]};
-            uint16_t* z {(uint16_t*)&twist3[0]};
+            double* x{(double*)&twist1[0]};
+            double* y{(double*)&twist2[0]};
+            uint16_t* z{(uint16_t*)&twist3[0]};
 
             if (*z < 400)
                 stars.emplace_back(*x, *y, 400 - *z);
 
             c += 32;
         }
-    }
-    else
-    {
-        double m {pi<double>() / 10000.};
-        for (int i = 0 ; i < 2000 ; ++i)
-            stars.emplace_back((rand() % 10000) * m , (rand() % 10000) * m * 2., 30 + rand() % 300);
+    } else {
+        double m{pi<double>() / 10000.};
+        for (int i = 0; i < 2000; ++i)
+            stars.emplace_back((rand() % 10000) * m, (rand() % 10000) * m * 2.,
+                               30 + rand() % 300);
     }
 
-    const int16_t l {-10}, h {266};
+    const int16_t l{-10}, h{266};
 
-    static const int16_t cube[24*3] = {
-        l,l,l,  h,l,l,  h,h,l,  l,h,l,
-        h,l,l,  h,l,h,  h,h,h,  h,h,l,
-        l,h,h,  h,h,h,  h,l,h,  l,l,h,
-        l,h,l,  l,h,h,  l,l,h,  l,l,l,
-        l,l,l,  h,l,l,  h,l,h,  l,l,h,
-        l,h,h,  h,h,h,  h,h,l,  l,h,l };
+    static const int16_t cube[24 * 3]
+        = {l, l, l, h, l, l, h, h, l, l, h, l, h, l, l, h, l, h,
+           h, h, h, h, h, l, l, h, h, h, h, h, h, l, h, l, l, h,
+           l, h, l, l, h, h, l, l, h, l, l, l, l, l, l, h, l, l,
+           h, l, h, l, l, h, l, h, h, h, h, h, h, h, l, l, h, l};
 
     occlusion_block_ = gl::vbo{cube, 24, sizeof(occ_cube_vtx)};
 }
@@ -304,35 +297,35 @@ sfml::~sfml()
 {
 }
 
-void sfml::draw_chunk_face (const chunk_coordinates& p, direction_type d)
+void sfml::draw_chunk_face(const chunk_coordinates& p, direction_type d)
 {
-    vec3i offset {p - chunk_offset_};
+    vec3i offset{p - chunk_offset_};
     opengl_cube_face(256.0f, offset, d);
 }
 
-void sfml::draw_chunk_cube (const chunk_coordinates& p)
+void sfml::draw_chunk_cube(const chunk_coordinates& p)
 {
-    vec3i offset {p - chunk_offset_};
+    vec3i offset{p - chunk_offset_};
     opengl_cube(256.0f, offset);
 }
 
 void sfml::prepare(const player& plr)
 {
     const float eye_height = 1.7f;
-    camera_wpos_ = wfpos(plr.position(), vector(0,0,0));
+    camera_wpos_ = wfpos(plr.position(), vector(0, 0, 0));
 
-	vector c = plr.rel_world_position(chunk_offset_ * chunk_size);
+    vector c = plr.rel_world_position(chunk_offset_ * chunk_size);
     c.z += eye_height;
 
     float bob = 0.0f, rock = 0.0f;
-    if (!plr.is_airborne)
-    {
-        bob  = std::abs(std::sin(tot_elapsed * 10.)) * length(plr.velocity) * 0.016;
+    if (!plr.is_airborne) {
+        bob = std::abs(std::sin(tot_elapsed * 10.)) * length(plr.velocity)
+              * 0.016;
         rock = std::sin(tot_elapsed * 10.) * length(plr.velocity) * 0.0012;
     }
 
-    camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock,
-                     1.22173048f, (float)width_ / (float)height_, 0.2f, 800.f);
+    camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock, 1.22173048f,
+                     (float)width_ / (float)height_, 0.2f, 800.f);
 
     glCheck(glDisable(GL_CULL_FACE));
     glCheck(glDisable(GL_LIGHTING));
@@ -345,29 +338,27 @@ void sfml::prepare(const player& plr)
     glCheck(glDisable(GL_FOG));
 
     glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-    glCheck(glClear(GL_COLOR_BUFFER_BIT| GL_DEPTH_BUFFER_BIT));
+    glCheck(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
     glCheck(glDepthMask(GL_FALSE));
 
-    static float hack (0.5f);
-    //hack += 0.0001f * 2.0f * pi<float>();
+    static float hack(0.5f);
+    // hack += 0.0001f * 2.0f * pi<float>();
 
     {
-    glMatrixMode(GL_PROJECTION);
-    glLoadMatrixf(camera_.projection_matrix().as_ptr());
+        glMatrixMode(GL_PROJECTION);
+        glLoadMatrixf(camera_.projection_matrix().as_ptr());
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadMatrixf(camera_.model_view_matrix().as_ptr());
+        glMatrixMode(GL_MODELVIEW);
+        glLoadMatrixf(camera_.model_view_matrix().as_ptr());
     }
-
 
     skydome lulz;
     std::vector<color> colors;
 
-	skylight pretty {yaw_pitch(-0.5f * pi<float>(), hack), 1.9f};
+    skylight pretty{yaw_pitch(-0.5f * pi<float>(), hack), 1.9f};
 
-    for(auto p : lulz.vertices())
-    {
-        color t (pretty(p));
+    for (auto p : lulz.vertices()) {
+        color t(pretty(p));
         t.Y() *= 2.5f;
         t.x() -= 0.33f;
         t.y() -= 0.38f;
@@ -378,7 +369,7 @@ void sfml::prepare(const player& plr)
         colors.push_back(xyY_to_srgb(t));
     }
 
-	color amb {pretty(normalize(vector(1.0f, 1.0f, 0.4f)))};
+    color amb{pretty(normalize(vector(1.0f, 1.0f, 0.4f)))};
 
     amb.Y() *= 2.5f;
     amb.x() -= 0.33f;
@@ -391,50 +382,45 @@ void sfml::prepare(const player& plr)
     horizon_color_ = xyY_to_srgb(amb);
 
     glBegin(GL_TRIANGLES);
-    for (auto& tri : lulz.triangles())
-    {
-        for (int i (0); i < 3; ++i)
-        {
-            unsigned int a (tri[i]);
+    for (auto& tri : lulz.triangles()) {
+        for (int i(0); i < 3; ++i) {
+            unsigned int a(tri[i]);
             gl::color(colors[a]);
             gl::vertex(lulz.vertices()[a]);
         }
     }
     glCheck(glEnd());
 
-    if(false)
-    {
-    glRotatef(hack * 57.2957795, 0, -1, 0);
-    float sun_size(5);
+    if (false) {
+        glRotatef(hack * 57.2957795, 0, -1, 0);
+        float sun_size(5);
 
-    gl::enable({ GL_TEXTURE_2D, GL_BLEND });
-    glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
+        gl::enable({GL_TEXTURE_2D, GL_BLEND});
+        glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
-    textures("star")->bind();
+        textures("star")->bind();
 
-    double x = clamp(-3.0 * std::cos(hack), 0.0, 1.0);
+        double x = clamp(-3.0 * std::cos(hack), 0.0, 1.0);
 
-    glBegin(GL_QUADS);
-    glColor4f(1,1,1,x);
+        glBegin(GL_QUADS);
+        glColor4f(1, 1, 1, x);
 
-    for (auto& s : stars)
-    {
-        auto test (make_quad(s.pos, 0.0023 + s.mag * 0.00002));
+        for (auto& s : stars) {
+            auto test(make_quad(s.pos, 0.0023 + s.mag * 0.00002));
 
-        glTexCoord2f(0, 0);
-        glVertex3f(test[0][0], test[0][1], test[0][2]);
-        glTexCoord2f(1, 0);
-        glVertex3f(test[1][0], test[1][1], test[1][2]);
-        glTexCoord2f(1, 1);
-        glVertex3f(test[2][0], test[2][1], test[2][2]);
-        glTexCoord2f(0, 1);
-        glVertex3f(test[3][0], test[3][1], test[3][2]);
-    }
-    glCheck(glEnd());
+            glTexCoord2f(0, 0);
+            glVertex3f(test[0][0], test[0][1], test[0][2]);
+            glTexCoord2f(1, 0);
+            glVertex3f(test[1][0], test[1][1], test[1][2]);
+            glTexCoord2f(1, 1);
+            glVertex3f(test[2][0], test[2][1], test[2][2]);
+            glTexCoord2f(0, 1);
+            glVertex3f(test[3][0], test[3][1], test[3][2]);
+        }
+        glCheck(glEnd());
 
-
-    textures("moon")->bind();
-    glBegin(GL_QUADS);
+        textures("moon")->bind();
+        glBegin(GL_QUADS);
         gl::color(color::white());
 
         glTexCoord2f(0, 0);
@@ -448,38 +434,35 @@ void sfml::prepare(const player& plr)
 
         glTexCoord2f(0, 1);
         glVertex3f(-sun_size, sun_size, -100);
-    glCheck(glEnd());
+        glCheck(glEnd());
 
+        textures("sun")->bind();
+        typedef vertex_2<vtx_xyz<>, vtx_uv<>> sunvtx;
 
-    textures("sun")->bind();
-    typedef vertex_2<vtx_xyz<>, vtx_uv<>> sunvtx;
+        std::vector<sunvtx> sunarr{{{-sun_size, -sun_size, 100}, {0, 0}},
+                                   {{-sun_size, sun_size, 100}, {0, 1}},
+                                   {{sun_size, sun_size, 100}, {1, 1}},
+                                   {{sun_size, -sun_size, 100}, {1, 0}}};
 
-    std::vector<sunvtx> sunarr {
-        { { -sun_size, -sun_size, 100 } , { 0, 0 } },
-        { { -sun_size,  sun_size, 100 } , { 0, 1 } },
-        { {  sun_size,  sun_size, 100 } , { 1, 1 } },
-        { {  sun_size, -sun_size, 100 } , { 1, 0 } } };
+        gl::vbo sunvbo(sunarr);
 
-    gl::vbo sunvbo (sunarr);
+        sunvbo.bind();
 
-    sunvbo.bind();
+        glCheck(glEnableClientState(GL_VERTEX_ARRAY));
+        glCheck(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
+        bind_attributes<sunvtx>();
 
-    glCheck(glEnableClientState(GL_VERTEX_ARRAY));
-    glCheck(glEnableClientState(GL_TEXTURE_COORD_ARRAY));
-    bind_attributes<sunvtx>();
-
-    glColor4f(1,1,1,1);
-    sunvbo.draw();
-    sunvbo.unbind();
-    glCheck(glDisableClientState(GL_VERTEX_ARRAY));
-    glCheck(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
-
+        glColor4f(1, 1, 1, 1);
+        sunvbo.draw();
+        sunvbo.unbind();
+        glCheck(glDisableClientState(GL_VERTEX_ARRAY));
+        glCheck(glDisableClientState(GL_TEXTURE_COORD_ARRAY));
     }
 
     texture::unbind();
 
-	camera_ = camera(vec3f{0, 0, 0}, plr.head_angle(), rock,
-                     1.22173048f, (float)width_ / (float)height_, 2.0f, 16000.f);
+    camera_ = camera(vec3f{0, 0, 0}, plr.head_angle(), rock, 1.22173048f,
+                     (float)width_ / (float)height_, 2.0f, 16000.f);
 
     camera_.move_to((c + vector(0, 0, bob)) * 16.f);
 
@@ -492,9 +475,9 @@ void sfml::highlight_face(const pos_dir<world_coordinates>& face,
                           const color_alpha& hl_color)
 {
     glCheck(glDepthMask(GL_FALSE));
-    vec3f offset (vec3i(face.pos - chunk_offset_ * chunk_size));
+    vec3f offset(vec3i(face.pos - chunk_offset_ * chunk_size));
     offset *= 16.f;
-    auto mtx (translate(camera_.model_view_matrix(), offset));
+    auto mtx(translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
 
     gl::color(hl_color);
@@ -504,12 +487,12 @@ void sfml::highlight_face(const pos_dir<world_coordinates>& face,
 
 void sfml::highlight_custom_block(world_coordinates block,
                                   const custom_block& model,
-                                  const color_alpha &hl_color)
+                                  const color_alpha& hl_color)
 {
     glCheck(glDepthMask(GL_FALSE));
-    vec3f offset (vec3i(block - chunk_offset_ * chunk_size));
+    vec3f offset(vec3i(block - chunk_offset_ * chunk_size));
     offset *= 16.f;
-    auto mtx (translate(camera_.model_view_matrix(), offset));
+    auto mtx(translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
 
     gl::color(hl_color);
@@ -521,9 +504,8 @@ void sfml::highlight_custom_block(world_coordinates block,
 
 void sfml::draw_bar(float x, float y, int index, int width, double ratio)
 {
-    for (int i (0); i < width; ++i)
-    {
-        int idx (index);
+    for (int i(0); i < width; ++i) {
+        int idx(index);
 
         ui_elem_[idx].setPosition(x, y);
         app_.draw(ui_elem_[idx]);
@@ -533,10 +515,10 @@ void sfml::draw_bar(float x, float y, int index, int width, double ratio)
 
 void sfml::draw_ui(double elapsed, const hud& h)
 {
-    static int step (0);
+    static int step(0);
     static sf::Text info;
     static sf::Text debug_info;
-    static double acc_elapsed (0);
+    static double acc_elapsed(0);
 
     acc_elapsed += elapsed;
     tot_elapsed += elapsed;
@@ -559,63 +541,53 @@ void sfml::draw_ui(double elapsed, const hud& h)
     else
         msgs = h.console_messages();
 
-    if (!msgs.empty())
-    {
+    if (!msgs.empty()) {
         float height = 20 * msgs.size();
-		sf::RectangleShape bg({ width_ - 20.0f, height });
+        sf::RectangleShape bg({width_ - 20.0f, height});
         bg.setPosition(5, height_ - (80 + height));
         bg.setFillColor(sf::Color(0, 0, 0, 170));
         app_.draw(bg);
 
         float y = height_ - (80 + height);
-        for (auto& line : msgs)
-        {
+        for (auto& line : msgs) {
             std::string msg;
-            sf::Color   msg_color (sf::Color::White);
+            sf::Color msg_color(sf::Color::White);
 
-            try
-            {
-                std::stringstream strm (line);
+            try {
+                std::stringstream strm(line);
                 pt::ptree info;
                 pt::json_parser::read_json(strm, info);
 
-                std::string type (info.get<std::string>("type", ""));
-                std::string text (info.get<std::string>("message", ""));
-                std::string user (info.get<std::string>("name", ""));
+                std::string type(info.get<std::string>("type", ""));
+                std::string text(info.get<std::string>("message", ""));
+                std::string user(info.get<std::string>("name", ""));
 
-
-                if (type == "chat")
-                {
-                    static const sf::Color chat_color[] =
-                    {
-                        { 0x7F, 0xDB, 0xFF },
-                        { 0x39, 0xCC, 0xCC },
-                        { 0x2E, 0xCC, 0x40 },
-                        { 0x01, 0xFF, 0x70 },
-                        { 0xFF, 0xDC, 0x00 },
-                        { 0xFF, 0x85, 0x1B },
-                        { 0xFF, 0x41, 0x36 },
-                        { 0xF0, 0x12, 0xBE },
-                        { 0xC1, 0x1D, 0xD9 },
-                        { 0xC0, 0xC0, 0xC0 }
-                    };
+                if (type == "chat") {
+                    static const sf::Color chat_color[] = {{0x7F, 0xDB, 0xFF},
+                                                           {0x39, 0xCC, 0xCC},
+                                                           {0x2E, 0xCC, 0x40},
+                                                           {0x01, 0xFF, 0x70},
+                                                           {0xFF, 0xDC, 0x00},
+                                                           {0xFF, 0x85, 0x1B},
+                                                           {0xFF, 0x41, 0x36},
+                                                           {0xF0, 0x12, 0xBE},
+                                                           {0xC1, 0x1D, 0xD9},
+                                                           {0xC0, 0xC0, 0xC0}};
 
                     msg = (boost::format("<%1%> %2%") % user % text).str();
                     msg_color = chat_color[fnv_hash(user) % 10];
-                }
-                else
+                } else
                     msg = text;
-            }
-            catch (...)
-            {
+            } catch (...) {
                 msg = line;
             }
 
             std::u32string wide;
-            sf::Utf8::toUtf32(msg.begin(), msg.end(), std::back_inserter(wide));
-            sf::String l ((const unsigned int*)&wide[0]);
+            sf::Utf8::toUtf32(msg.begin(), msg.end(),
+                              std::back_inserter(wide));
+            sf::String l((const unsigned int*)&wide[0]);
 
-            sf::Text txt (l, *ui_font_, 16);
+            sf::Text txt(l, *ui_font_, 16);
             txt.setColor(msg_color);
             txt.setPosition(10, y);
             app_.draw(txt);
@@ -623,41 +595,37 @@ void sfml::draw_ui(double elapsed, const hud& h)
         }
     }
 
-    if (h.show_input())
-    {
-        sf::RectangleShape bg ({ width_ - 10.f, 20.f });
+    if (h.show_input()) {
+        sf::RectangleShape bg({width_ - 10.f, 20.f});
         bg.setPosition(5, height_ - 70);
         bg.setFillColor(sf::Color(0, 0, 0, 150));
         app_.draw(bg);
 
-        sf::String l (reinterpret_cast<const unsigned int*>(&h.get_input()[0]));
-        sf::Text txt (l, *ui_font_, 16);
+        sf::String l(reinterpret_cast<const unsigned int*>(&h.get_input()[0]));
+        sf::Text txt(l, *ui_font_, 16);
         txt.setPosition(10, height_ - 70);
         app_.draw(txt);
 
         // Hopefully sf::String::substring will be available soon.
-        auto sub (h.get_input().substr(0, h.get_cursor()));
-        sf::String ml (reinterpret_cast<const unsigned int*>(&sub[0]));
-        sf::Text measure (ml, *ui_font_, 16);
-        float width (measure.getLocalBounds().width);
-        sf::Vertex cline[] =
-        {
-            sf::Vertex(sf::Vector2f(10 + width, height_ - 68)),
-            sf::Vertex(sf::Vector2f(10 + width, height_ - 52))
-        };
+        auto sub(h.get_input().substr(0, h.get_cursor()));
+        sf::String ml(reinterpret_cast<const unsigned int*>(&sub[0]));
+        sf::Text measure(ml, *ui_font_, 16);
+        float width(measure.getLocalBounds().width);
+        sf::Vertex cline[]
+            = {sf::Vertex(sf::Vector2f(10 + width, height_ - 68)),
+               sf::Vertex(sf::Vector2f(10 + width, height_ - 52))};
         app_.draw(cline, 2, sf::Lines);
     }
 
     if (h.hotbar_needs_update)
         draw_hotbar(h);
 
-    sf::Sprite hb (hotbar_.getTexture());
+    sf::Sprite hb(hotbar_.getTexture());
     hb.setPosition((width_ - hb.getGlobalBounds().width) * 0.5,
-                    height_ - hb.getGlobalBounds().height - 1);
+                   height_ - hb.getGlobalBounds().height - 1);
     app_.draw(hb);
 
-    if (acc_elapsed > 0.2)
-    {
+    if (acc_elapsed > 0.2) {
         info.setFont(*ui_font_);
         info.setPosition(10, 10);
         info.setCharacterSize(14);
@@ -666,8 +634,8 @@ void sfml::draw_ui(double elapsed, const hud& h)
         debug_info.setPosition(10, 30);
         debug_info.setCharacterSize(14);
 
-        auto p (camera_wpos_.pos);
-        //world_coordinates r (p - world_center);
+        auto p(camera_wpos_.pos);
+        // world_coordinates r (p - world_center);
 
         GLint total_mem_kb = 0;
         glGetIntegerv(0x9048, &total_mem_kb);
@@ -684,24 +652,24 @@ void sfml::draw_ui(double elapsed, const hud& h)
             ).str());
 */
         info.setString((boost::format("%1% FPS  |   %2% , %3% , %4%")
-            % int((double)step / acc_elapsed + 0.5f)
-            % p.x % p.y % p.z
-            ).str());
+                        % int((double)step / acc_elapsed + 0.5f) % p.x % p.y
+                        % p.z).str());
 
-        debug_info.setString((boost::format("chunk %1% , %2% , %3%   ( %4% , %5% , %6% )  [ %7% , %8%, %9%]\nheight %10%")
-            % (p.x / chunk_size) % (p.y / chunk_size) % (p.z / chunk_size)
-            % int((p.x / chunk_size) - world_chunk_center.x)
-            % int((p.y / chunk_size) - world_chunk_center.y)
-            % int((p.z / chunk_size) - world_chunk_center.z)
-            % (p.x % chunk_size) % (p.y % chunk_size) % (p.z % chunk_size)
-            % h.local_height).str());
+        debug_info.setString(
+            (boost::format("chunk %1% , %2% , %3%   ( %4% , %5% , %6% )  [ "
+                           "%7% , %8%, %9%]\nheight %10%") % (p.x / chunk_size)
+             % (p.y / chunk_size) % (p.z / chunk_size)
+             % int((p.x / chunk_size) - world_chunk_center.x)
+             % int((p.y / chunk_size) - world_chunk_center.y)
+             % int((p.z / chunk_size) - world_chunk_center.z)
+             % (p.x % chunk_size) % (p.y % chunk_size) % (p.z % chunk_size)
+             % h.local_height).str());
 
         step = 0;
         acc_elapsed = 0;
     }
 
-    if (h.show_debug_info)
-    {
+    if (h.show_debug_info) {
         app_.draw(info);
         app_.draw(debug_info);
     }
@@ -719,7 +687,7 @@ void sfml::resize(unsigned int w, unsigned int h)
     width_ = w;
     height_ = h;
 
-    auto current_view (app_.getView());
+    auto current_view(app_.getView());
     current_view.setSize(w, h);
     current_view.setCenter(w * 0.5, h * 0.5);
     app_.setView(current_view);
@@ -730,35 +698,35 @@ void sfml::resize(unsigned int w, unsigned int h)
 
 void sfml::draw_hotbar(const hud& h)
 {
-    static const light prefab[6] = { 3, 3, 8, 8, 15, 15 };
+    static const light prefab[6] = {3, 3, 8, 8, 15, 15};
 
     if (h.bar.empty())
         return;
 
-    auto slot       = ui_elem("slot");
-    auto slot_left  = ui_elem("slot-left");
+    auto slot = ui_elem("slot");
+    auto slot_left = ui_elem("slot-left");
     auto slot_right = ui_elem("slot-right");
-    auto slot_sep   = ui_elem("slot-sep");
-    auto slot_actv  = ui_elem("slot-active");
+    auto slot_sep = ui_elem("slot-sep");
+    auto slot_actv = ui_elem("slot-active");
 
     if (slot == nullptr || slot_actv == nullptr)
         return;
 
-    size_t size_left  (slot_left  ? (*slot_left).getGlobalBounds().width : 0),
-           size_slot  ((*slot).getGlobalBounds().width),
-           size_actv  ((*slot_actv).getGlobalBounds().width),
-           size_sep   (slot_sep   ? (*slot_sep).getGlobalBounds().width  : 0),
-           size_right (slot_right ? (*slot_right).getGlobalBounds().width: 0);
+    size_t size_left(slot_left ? (*slot_left).getGlobalBounds().width : 0),
+        size_slot((*slot).getGlobalBounds().width),
+        size_actv((*slot_actv).getGlobalBounds().width),
+        size_sep(slot_sep ? (*slot_sep).getGlobalBounds().width : 0),
+        size_right(slot_right ? (*slot_right).getGlobalBounds().width : 0);
 
-    size_t slot_height ((*slot).getGlobalBounds().height),
-           actv_height ((*slot_actv).getGlobalBounds().height);
+    size_t slot_height((*slot).getGlobalBounds().height),
+        actv_height((*slot_actv).getGlobalBounds().height);
 
-    size_t total (h.bar.size() * size_slot + size_left + size_right);
+    size_t total(h.bar.size() * size_slot + size_left + size_right);
     if (h.bar.size() >= 2)
         total += (h.bar.size() - 1) * size_sep;
 
-    size_t edge (size_actv > size_slot ? (size_actv - size_slot) * 0.5 : 0);
-    size_t edge_l (0), edge_r (0);
+    size_t edge(size_actv > size_slot ? (size_actv - size_slot) * 0.5 : 0);
+    size_t edge_l(0), edge_r(0);
 
     if (edge > size_left)
         edge_l = edge - size_left;
@@ -767,126 +735,111 @@ void sfml::draw_hotbar(const hud& h)
         edge_r = edge - size_right;
 
     total += edge_l + edge_r;
-    size_t total_height (std::max(slot_height, actv_height));
+    size_t total_height(std::max(slot_height, actv_height));
 
     if (hotbar_.getSize().x != total || hotbar_.getSize().y != total_height)
         hotbar_.create(total, total_height);
 
-    hotbar_.clear(sf::Color(0,0,0,0));
+    hotbar_.clear(sf::Color(0, 0, 0, 0));
 
-    size_t pen_x (edge_l), pen_y (0);
+    size_t pen_x(edge_l), pen_y(0);
     if (actv_height > slot_height)
         pen_y = (actv_height - slot_height) * 0.5;
 
-    if (slot_left)
-    {
+    if (slot_left) {
         slot_left->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot_left);
         pen_x += size_left;
     }
 
-    for (size_t cnt = 0; cnt < h.bar.size(); ++cnt)
-    {
+    for (size_t cnt = 0; cnt < h.bar.size(); ++cnt) {
         slot->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot);
         pen_x += size_slot;
 
-        if (slot_sep && cnt + 1 < h.bar.size())
-        {
+        if (slot_sep && cnt + 1 < h.bar.size()) {
             slot_sep->setPosition(pen_x, pen_y);
             hotbar_.draw(*slot_sep);
             pen_x += size_sep;
         }
     }
 
-    if (slot_right)
-    {
+    if (slot_right) {
         slot_right->setPosition(pen_x, pen_y);
         hotbar_.draw(*slot_right);
     }
 
     pen_x = edge_l + size_left;
-    for (auto& curr_slot : h.bar)
-    {
-        switch (curr_slot.type)
-        {
-        case hotbar_slot::material:
-            {
-			auto     temp = make_terrain_mesher({0,0,0});
+    for (auto& curr_slot : h.bar) {
+        switch (curr_slot.type) {
+        case hotbar_slot::material: {
+            auto temp = make_terrain_mesher({0, 0, 0});
             uint16_t mat_idx = find_material(curr_slot.name);
-            const    material& m = material_prop[mat_idx];
-            chunk_index c {0,0,0};
+            const material& m = material_prop[mat_idx];
+            chunk_index c{0, 0, 0};
             float scale = 1.2f;
-            if (m.model.empty())
-            {
+            if (m.model.empty()) {
                 for (int i = 0; i < 6; ++i)
-                    (*temp).add_face(c, direction_type(i), m.textures[i], prefab[i]);
-            }
-            else
-            {
+                    (*temp).add_face(c, direction_type(i), m.textures[i],
+                                     prefab[i]);
+            } else {
                 scale = 1.6f;
-                (*temp).add_custom_block(c, m.model, std::vector<light>(prefab, prefab + 6));
+                (*temp).add_custom_block(
+                    c, m.model, std::vector<light>(prefab, prefab + 6));
             }
 
-
-            gl::vbo mesh {(*temp).make_buffer()};
+            gl::vbo mesh{(*temp).make_buffer()};
             gl::enable({GL_BLEND, GL_CULL_FACE});
             glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 
             auto p = matrix4<float>::identity();
-            p(0,0) = 2.0f / hotbar_.getSize().x;
-            p(1,1) = 2.0f / hotbar_.getSize().y;
-            p(2,2) = 0.01f;
-            p(0,3) = -1;
-            p(1,3) = -1;
-            auto mtx =   p
-                       * matrix4<float>::translation(pen_x + size_slot * 0.5f, pen_y + slot_height * 0.5f, 0.f)
-                       * rotate_x<float>(-0.5)
-                       * rotate_y<float>(0.5)
-                       * matrix4<float>::scale3(scale)
-                       * matrix4<float>::flip()
+            p(0, 0) = 2.0f / hotbar_.getSize().x;
+            p(1, 1) = 2.0f / hotbar_.getSize().y;
+            p(2, 2) = 0.01f;
+            p(0, 3) = -1;
+            p(1, 3) = -1;
+            auto mtx = p * matrix4<float>::translation(
+                               pen_x + size_slot * 0.5f,
+                               pen_y + slot_height * 0.5f, 0.f)
+                       * rotate_x<float>(-0.5) * rotate_y<float>(0.5)
+                       * matrix4<float>::scale3(scale) * matrix4<float>::flip()
                        * matrix4<float>::translation(-8.0f, -8.0f, -8.0f);
             draw(mesh, mtx);
 
-            }
-            break;
+        } break;
 
-        case hotbar_slot::item:
-            {
+        case hotbar_slot::item: {
             auto icon = sprites(curr_slot.name);
-            if (icon)
-            {
+            if (icon) {
                 (*icon).setPosition(pen_x + size_slot * 0.5 - 16,
                                     pen_y + slot_height * 0.5 - 16);
                 hotbar_.draw(*icon);
             }
-
-            }
+        }
         }
         pen_x += size_slot + size_sep;
     }
 
     app_.resetGLStates();
 
-    if (h.active_slot < h.bar.size())
-    {
-        slot_actv->setPosition(edge_l + size_left + h.active_slot * (size_slot + size_sep) + size_slot * 0.5 - size_actv * 0.5, 0);
+    if (h.active_slot < h.bar.size()) {
+        slot_actv->setPosition(edge_l + size_left
+                               + h.active_slot * (size_slot + size_sep)
+                               + size_slot * 0.5 - size_actv * 0.5,
+                               0);
         hotbar_.draw(*slot_actv);
     }
 
     hotbar_.display();
 }
 
-void sfml::load_shader (shader_program& shader, const std::string& name)
+void sfml::load_shader(shader_program& shader, const std::string& name)
 {
     shader.load(resource_file(res_shader, name));
-    if (!shader.link())
-    {
+    if (!shader.link()) {
         log_msg(shader.info_log());
         throw std::runtime_error("cannot link shader " + name);
     }
 }
 
-
 } // namespace hexa
-

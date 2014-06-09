@@ -34,7 +34,8 @@
 #include <hexa/client/texture.hpp>
 #include <hexa/client/vbo.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** A 3-D model. */
 class model
@@ -46,7 +47,7 @@ public:
 
 #else
     model(model&&) = default;
-    model& operator= (model&&) = default;
+    model& operator=(model&&) = default;
 #endif
 
     typedef vertex_5<vtx_xyz<>, vtx_uv<>, vtx_normal<>,
@@ -65,61 +66,64 @@ public:
             : first_triangle(ft)
             , nr_of_triangles(nt)
             , material(mat)
-        { }
+        {
+        }
 
-        uint16_t                first_triangle;
-        uint16_t                nr_of_triangles;
+        uint16_t first_triangle;
+        uint16_t nr_of_triangles;
 
-        std::string             material;
-        texture                 tex;
-        texture                 specular;
+        std::string material;
+        texture tex;
+        texture specular;
     };
 
     struct bone
     {
-        bone(vector3<float> t, quaternion<float> r,
-             vector3<float> s, uint16_t p, std::string n)
-            : translation(t), rotation(r)
-            , scale(s), parent(p)
+        bone(vector3<float> t, quaternion<float> r, vector3<float> s,
+             uint16_t p, std::string n)
+            : translation(t)
+            , rotation(r)
+            , scale(s)
+            , parent(p)
             , name(n)
-        { }
+        {
+        }
 
-        vector3<float>          translation;
-        quaternion<float>       rotation;
-        vector3<float>          scale;
+        vector3<float> translation;
+        quaternion<float> rotation;
+        vector3<float> scale;
 
-        uint16_t                parent;
-        std::string             name;
+        uint16_t parent;
+        std::string name;
     };
 
     typedef std::array<uint16_t, 3> triangle;
 
-    std::vector<vertex>     vertex_buffer;
+    std::vector<vertex> vertex_buffer;
     std::vector<vertex_col> vertex_buffer_col;
-    std::vector<triangle>   edge_buffer;
-    std::vector<mesh>       meshes;
-    std::vector<bone>       bones;
+    std::vector<triangle> edge_buffer;
+    std::vector<mesh> meshes;
+    std::vector<bone> bones;
 
-    std::string             name;
+    std::string name;
 };
 
 /** Animation for a 3-D model. */
 class animation : boost::noncopyable
 {
 public:
-    std::string         name;
-    float               framerate;
-    uint32_t            flags;
+    std::string name;
+    float framerate;
+    uint32_t flags;
 
     struct pose
     {
-        uint16_t                        parent;
-        uint16_t                        mask;
-        std::vector<matrix3x4<float>>   data;
+        uint16_t parent;
+        uint16_t mask;
+        std::vector<matrix3x4<float>> data;
     };
 
-    std::vector<pose>   frames;
+    std::vector<pose> frames;
 };
 
 } // namespace hexa
-

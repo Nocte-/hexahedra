@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <hexa/basic_types.hpp>
@@ -27,7 +27,8 @@
 #include <hexa/protocol.hpp>
 #include <hexa/wfpos.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** The player.
  *  Since this is used at the client side, there's usually only one
@@ -40,69 +41,69 @@ public:
     void move_to(const world_coordinates& pos, const vector& fraction);
 
 public:
-    void        look_at(const yaw_pitch& direction);
-    yaw_pitch   turn_head(const yaw_pitch& amount);
-    void        move(const vector& delta);
-    void        move_to(const wfpos& p)
-        {
-            position_ = p.pos;
-            position_fraction_ = p.frac;
-        }
+    void look_at(const yaw_pitch& direction);
+    yaw_pitch turn_head(const yaw_pitch& amount);
+    void move(const vector& delta);
+    void move_to(const wfpos& p)
+    {
+        position_ = p.pos;
+        position_fraction_ = p.frac;
+    }
 
 public:
-    yaw_pitch   head_angle() const;
-    yaw_pitch   walk_angle() const;
-    float       height() const;
+    yaw_pitch head_angle() const;
+    yaw_pitch walk_angle() const;
+    float height() const;
 
-    wfpos get_wfpos() const
-        { return wfpos(position_, position_fraction_); }
+    wfpos get_wfpos() const { return wfpos(position_, position_fraction_); }
 
-    world_coordinates position() const
-        { return position_; }
+    world_coordinates position() const { return position_; }
 
-    vector position_fraction() const
-        { return position_fraction_; }
+    vector position_fraction() const { return position_fraction_; }
 
     vector3<double> world_position() const
-        { return position() + position_fraction(); }
+    {
+        return position() + position_fraction();
+    }
 
     vector rel_world_position(const world_coordinates& o) const
-        { return vector(world_vector(position() - o)) + position_fraction(); }
+    {
+        return vector(world_vector(position() - o)) + position_fraction();
+    }
 
-    chunk_coordinates chunk_position() const
-        { return position_ / chunk_size; }
+    chunk_coordinates chunk_position() const { return position_ / chunk_size; }
 
     vector position_relative_in_chunk() const
-        { return position_fraction() + vector(position() % chunk_size); }
+    {
+        return position_fraction() + vector(position() % chunk_size);
+    }
 
     aabb<vector> collision_box() const
-        {
-            auto o (position_relative_in_chunk());
-            return aabb<vector>(o - vector(0.4f, 0.4f, 0.01f),
-                                o + vector(0.4f, 0.4f, 1.73f));
-        }
-
-
-private:
-    void    on_move();
+    {
+        auto o(position_relative_in_chunk());
+        return aabb<vector>(o - vector(0.4f, 0.4f, 0.01f),
+                            o + vector(0.4f, 0.4f, 1.73f));
+    }
 
 private:
-    world_coordinates       position_;
-    vector                  position_fraction_;
-    yaw_pitch               look_at_;
-    vector2<float>          walk_vector_;
-    vector2<float>          target_vector_;
-    float                   height_;
+    void on_move();
+
+private:
+    world_coordinates position_;
+    vector position_fraction_;
+    yaw_pitch look_at_;
+    vector2<float> walk_vector_;
+    vector2<float> target_vector_;
+    float height_;
 
 public:
-    vector                  velocity;
-    unsigned int            active_slot;
+    vector velocity;
+    unsigned int active_slot;
 
     typedef msg::player_configure_hotbar::slot slot;
-    std::vector<slot>       hotbar;
-    bool                    hotbar_needs_update;
-    bool                    is_airborne;
+    std::vector<slot> hotbar;
+    bool hotbar_needs_update;
+    bool is_airborne;
 };
 
 } // namespace hexa
-

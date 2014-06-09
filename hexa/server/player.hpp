@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
@@ -28,7 +27,8 @@
 #include <hexa/basic_types.hpp>
 #include <hexa/player_base.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class player : public player_base
 {
@@ -37,14 +37,14 @@ public:
     ~player();
 
 public:
-    ENetPeer*           conn;
-    std::string         name;
-    es::entity          entity;
+    ENetPeer* conn;
+    std::string name;
+    es::entity entity;
 
-    uint8_t             last_move_speed;
-    uint8_t             last_move_dir;
-    uint8_t             last_button_mask;
-    uint8_t             selected_hotbar;
+    uint8_t last_move_speed;
+    uint8_t last_move_dir;
+    uint8_t last_button_mask;
+    uint8_t selected_hotbar;
 };
 
 } // namespace hexa

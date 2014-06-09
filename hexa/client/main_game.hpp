@@ -43,7 +43,8 @@
 #include "player.hpp"
 #include "scene.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class packet;
 
@@ -51,23 +52,21 @@ class packet;
 class main_game : public game_state, public udp_client
 {
 public:
-    main_game (game& the_game, const std::string& host, uint16_t port,
-               unsigned int view_dist = 24);
+    main_game(game& the_game, const std::string& host, uint16_t port,
+              unsigned int view_dist = 24);
     ~main_game();
 
-    void        receive(const packet& p);
-    void        login();
-    void        request_chunk(const chunk_coordinates& pos);
+    void receive(const packet& p);
+    void login();
+    void request_chunk(const chunk_coordinates& pos);
 
-    player&     get_player();
+    player& get_player();
 
-    chunk_cache&
-                map()  { return *map_; }
+    chunk_cache& map() { return *map_; }
 
-    renderer_i& renderer()  { return *renderer_; }
+    renderer_i& renderer() { return *renderer_; }
 
-    std::unique_ptr<terrain_mesher_i>
-                make_terrain_mesher(vec3i offset);
+    std::unique_ptr<terrain_mesher_i> make_terrain_mesher(vec3i offset);
 
 public:
     std::string name() const override { return "main game"; }
@@ -89,21 +88,21 @@ public:
 
 public:
     boost::signals2::signal<void(double)> on_tick;
-    void   bg_thread();
-    void   network_thread();
+    void bg_thread();
+    void network_thread();
 
 private:
-    void   process_event_captured(const event&);
-    void   process_event_uncaptured(const event&);
+    void process_event_captured(const event&);
+    void process_event_uncaptured(const event&);
 
-    void   setup_world(const std::string& host, uint16_t port);
-    void   setup_renderer();
+    void setup_world(const std::string& host, uint16_t port);
+    void setup_renderer();
 
-    void   stop();
+    void stop();
     double elapsed_time();
-    void   player_controls();
-    void   player_motion();
-    void   console_input (const std::u32string& msg);
+    void player_controls();
+    void player_motion();
+    void console_input(const std::u32string& msg);
 
     void handshake(deserializer<packet>& p);
     void greeting(deserializer<packet>& p);
@@ -125,49 +124,48 @@ private:
     void on_disconnect() override;
 
 private:
-    boost::asio::io_service                io_;
+    boost::asio::io_service io_;
 
     /** Persistent storage for chunk surfaces and the coarse height map. */
-    std::unique_ptr<persistent_storage_i>  storage_;
+    std::unique_ptr<persistent_storage_i> storage_;
     /** A memory cache for the persistent storage. */
-    std::unique_ptr<chunk_cache>           map_;
+    std::unique_ptr<chunk_cache> map_;
     /** It is determined at run time what kind of renderer will be used,
      ** depending on the OpenGL capabilities of the client. */
-    std::unique_ptr<renderer_i>            renderer_;
+    std::unique_ptr<renderer_i> renderer_;
 
-    player              player_;
-    hud                 hud_;
-    chunk_coordinates   old_chunk_pos_;
-    world_coordinates   old_position_;
-    vector              old_fraction_;
-    scene               scene_;
-    std::atomic<bool>   stop_;
+    player player_;
+    hud hud_;
+    chunk_coordinates old_chunk_pos_;
+    world_coordinates old_position_;
+    vector old_fraction_;
+    scene scene_;
+    std::atomic<bool> stop_;
 
-    bool                in_action_;
-    uint16_t            last_action_;
+    bool in_action_;
+    uint16_t last_action_;
 
-    boost::mutex                requests_lock_;
+    boost::mutex requests_lock_;
     std::unordered_set<chunk_coordinates> requests_;
 
-    boost::thread               asio_;
-    boost::thread               clock_;
-    boost::thread               network_;
-    std::vector<std::string>    textures_;
+    boost::thread asio_;
+    boost::thread clock_;
+    boost::thread network_;
+    std::vector<std::string> textures_;
 
-    double              elapsed_;
-    bool                was_standing_;
+    double elapsed_;
+    bool was_standing_;
 
-    entity_system       entities_;
-    uint32_t            player_entity_;
+    entity_system entities_;
+    uint32_t player_entity_;
 
-    bool                waiting_for_data_;
-    mutable bool        loading_screen_;
-    bool                singleplayer_;
-    pid_type            server_process_;
-    bool                show_ui_;
+    bool waiting_for_data_;
+    mutable bool loading_screen_;
+    bool singleplayer_;
+    pid_type server_process_;
+    bool show_ui_;
 
-    uint32_t            ignore_text_;
+    uint32_t ignore_text_;
 };
 
 } // namespace hexa
-

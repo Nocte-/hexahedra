@@ -34,7 +34,8 @@ using boost::format;
 
 // std::to_string is not implemented in MinGW32.  Dafuq?
 
-namespace std {
+namespace std
+{
 
 string to_string(int i)
 {
@@ -42,45 +43,43 @@ string to_string(int i)
         return string("-") + to_string(-i);
 
     string result;
-    do
-    {
+    do {
         result.insert(result.begin(), "0123456789"[i % 10]);
         i /= 10;
     } while (i != 0);
     return result;
 }
-
 }
 
 #endif
 
-namespace hexa {
+namespace hexa
+{
 
-namespace {
+namespace
+{
 std::mutex debug_trace_mutex;
 }
 
 void trace_impl(const char* func, const char* file, unsigned int line,
                 const std::string& msg)
 {
-    std::lock_guard<std::mutex> g (debug_trace_mutex);
-    std::cout << file << ':' << line << " (" << func << ") : " << msg << std::endl;
-    //log_msg("%1%:%2%  %3%", file, line, msg);
+    std::lock_guard<std::mutex> g(debug_trace_mutex);
+    std::cout << file << ':' << line << " (" << func << ") : " << msg
+              << std::endl;
+    // log_msg("%1%:%2%  %3%", file, line, msg);
 }
 
 void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a)
 {
-    try
-    {
-        std::lock_guard<std::mutex> g (debug_trace_mutex);
-        std::cout << file << ':' << line << " (" << func << ") : "
-            << (format(msg) % a).str() << std::endl;
+    try {
+        std::lock_guard<std::mutex> g(debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func
+                  << ") : " << (format(msg) % a).str() << std::endl;
 
-        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
-    }
-    catch(...)
-    {
+        // log_msg("%1%:%2%  %3%", file, line, (format(msg) % a).str());
+    } catch (...) {
         trace_impl(func, file, line, "bad trace message");
     }
 }
@@ -89,16 +88,13 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a,
                   const std::string& b)
 {
-    try
-    {
-        std::lock_guard<std::mutex> g (debug_trace_mutex);
-        std::cout << file << ':' << line << " (" << func << ") : "
-            << (format(msg) % a % b).str() << std::endl;
+    try {
+        std::lock_guard<std::mutex> g(debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func
+                  << ") : " << (format(msg) % a % b).str() << std::endl;
 
-        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
-    }
-    catch(...)
-    {
+        // log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b).str());
+    } catch (...) {
         trace_impl(func, file, line, "bad trace message");
     }
 }
@@ -107,16 +103,14 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a,
                   const std::string& b, const std::string& c)
 {
-    try
-    {
-        std::lock_guard<std::mutex> g (debug_trace_mutex);
-        std::cout << file << ':' << line << " (" << func << ") : "
-            << (format(msg) % a % b %c).str() << std::endl;
+    try {
+        std::lock_guard<std::mutex> g(debug_trace_mutex);
+        std::cout << file << ':' << line << " (" << func
+                  << ") : " << (format(msg) % a % b % c).str() << std::endl;
 
-        //log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b % c).str());
-    }
-    catch(...)
-    {
+        // log_msg("%1%:%2%  %3%", file, line, (format(msg) % a % b %
+        // c).str());
+    } catch (...) {
         trace_impl(func, file, line, "bad trace message");
     }
 }

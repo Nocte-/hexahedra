@@ -27,7 +27,8 @@
 
 using namespace boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
 object_placer::object_placer(world& w, const ptree& conf)
     : terrain_generator_i(w)
@@ -36,26 +37,21 @@ object_placer::object_placer(world& w, const ptree& conf)
     if (density_map_ < 0)
         throw std::runtime_error("object_placer: cannot find 'density_map'");
 
-    auto& list (conf.get_child("sprites", ptree()));
+    auto& list(conf.get_child("sprites", ptree()));
     for (auto& elem : list)
         sprites_.emplace_back(deserialize(file_contents(elem.second.data())));
 }
 
-void
-object_placer::generate(world_terraingen_access& data,
-                        const chunk_coordinates& pos,
-                        chunk& cnk)
+void object_placer::generate(world_terraingen_access& data,
+                             const chunk_coordinates& pos, chunk& cnk)
 {
-
 }
 
-chunk_height
-object_placer::estimate_height (world_terraingen_access& data,
-                                map_coordinates xy,
-                                chunk_height prev) const
+chunk_height object_placer::estimate_height(world_terraingen_access& data,
+                                            map_coordinates xy,
+                                            chunk_height prev) const
 {
     return prev;
 }
 
 } // namespace hexa
-

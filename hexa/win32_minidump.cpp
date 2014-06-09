@@ -18,7 +18,7 @@
 //
 // Copyright 2011, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "win32_minidump.hpp"
 
 // Checking for _MSC_VER instead of Win32, since MinGW doesn't support this.
@@ -38,8 +38,9 @@
 
 using namespace boost;
 
-namespace {
-    std::string appname_;
+namespace
+{
+std::string appname_;
 }
 
 LONG WINAPI GenerateDump(EXCEPTION_POINTERS* pointers)
@@ -48,31 +49,32 @@ LONG WINAPI GenerateDump(EXCEPTION_POINTERS* pointers)
     MINIDUMP_EXCEPTION_INFORMATION param;
     boost::filesystem::create_directory(hexa::app_user_dir());
     GetLocalTime(&local_time);
-    
-    std::string filename (
-        (format("%s\\%s-%04d%02d%02d-%02d%02d%0d2.dmp")
-          % hexa::app_user_dir().string()
-          % appname_
-          % local_time.wYear % local_time.wMonth % local_time.wDay
-          % local_time.wHour % local_time.wMinute % local_time.wSecond).str());
+
+    std::string filename((format("%s\\%s-%04d%02d%02d-%02d%02d%0d2.dmp")
+                          % hexa::app_user_dir().string() % appname_
+                          % local_time.wYear % local_time.wMonth
+                          % local_time.wDay % local_time.wHour
+                          % local_time.wMinute % local_time.wSecond).str());
 
     param.ThreadId = GetCurrentThreadId();
     param.ExceptionPointers = pointers;
     param.ClientPointers = TRUE;
 
-	HANDLE hFile = CreateFile(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 
-							  0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL ); 
+    HANDLE hFile
+        = CreateFile(filename.c_str(), GENERIC_READ | GENERIC_WRITE, 0, NULL,
+                     CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
 
-    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(),
-                      hFile,
-                      MiniDumpWithProcessThreadData, &param,
-                      nullptr, nullptr);
+    MiniDumpWriteDump(GetCurrentProcess(), GetCurrentProcessId(), hFile,
+                      MiniDumpWithProcessThreadData, &param, nullptr, nullptr);
 
-    std::string msg((format("Something went terribly, terribly wrong.  "
-        "Information about this crash has been saved to a dump file: \n%s\n\n"
-        "You can help fixing this bug by sending this file to "
-        "hexahedra.maintainer@gmail.com .  Thanks!") % filename).str());
- 
+    std::string msg(
+        (format("Something went terribly, terribly wrong.  "
+                "Information about this crash has been saved to a dump file: "
+                "\n%s\n\n"
+                "You can help fixing this bug by sending this file to "
+                "hexahedra.maintainer@gmail.com .  Thanks!") % filename)
+            .str());
+
     MessageBox(0, msg.c_str(), "Hexahedra", MB_ICONWARNING);
 
     return EXCEPTION_EXECUTE_HANDLER;
@@ -86,7 +88,8 @@ void setup_minidump(const std::string& appname)
 
 #else // ifdef MSC_VER
 
-void setup_minidump(const std::string&) {} 
+void setup_minidump(const std::string&)
+{
+}
 
 #endif
-

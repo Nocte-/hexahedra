@@ -26,16 +26,20 @@
 #include <string>
 #include <stdexcept>
 
-namespace hexa {
+namespace hexa
+{
 
 class base58_error : public std::runtime_error
 {
 public:
-    base58_error() : std::runtime_error("not a valid base58 encoding") { }
+    base58_error()
+        : std::runtime_error{"not a valid base58 encoding"}
+    {
+    }
 };
 
-binary_data base58_decode (const std::string& in);
+binary_data base58_decode(const std::string& in);
 
-std::string base58_encode (const binary_data& in);
+std::string base58_encode(const binary_data& in);
 
 } // namespace hexa

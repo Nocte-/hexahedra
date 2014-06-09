@@ -19,7 +19,6 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <stdexcept>
@@ -32,7 +31,8 @@
 #include <vector>
 #include <queue>
 
-namespace hexa {
+namespace hexa
+{
 
 /** A pool of workers and a job queue.
  *  Based on an implementation by Jakob Progsch.
@@ -42,18 +42,18 @@ class threadpool
 {
 public:
     /** Set up a pool with a given number of worker threads. */
-    threadpool (size_t threadcount = 1)
+    threadpool(size_t threadcount = 1)
     {
         stop_ = false;
-        for (size_t i (0); i < threadcount; ++i)
-            workers_.emplace_back([=]{worker();});
+        for (size_t i = 0; i < threadcount; ++i)
+            workers_.emplace_back([=] { worker(); });
     }
 
     ~threadpool()
     {
         {
-        std::unique_lock<std::mutex> lock (queue_mutex_);
-        stop_ = true;
+            std::unique_lock<std::mutex> lock{queue_mutex_};
+            stop_ = true;
         }
 
         condition_.notify_all();
@@ -75,23 +75,23 @@ public:
      * @return An std::future object that can be used to retrieve the
      *         results of the operation.
      */
-    template <typename func_t, typename... args_t>
-    auto enqueue (func_t&& f, args_t&&... args)
-             -> std::future<typename std::result_of<func_t(args_t...)>::type>
+    template <typename Func, typename... Args>
+    auto enqueue(Func&& f, Args&&... args)
+        -> std::future<typename std::result_of<Func(Args...)>::type>
     {
-        typedef typename std::result_of<func_t(args_t...)>::type return_type;
+        typedef typename std::result_of<Func(Args...)>::type return_type;
 
         if (stop_)
             throw std::runtime_error("threadpool was stopped");
 
-        auto task (std::make_shared<std::packaged_task<return_type()>>(
-                       std::bind(std::forward<func_t>(f),
-                                 std::forward<args_t>(args)...)));
+        auto task =
+            std::make_shared<std::packaged_task<return_type()>>(std::bind(
+                std::forward<Func>(f), std::forward<Args>(args)...));
 
-        std::future<return_type> result (task->get_future());
+        std::future<return_type> result{task->get_future()};
         {
-        std::unique_lock<std::mutex> lock (queue_mutex_);
-        tasks_.push([task](){ (*task)(); });
+            std::unique_lock<std::mutex> lock{queue_mutex_};
+            tasks_.push([task]() { (*task)(); });
         }
         condition_.notify_one();
 
@@ -101,16 +101,15 @@ public:
 private:
     void worker()
     {
-        for(;;)
-        {
-            std::unique_lock<std::mutex> lock (queue_mutex_);
+        for (;;) {
+            std::unique_lock<std::mutex> lock{queue_mutex_};
             while (!stop_ && tasks_.empty())
                 condition_.wait(lock);
 
             if (stop_ && tasks_.empty())
                 break;
 
-            auto task (tasks_.front());
+            auto task = tasks_.front();
             tasks_.pop();
             lock.unlock();
 
@@ -119,21 +118,18 @@ private:
     }
 
 private:
-    std::vector<std::thread>            workers_;
-    std::queue<std::function<void()>>   tasks_;
-    std::atomic_bool                    stop_;
-    std::mutex                          queue_mutex_;
-    std::condition_variable             condition_;
+    std::vector<std::thread> workers_;
+    std::queue<std::function<void()>> tasks_;
+    std::atomic_bool stop_;
+    std::mutex queue_mutex_;
+    std::condition_variable condition_;
 };
 
-
 /** Check if a std::future is ready. */
-template <typename t>
-bool
-is_ready (std::future<t>& f)
+template <typename T>
+bool is_ready(std::future<T>& f)
 {
     return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 }
 
 } // namespace hexa
-

@@ -30,24 +30,24 @@
 #include <CL/cl.hpp>
 
 #ifdef WIN32
-# define OPENCL_DLL_NAME "OpenCL.dll"
-#elif defined (MACOSX)
-# define OPENCL_DLL_NAME 0
+#define OPENCL_DLL_NAME "OpenCL.dll"
+#elif defined(MACOSX)
+#define OPENCL_DLL_NAME 0
 #else
-# define OPENCL_DLL_NAME "libOpenCL.so"
+#define OPENCL_DLL_NAME "libOpenCL.so"
 #endif
 
+namespace hexa
+{
 
-namespace hexa {
-
-namespace {
+namespace
+{
 
 bool initialized_ = false;
 bool have_opencl_ = false;
 
 cl::Context ctx_;
-cl::Device  dev_;
-
+cl::Device dev_;
 }
 
 void init_opencl()
@@ -60,10 +60,9 @@ void init_opencl()
     if (clewInit(OPENCL_DLL_NAME) < 0)
         return;
 
-    try
-    {
-        uint32_t platform_index (0);
-        uint32_t device_index   (0);
+    try {
+        uint32_t platform_index(0);
+        uint32_t device_index(0);
 
         std::vector<cl::Platform> platform_list;
         cl::Platform::get(&platform_list);
@@ -72,22 +71,20 @@ void init_opencl()
             return;
 
         std::vector<cl::Device> device_list;
-        auto& pl (platform_list[platform_index]);
+        auto& pl(platform_list[platform_index]);
         pl.getDevices(CL_DEVICE_TYPE_ALL, &device_list);
 
         if (device_index >= device_list.size())
             return;
 
-        cl_context_properties properties [] =
-                    { CL_CONTEXT_PLATFORM, (cl_context_properties)(pl)(), 0 };
+        cl_context_properties properties[]
+            = {CL_CONTEXT_PLATFORM, (cl_context_properties)(pl)(), 0};
 
         ctx_ = cl::Context(CL_DEVICE_TYPE_ALL, properties);
         dev_ = device_list[device_index];
 
         have_opencl_ = true;
-    }
-    catch (...)
-    {
+    } catch (...) {
         have_opencl_ = false;
     }
 }
@@ -113,13 +110,24 @@ cl::Device& opencl_device()
 
 #else
 
-namespace hexa {
+namespace hexa
+{
 
-void init_opencl()  { }
-bool have_opencl()  { return false; }
-cl::Context& opencl_context() { throw 0; }
-cl::Device& opencl_device() { throw 0; }
-
+void init_opencl()
+{
+}
+bool have_opencl()
+{
+    return false;
+}
+cl::Context& opencl_context()
+{
+    throw 0;
+}
+cl::Device& opencl_device()
+{
+    throw 0;
+}
 }
 
 #endif

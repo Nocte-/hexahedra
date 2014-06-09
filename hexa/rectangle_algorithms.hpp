@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -27,13 +27,14 @@
 #include "algorithm.hpp"
 #include "rectangle.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Calculate the area of a rectangle.
  * @param rect  The rectangle
  * @return  The product of the rectangle's width and height */
 template <typename t>
-t area (const rectangle<t>& rect)
+t area(const rectangle<t>& rect)
 {
     return rect.width() * rect.height();
 }
@@ -42,7 +43,7 @@ t area (const rectangle<t>& rect)
  * @param rect  The rectangle
  * @return  The sum of the length of the rectangle's sides */
 template <typename t>
-t circumference (const rectangle<t>& rect)
+t circumference(const rectangle<t>& rect)
 {
     return rect.width() * 2 + rect.height() * 2;
 }
@@ -51,8 +52,7 @@ t circumference (const rectangle<t>& rect)
  * @param rect  The rectangle
  * @return  The point halfway two opposite corners of the rectangle */
 template <typename t>
-typename rectangle<t>::value_type
-center (const rectangle<t>& rect)
+typename rectangle<t>::value_type center(const rectangle<t>& rect)
 {
     return halfway(rect.first, rect.second);
 }
@@ -64,12 +64,12 @@ center (const rectangle<t>& rect)
  * @param rect  The rectangle
  * @return  True if the point is located inside the rectangle */
 template <typename t>
-bool point_in_rectangle (const typename rectangle<t>::value_type& point,
-                         const rectangle<t>& rect)
+bool point_in_rectangle(const typename rectangle<t>::value_type& point,
+                        const rectangle<t>& rect)
 {
     assert(rect.is_correct());
 
-    return    point[0] > rect.left()  && point[1] > rect.top()
+    return point[0] > rect.left() && point[1] > rect.top()
            && point[0] < rect.right() && point[1] < rect.bottom();
 }
 
@@ -80,11 +80,11 @@ bool point_in_rectangle (const typename rectangle<t>::value_type& point,
  * @param rect  The rectangle
  * @return  True if the point is located on the rectangle */
 template <typename t>
-bool point_on_rectangle (const typename rectangle<t>::value_type& point,
-                         const rectangle<t>& rect)
+bool point_on_rectangle(const typename rectangle<t>::value_type& point,
+                        const rectangle<t>& rect)
 {
     assert(rect.is_correct());
-    return    point[0] >= rect.left()  && point[1] >= rect.top()
+    return point[0] >= rect.left() && point[1] >= rect.top()
            && point[0] <= rect.right() && point[1] <= rect.bottom();
 }
 
@@ -95,12 +95,12 @@ bool point_on_rectangle (const typename rectangle<t>::value_type& point,
  * @param rhs  The second rectangle
  * @return  True if lhs and rhs overlap */
 template <typename t>
-bool rectangles_are_overlapping (const rectangle<t>& lhs,
-                                 const rectangle<t>& rhs)
+bool rectangles_are_overlapping(const rectangle<t>& lhs,
+                                const rectangle<t>& rhs)
 {
     assert(lhs.is_correct());
     assert(rhs.is_correct());
-    return !(   rhs.right() <= lhs.left() || rhs.left() >= lhs.right()
+    return !(rhs.right() <= lhs.left() || rhs.left() >= lhs.right()
              || rhs.bottom() <= lhs.top() || rhs.top() >= lhs.bottom());
 }
 
@@ -111,12 +111,11 @@ bool rectangles_are_overlapping (const rectangle<t>& lhs,
  * @param rhs The second rectangle
  * @return  True if lhs and rhs touch somewhere */
 template <typename t>
-bool rectangles_are_touching (const rectangle<t>& lhs,
-                              const rectangle<t>& rhs)
+bool rectangles_are_touching(const rectangle<t>& lhs, const rectangle<t>& rhs)
 {
     assert(lhs.is_correct());
     assert(rhs.is_correct());
-    return !(   rhs.right() < lhs.left() || rhs.left() > lhs.right()
+    return !(rhs.right() < lhs.left() || rhs.left() > lhs.right()
              || rhs.bottom() < lhs.top() || rhs.top() > lhs.bottom());
 }
 
@@ -125,13 +124,12 @@ bool rectangles_are_touching (const rectangle<t>& lhs,
  * @param inner The inner rectangle
  * @return True if inner is completely inside outer */
 template <typename t>
-bool is_inside (const rectangle<t>& inner, const rectangle<t>& outer)
+bool is_inside(const rectangle<t>& inner, const rectangle<t>& outer)
 {
     assert(inner.is_correct());
     assert(outer.is_correct());
-    return    inner.left()   >= outer.left()
-           && inner.top()    >= outer.top()
-           && inner.right()  <= outer.right()
+    return inner.left() >= outer.left() && inner.top() >= outer.top()
+           && inner.right() <= outer.right()
            && inner.bottom() <= outer.bottom();
 }
 
@@ -143,8 +141,8 @@ bool is_inside (const rectangle<t>& inner, const rectangle<t>& outer)
  * @return  The intersection bewtween lhs and rhs.  If the returned rectangle
  *          is not correct (!is_correct()), no intersection was found. */
 template <typename t>
-rectangle<t>
-make_intersection (const rectangle<t>& lhs, const rectangle<t>& rhs)
+rectangle<t> make_intersection(const rectangle<t>& lhs,
+                               const rectangle<t>& rhs)
 {
     assert(lhs.is_correct());
     assert(rhs.is_correct());
@@ -162,15 +160,15 @@ make_intersection (const rectangle<t>& lhs, const rectangle<t>& rhs)
  * @param rhs  The second rectangle
  * @return  A rectangle that contains both lhs and rhs completely. */
 template <typename t>
-rectangle<t> make_union (const rectangle<t>& lhs, const rectangle<t>& rhs)
+rectangle<t> make_union(const rectangle<t>& lhs, const rectangle<t>& rhs)
 {
     assert(lhs.is_correct());
     assert(rhs.is_correct());
 
-    return rectangle<t>(std::min (lhs.left(), rhs.left()),
-                        std::min (lhs.top(), rhs.top()),
-                        std::max (lhs.right(), rhs.right()),
-                        std::max (lhs.bottom(), rhs.bottom()));
+    return rectangle<t>(std::min(lhs.left(), rhs.left()),
+                        std::min(lhs.top(), rhs.top()),
+                        std::max(lhs.right(), rhs.right()),
+                        std::max(lhs.bottom(), rhs.bottom()));
 }
 
 /** Determine the bounding rectangle of a set of points.
@@ -181,13 +179,12 @@ rectangle<t> make_union (const rectangle<t>& lhs, const rectangle<t>& rhs)
  *         point in the input set. */
 template <class iterator>
 rectangle<typename std::iterator_traits<iterator>::value_type::value_type>
-bounding_rectangle (iterator first, iterator last)
+bounding_rectangle(iterator first, iterator last)
 {
     typedef typename std::iterator_traits<iterator>::value_type::value_type t;
     assert(first != last);
-    rectangle<t> result (*first, *first);
-    for (++first; first != last; ++first)
-    {
+    rectangle<t> result(*first, *first);
+    for (++first; first != last; ++first) {
         if (result.left() > (*first)[0])
             result.left() = (*first)[0];
         else if (result.right() < (*first)[0])
@@ -209,9 +206,9 @@ bounding_rectangle (iterator first, iterator last)
  *         point in the input set. */
 template <class container>
 rectangle<typename container::value_type::value_type>
-bounding_rectangle (const container& points)
+bounding_rectangle(const container& points)
 {
-    return bounding_rectangle (points.begin(), points.end());
+    return bounding_rectangle(points.begin(), points.end());
 }
 
 /** Inflate a rectangle by a given amount.
@@ -220,7 +217,7 @@ bounding_rectangle (const container& points)
  * @param in      The rectangle
  * @param amount  The vector that will be used to move the corners */
 template <typename t>
-rectangle<t> inflate (rectangle<t> in, typename rectangle<t>::value_type amount)
+rectangle<t> inflate(rectangle<t> in, typename rectangle<t>::value_type amount)
 {
     assert(in.is_correct());
     in.first -= amount;
@@ -234,10 +231,10 @@ rectangle<t> inflate (rectangle<t> in, typename rectangle<t>::value_type amount)
  * @param in      The rectangle
  * @param amount  The distance that will be used to move the corners */
 template <typename t>
-rectangle<t> inflate (rectangle<t> in, t amount)
+rectangle<t> inflate(rectangle<t> in, t amount)
 {
     assert(in.is_correct());
-    typename rectangle<t>::value_type shift (amount, amount);
+    typename rectangle<t>::value_type shift(amount, amount);
     in.first -= shift;
     in.second += shift;
     return in;
@@ -248,8 +245,7 @@ rectangle<t> inflate (rectangle<t> in, t amount)
  * @param out   The destination
  * @return  A copy of the used output iterator */
 template <typename t, class output_iterator>
-output_iterator
-make_polygon (const rectangle<t>& rect, output_iterator out)
+output_iterator make_polygon(const rectangle<t>& rect, output_iterator out)
 {
     *out++ = rect.top_left();
     *out++ = rect.top_right();
@@ -263,11 +259,10 @@ make_polygon (const rectangle<t>& rect, output_iterator out)
  * @param rect  The source rectangle
  * @return  The same rectangle, encoded as a polygon. */
 template <typename t>
-std::vector<t>
-make_polygon (const rectangle<t>& rect)
+std::vector<t> make_polygon(const rectangle<t>& rect)
 {
-    std::vector<t> temp (4);
-    make_polygon (rect, temp.begin());
+    std::vector<t> temp(4);
+    make_polygon(rect, temp.begin());
     return temp;
 }
 
@@ -277,10 +272,9 @@ make_polygon (const rectangle<t>& rect)
  * @param out   The destination
  * @pre point_in_rectangle (at, src) */
 template <typename t, class output_iterator>
-output_iterator
-subdivide (const rectangle<t>& src,
-           const typename rectangle<t>::value_type& at,
-           output_iterator out)
+output_iterator subdivide(const rectangle<t>& src,
+                          const typename rectangle<t>::value_type& at,
+                          output_iterator out)
 {
     *out++ = rectangle<t>(src.first, at);
     *out++ = rectangle<t>(at[0], src.top(), src.right(), at[1]);
@@ -295,21 +289,20 @@ subdivide (const rectangle<t>& src,
  * @return A rectangle r that satisfies rectangles_are_overlapping (src, r)
  *         and point_on_rectangle (p, r) */
 template <typename t>
-rectangle<t>
-include (rectangle<t> in, const typename rectangle<t>::value_type& p)
+rectangle<t> include(rectangle<t> in,
+                     const typename rectangle<t>::value_type& p)
 {
-    if (p[0] < in.left ())
-        in.left () = p[0];
-    else if (p[0] > in.right ())
-        in.right () = p[0];
+    if (p[0] < in.left())
+        in.left() = p[0];
+    else if (p[0] > in.right())
+        in.right() = p[0];
 
-    if (p[1] < in.top ())
-        in.top () = p[1];
-    else if (p[1] > in.bottom ())
-        in.bottom () = p[1];
+    if (p[1] < in.top())
+        in.top() = p[1];
+    else if (p[1] > in.bottom())
+        in.bottom() = p[1];
 
     return in;
 }
 
 } // namespace hexa
-

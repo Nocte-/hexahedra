@@ -17,14 +17,13 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2011, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-namespace hexa {
+namespace hexa
+{
 
 typedef enum { opaque, transparent } vbuf_type;
 
 } // namespace hexa
-

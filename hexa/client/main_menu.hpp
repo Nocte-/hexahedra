@@ -31,19 +31,20 @@
 #include "button.hpp"
 #include "server_list.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Game state for the main menu. */
 class main_menu : public game_state
 {
 public:
-    main_menu (game& the_game);
+    main_menu(game& the_game);
 
     std::string name() const override { return "main menu"; }
-    void update (double time_delta) override;
+    void update(double time_delta) override;
     void render() override;
-    bool process_event (const event&) override;
-    void resize (unsigned int x, unsigned int y) override;
+    bool process_event(const event&) override;
+    void resize(unsigned int x, unsigned int y) override;
     void expose() override;
 
     bool is_transparent() const { return false; }
@@ -54,21 +55,20 @@ public:
 private:
     std::vector<server_info> servers_;
     sf::Texture logo_img_;
-    sf::Sprite  logo_;
-    sf::Font    font_;
-    sf::Text    copyright_;
-    double      time_;
+    sf::Sprite logo_;
+    sf::Font font_;
+    sf::Text copyright_;
+    double time_;
 
     std::vector<std::vector<button>> menus_;
-    int         active_menu_;
+    int active_menu_;
 
     std::string host_;
-    uint16_t    port_;
+    uint16_t port_;
 
-    int         width_;
-    int         height_;
-    bool        exit_;
+    int width_;
+    int height_;
+    bool exit_;
 };
 
 } // namespace hexa
-

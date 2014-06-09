@@ -25,7 +25,8 @@
 #include <memory>
 #include "terrain_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Fill everything below a heightmap with a single material. */
 class heightmap_terrain_generator : public terrain_generator_i
@@ -42,28 +43,23 @@ public:
      *   - material (default 'stone', 1): the material to fill the world with
      */
     heightmap_terrain_generator(world& w,
-                             const boost::property_tree::ptree& conf);
+                                const boost::property_tree::ptree& conf);
 
     virtual ~heightmap_terrain_generator();
 
-    void generate (world_terraingen_access& data,
-                   const chunk_coordinates& pos,
-                   chunk& cnk);
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk);
 
-    chunk_height estimate_height (world_terraingen_access& data,
-                                  map_coordinates xy,
-                                  chunk_height prev) const;
+    chunk_height estimate_height(world_terraingen_access& data,
+                                 map_coordinates xy, chunk_height prev) const;
 
-    std::vector<std::string>
-    area_generator() const override
+    std::vector<std::string> area_generator() const override
     {
-        return { "surface" };
+        return {"surface"};
     }
 
-    bool
-    generate (world_terraingen_access& proxy,
-              const std::string& type, map_coordinates pos,
-              area_data& data) const override;
+    bool generate(world_terraingen_access& proxy, const std::string& type,
+                  map_coordinates pos, area_data& data) const override;
 };
 
 } // namespace hexa

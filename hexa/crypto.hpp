@@ -19,34 +19,33 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <vector>
 #include <cryptopp/eccrypto.h>
 
-namespace hexa {
-namespace crypto {
+namespace hexa
+{
+namespace crypto
+{
 
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-make_new_key();
+CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> make_new_key();
 
-std::vector<uint8_t>
-make_random (int bytes);
+std::vector<uint8_t> make_random(int bytes);
 
-CryptoPP::Integer
-make_random_128();
-
-std::string
-serialize_private_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & key);
-
-CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
-deserialize_private_key (const std::string & key);
+CryptoPP::Integer make_random_128();
 
 std::string
-serialize_public_key (const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> & privkey);
+serialize_private_key(const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& key);
+
+CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>
+deserialize_private_key(const std::string& key);
+
+std::string
+serialize_public_key(const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& privkey);
 
 CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>
-deserialize_public_key (const std::string & privkey);
+deserialize_public_key(const std::string& privkey);
 
-}} // namespace hexa::crypto
+} // namespace crypto
+} // namespace hexa

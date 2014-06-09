@@ -30,13 +30,14 @@
 #include <hexa/basic_types.hpp>
 #include <hexa/trace.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
-template <typename t>
+template <typename T>
 class distance_sorted_map
 {
     /// Collection of objects with the same distance.
-    typedef std::unordered_map<chunk_coordinates, t> shell_t;
+    typedef std::unordered_map<chunk_coordinates, T> shell_t;
 
     /// Shells are kept sorted by their Manhattan distance.
     typedef std::vector<shell_t> sorted_t;
@@ -44,9 +45,9 @@ class distance_sorted_map
 public:
     //@{
     /// Public typedefs.
-    typedef chunk_coordinates               key_type;
-    typedef typename shell_t::value_type    value_type;
-    typedef t                               mapped_type;
+    typedef chunk_coordinates key_type;
+    typedef typename shell_t::value_type value_type;
+    typedef T mapped_type;
     //@}
 
 public:
@@ -64,51 +65,40 @@ public:
 
 public:
     distance_sorted_map()
-        : view_dist_(0)
-        , sq_view_dist_(0)
-        , pos_(world_chunk_center)
-    { }
-
-    size_t  size() const
+        : view_dist_{0}
+        , sq_view_dist_{0}
+        , pos_{world_chunk_center}
     {
-        size_t sum (0);
+    }
+
+    size_t size() const
+    {
+        size_t sum = 0;
         for (auto& shell : data_)
             sum += shell.size();
         return sum;
     }
 
-    bool    empty() const
-    {
-        return data_.empty();
-    }
+    bool empty() const { return data_.empty(); }
 
 public:
-
     /** Check if a given chunk is inside the view radius. */
-    bool
-    is_inside (chunk_coordinates pos) const
+    bool is_inside(chunk_coordinates pos) const
     {
         return squared_distance(pos, pos_) < sq_view_dist_;
     }
 
     /** Query the view radius, measured in chunks. */
-    size_t
-    view_radius () const
-    {
-        return view_dist_;
-    }
+    size_t view_radius() const { return view_dist_; }
 
     /** Change the view radius, measured in chunks. */
-    void
-    view_radius (size_t new_radius)
+    void view_radius(size_t new_radius)
     {
-        bool erase (false);
+        bool erase = false;
 
-        if (new_radius < view_dist_)
-        {
+        if (new_radius < view_dist_) {
             erase = true;
-            for_each([&](value_type& p)
-            {
+            for_each([&](value_type& p) {
                 if (!is_inside(p.first))
                     on_remove(p.first, p.second);
             });
@@ -120,15 +110,13 @@ public:
         // Convert from inscribed sphere radius to octahedron size.
         // (Since we sort by Manhattan distance, the octahedron
         // is our "sphere".)
-        size_t octahedron_radius (static_cast<size_t>(std::ceil(new_radius * 1.7321)));
+        size_t octahedron_radius(
+            static_cast<size_t>(std::ceil(new_radius * 1.7321)));
         data_.resize(octahedron_radius);
 
-        if (erase)
-        {
-            for (auto& shell : data_)
-            {
-                for (auto i (shell.begin()); i != shell.end(); ++i)
-                {
+        if (erase) {
+            for (auto& shell : data_) {
+                for (auto i(shell.begin()); i != shell.end(); ++i) {
                     if (!is_inside(i->first))
                         shell.erase(i);
                 }
@@ -139,19 +127,16 @@ public:
     /** Move the center to a new position.
      *  All items are sorted by distance to this new center.  If any element
      *  is now too far away, it is deleted automatically. */
-    void
-    center (chunk_coordinates new_pos)
+    void center(chunk_coordinates new_pos)
     {
         if (pos_ == new_pos)
             return;
 
         pos_ = new_pos;
 
-        sorted_t temp (data_.size());
-        for (auto& l : data_)
-        {
-            for (auto& p : l)
-            {
+        sorted_t temp{data_.size()};
+        for (auto& l : data_) {
+            for (auto& p : l) {
                 if (is_inside(p.first))
                     temp[index(p.first)][p.first] = std::move(p.second);
                 else
@@ -161,32 +146,24 @@ public:
         data_.swap(temp);
     }
 
-    chunk_coordinates
-    center() const
-    {
-        return pos_;
-    }
+    chunk_coordinates center() const { return pos_; }
 
     /** Add or update an item.
      * @param pos   The item's position
      * @param item  The item itself
      * @return true iff the item was set */
-    bool
-    set (chunk_coordinates pos, mapped_type&& item)
+    bool set(chunk_coordinates pos, mapped_type&& item)
     {
         if (!is_inside(pos))
             return false;
 
-        auto& shell (data_[index(pos)]);
-        auto found (shell.find(pos));
-        if (found == shell.end())
-        {
-            auto result (shell.emplace(pos, std::move(item)));
+        auto& shell = data_[index(pos)];
+        auto found = shell.find(pos);
+        if (found == shell.end()) {
+            auto result = shell.emplace(pos, std::move(item));
             on_new(pos, result.first->second);
             return true;
-        }
-        else
-        {
+        } else {
             on_before_update(pos, found->second);
             found->second = std::move(item);
             on_after_update(pos, found->second);
@@ -194,17 +171,15 @@ public:
         }
     }
 
-    bool
-    has (chunk_coordinates pos) const
+    bool has(chunk_coordinates pos) const
     {
         return is_inside(pos) && data_[index(pos)].count(pos) != 0;
     }
 
-    const mapped_type&
-    get (chunk_coordinates pos) const
+    const mapped_type& get(chunk_coordinates pos) const
     {
-        const shell_t& sh (data_[index(pos)]);
-        auto found (sh.find(pos));
+        const shell_t& sh(data_[index(pos)]);
+        auto found = sh.find(pos);
         if (found == sh.end())
             throw std::runtime_error("invalid index");
 
@@ -214,15 +189,14 @@ public:
     /** Remove an item.
      * @param pos   The item's position
      * @return true iff the item was removed */
-    bool
-    remove (chunk_coordinates pos)
+    bool remove(chunk_coordinates pos)
     {
-        size_t dist (index(pos));
+        size_t dist = index(pos);
         if (dist >= data_.size() || !is_inside(pos))
             return false;
 
-        auto& shell (data_[dist]);
-        auto found (shell.find(pos));
+        auto& shell = data_[dist];
+        auto found = shell.find(pos);
         if (found == shell.end())
             return false;
 
@@ -234,22 +208,18 @@ public:
     /** Apply a function to every element, in a near-to-far order.
      *  The function is passed a pair_t. */
     template <typename func>
-    void
-    for_each (func op) const
+    void for_each(func op) const
     {
-        for (auto& shell : data_)
-        {
+        for (auto& shell : data_) {
             for (auto& elem : shell)
                 op(elem);
         }
     }
 
     template <typename func>
-    void
-    for_each (func op)
+    void for_each(func op)
     {
-        for (auto& shell : data_)
-        {
+        for (auto& shell : data_) {
             for (auto& elem : shell)
                 op(elem);
         }
@@ -258,36 +228,31 @@ public:
     /** Apply a function to every element, in a far-to-near order.
      *  The function is passed a pair_t. */
     template <typename func>
-    void
-    for_each_reverse (func op) const
+    void for_each_reverse(func op) const
     {
-        for (int i (data_.size() - 1); i >= 0; --i)
-        {
+        for (int i = data_.size() - 1; i >= 0; --i) {
             for (auto& elem : data_[i])
                 op(elem);
         }
     }
 
 private:
-    size_t
-    index (chunk_coordinates pos) const
+    size_t index(chunk_coordinates pos) const
     {
-        auto result (manhattan_distance(pos, pos_));
+        auto result = manhattan_distance(pos, pos_);
         assert(result < data_.size());
         return result;
     }
 
 private:
     /** The current view distance, measured in chunks. */
-    size_t              view_dist_;
+    size_t view_dist_;
     /** view_dist_ squared. */
-    size_t              sq_view_dist_;
+    size_t sq_view_dist_;
     /** The position of the center chunk. */
-    chunk_coordinates   pos_;
+    chunk_coordinates pos_;
     /** The actual data. */
-    sorted_t            data_;
+    sorted_t data_;
 };
 
 } // namespace hexa
-
-

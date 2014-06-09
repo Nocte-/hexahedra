@@ -25,14 +25,16 @@
 #include <hexa/persistent_storage_i.hpp>
 #include <hexa/surface.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
-namespace {
+namespace
+{
 
 template <typename type>
-type unpack_as (const compressed_data& data)
+type unpack_as(const compressed_data& data)
 {
-    auto tmp (decompress(data));
+    auto tmp(decompress(data));
     return deserialize_as<type>(tmp);
 }
 
@@ -40,92 +42,83 @@ type unpack_as (const compressed_data& data)
 
 //---------------------------------------------------------------------------
 
-chunk_cache::chunk_cache (persistent_storage_i& store, size_t limit)
+chunk_cache::chunk_cache(persistent_storage_i& store, size_t limit)
     : store_(store)
     , limit_(limit)
 {
 }
 
-void
-chunk_cache::cleanup()
+void chunk_cache::cleanup()
 {
     {
-    std::unique_lock<std::mutex> lock (surfaces_mutex_);
-    surfaces_.prune(limit_);
+        std::unique_lock<std::mutex> lock(surfaces_mutex_);
+        surfaces_.prune(limit_);
     }
     {
-    std::unique_lock<std::mutex> lock (lightmaps_mutex_);
-    lightmaps_.prune(limit_);
+        std::unique_lock<std::mutex> lock(lightmaps_mutex_);
+        lightmaps_.prune(limit_);
     }
     {
-    std::unique_lock<std::mutex> lock (heights_mutex_);
-    heights_.prune(limit_ * 8);
+        std::unique_lock<std::mutex> lock(heights_mutex_);
+        heights_.prune(limit_ * 8);
     }
 }
 
-bool
-chunk_cache::is_coarse_height_available (const map_coordinates& pos) const
+bool chunk_cache::is_coarse_height_available(const map_coordinates& pos) const
 {
-    std::unique_lock<std::mutex> lock (heights_mutex_);
-    return    heights_.count(pos) != 0
-           || store_.is_available(pos);
+    std::unique_lock<std::mutex> lock(heights_mutex_);
+    return heights_.count(pos) != 0 || store_.is_available(pos);
 }
 
-chunk_height
-chunk_cache::get_coarse_height (const map_coordinates& pos)
+chunk_height chunk_cache::get_coarse_height(const map_coordinates& pos)
 {
-    std::unique_lock<std::mutex> lock (heights_mutex_);
+    std::unique_lock<std::mutex> lock(heights_mutex_);
 
-    auto found (heights_.try_get(pos));
+    auto found(heights_.try_get(pos));
     if (found)
         return *found;
 
     if (!store_.is_available(pos))
         return undefined_height;
 
-    auto value (store_.retrieve(pos));
+    auto value(store_.retrieve(pos));
     return heights_[pos] = value;
 }
 
-void
-chunk_cache::store_coarse_height (const map_coordinates& pos,
-                                  chunk_height value)
+void chunk_cache::store_coarse_height(const map_coordinates& pos,
+                                      chunk_height value)
 {
-    std::unique_lock<std::mutex> lock (heights_mutex_);
+    std::unique_lock<std::mutex> lock(heights_mutex_);
     heights_[pos] = value;
     store_.store(pos, value);
 }
 
-
 //---------------------------------------------------------------------------
 
-bool
-chunk_cache::is_surface_available (const chunk_coordinates& pos) const
+bool chunk_cache::is_surface_available(const chunk_coordinates& pos) const
 {
-    std::unique_lock<std::mutex> lock (surfaces_mutex_);
-    return    surfaces_.count(pos) != 0
+    std::unique_lock<std::mutex> lock(surfaces_mutex_);
+    return surfaces_.count(pos) != 0
            || store_.is_available(persistent_storage_i::surface, pos);
 }
 
-const surface_data&
-chunk_cache::get_surface (const chunk_coordinates& pos)
+const surface_data& chunk_cache::get_surface(const chunk_coordinates& pos)
 {
-    std::unique_lock<std::mutex> lock (surfaces_mutex_);
+    std::unique_lock<std::mutex> lock(surfaces_mutex_);
 
-    auto found (surfaces_.try_get(pos));
+    auto found(surfaces_.try_get(pos));
     if (found)
         return *found;
 
     assert(store_.is_available(persistent_storage_i::surface, pos));
-    auto compr_surf (store_.retrieve(persistent_storage_i::surface, pos));
+    auto compr_surf(store_.retrieve(persistent_storage_i::surface, pos));
     return surfaces_[pos] = unpack_as<surface_data>(compr_surf);
 }
 
-void
-chunk_cache::store_surface (const chunk_coordinates& pos,
-                            const compressed_data& data)
+void chunk_cache::store_surface(const chunk_coordinates& pos,
+                                const compressed_data& data)
 {
-    std::unique_lock<std::mutex> lock (surfaces_mutex_);
+    std::unique_lock<std::mutex> lock(surfaces_mutex_);
 
     surfaces_.remove(pos);
     store_.store(persistent_storage_i::surface, pos, data);
@@ -133,34 +126,31 @@ chunk_cache::store_surface (const chunk_coordinates& pos,
 
 //---------------------------------------------------------------------------
 
-bool
-chunk_cache::is_lightmap_available (const chunk_coordinates& pos) const
+bool chunk_cache::is_lightmap_available(const chunk_coordinates& pos) const
 {
-    std::unique_lock<std::mutex> lock (lightmaps_mutex_);
+    std::unique_lock<std::mutex> lock(lightmaps_mutex_);
 
-    return    lightmaps_.count(pos) != 0
+    return lightmaps_.count(pos) != 0
            || store_.is_available(persistent_storage_i::light, pos);
 }
 
-const light_data&
-chunk_cache::get_lightmap(const chunk_coordinates& pos)
+const light_data& chunk_cache::get_lightmap(const chunk_coordinates& pos)
 {
-    std::unique_lock<std::mutex> lock (lightmaps_mutex_);
+    std::unique_lock<std::mutex> lock(lightmaps_mutex_);
 
-    auto found (lightmaps_.try_get(pos));
+    auto found(lightmaps_.try_get(pos));
     if (found)
         return *found;
 
     assert(store_.is_available(persistent_storage_i::light, pos));
-    auto compr_surf (store_.retrieve(persistent_storage_i::light, pos));
+    auto compr_surf(store_.retrieve(persistent_storage_i::light, pos));
     return lightmaps_[pos] = unpack_as<light_data>(compr_surf);
 }
 
-void
-chunk_cache::store_lightmap (const chunk_coordinates& pos,
-                             const compressed_data& data)
+void chunk_cache::store_lightmap(const chunk_coordinates& pos,
+                                 const compressed_data& data)
 {
-    std::unique_lock<std::mutex> lock (lightmaps_mutex_);
+    std::unique_lock<std::mutex> lock(lightmaps_mutex_);
     lightmaps_.remove(pos);
     store_.store(persistent_storage_i::light, pos, data);
 }

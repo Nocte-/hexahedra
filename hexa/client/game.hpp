@@ -31,7 +31,8 @@
 #include "../vector2.hpp"
 #include "keycodes.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class game_state;
 struct event;
@@ -62,13 +63,13 @@ public:
      * @param title     Window title
      * @param width     Initial window width
      * @param height    Initial window height */
-    game (const std::string& title, unsigned int width, unsigned int height);
+    game(const std::string& title, unsigned int width, unsigned int height);
 
     /** Start the event loop, showing this game state. */
-    void run (std::unique_ptr<game_state> initial_state);
+    void run(std::unique_ptr<game_state> initial_state);
 
     /** Push a new state on top of the stack. */
-    void push (std::unique_ptr<game_state> new_state);
+    void push(std::unique_ptr<game_state> new_state);
 
     /** Create a new game state.
      * @param parameters    List of parameters that will be forwarded to
@@ -81,28 +82,28 @@ public:
 
     sf::RenderWindow& window() { return window_; }
 
-    bool            key_pressed (key code) const;
-    bool            mouse_button_pressed (unsigned int button) const;
-    float           joystick_pos (unsigned int axis) const;
-    vector2<int>    mouse_pos() const;
+    bool key_pressed(key code) const;
+    bool mouse_button_pressed(unsigned int button) const;
+    float joystick_pos(unsigned int axis) const;
+    vector2<int> mouse_pos() const;
 
-    unsigned int    width() const { return width_; }
-    unsigned int    height() const { return height_; }
+    unsigned int width() const { return width_; }
+    unsigned int height() const { return height_; }
 
     /** Turn relative mouse mode on or off. */
-    void            relative_mouse (bool on);
+    void relative_mouse(bool on);
 
     /** Check if the mouse is currently in relative mode. */
-    bool            mouse_is_relative() const { return rel_mouse_; }
+    bool mouse_is_relative() const { return rel_mouse_; }
 
-    double          total_time_passed() const { return time_; }
+    double total_time_passed() const { return time_; }
 
 private:
-    void            poll_events();
-    void            handle_keypress(uint32_t keycode);
-    void            resize(unsigned int width, unsigned int height);
-    void            toggle_fullscreen();
-    void            process_event (const event& ev);
+    void poll_events();
+    void handle_keypress(uint32_t keycode);
+    void resize(unsigned int width, unsigned int height);
+    void toggle_fullscreen();
+    void process_event(const event& ev);
 
 private:
     /** The game state stack.
@@ -110,12 +111,12 @@ private:
      *  through it. */
     std::vector<std::unique_ptr<game_state>> states_;
 
-    sf::RenderWindow    window_;
-    std::string         window_title_;
-    unsigned int        width_, height_;
+    sf::RenderWindow window_;
+    std::string window_title_;
+    unsigned int width_, height_;
 
     /** Keeps track of which keys are pressed. */
-    std::array<bool, static_cast<unsigned int>(key::count)>    key_pressed_;
+    std::array<bool, static_cast<unsigned int>(key::count)> key_pressed_;
 
     /** Keeps track of the position of joystick axes. */
     std::array<float, 32> joy_axis_;
@@ -127,19 +128,19 @@ private:
     std::array<bool, 8> mouse_btn_pressed_;
 
     /** Using relative mouse mode? */
-    bool                rel_mouse_;
+    bool rel_mouse_;
 
     /** In fullscreen mode? */
-    bool                fullscreen_;
+    bool fullscreen_;
 
     /** Remember the old window size when switching to fullscreen. */
-    unsigned int        window_width_, window_height_;
+    unsigned int window_width_, window_height_;
 
     /** Current mouse position. */
-    vector2<int>        mouse_pos_;
+    vector2<int> mouse_pos_;
 
     /** Total time passed, in seconds. */
-    double              time_;
+    double time_;
 };
 
 } // namespace hexa

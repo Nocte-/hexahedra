@@ -44,7 +44,8 @@
 
 namespace po = boost::program_options;
 
-namespace hexa {
+namespace hexa
+{
 
 extern po::variables_map global_settings;
 
@@ -52,7 +53,8 @@ static GLuint cubes;
 
 //---------------------------------------------------------------------------
 
-namespace {
+namespace
+{
 
 double random()
 {
@@ -61,87 +63,87 @@ double random()
 
 void setup_dl()
 {
-    const double cb (0.12), cv (0.026);
+    const double cb(0.12), cv(0.026);
 
     cubes = glGenLists(1);
     glNewList(cubes, GL_COMPILE);
     glBegin(GL_TRIANGLES);
-    for (int i (0); i < 2000; ++i)
-    {
-        double a (random() * 3.14159 * 2.);
-        double d (random() * 50. + 3.);
+    for (int i(0); i < 2000; ++i) {
+        double a(random() * 3.14159 * 2.);
+        double d(random() * 50. + 3.);
 
-        float x (2 * std::floor(std::sin(a) * d)),
-              y (2 * std::floor(std::cos(a) * d)),
-              z (2 * std::floor(random() * 100. - 50.));
+        float x(2 * std::floor(std::sin(a) * d)),
+            y(2 * std::floor(std::cos(a) * d)),
+            z(2 * std::floor(random() * 100. - 50.));
 
-        glColor4f(cb - random() * cv, cb - random() * cv, cb - random() * cv, 1);
+        glColor4f(cb - random() * cv, cb - random() * cv, cb - random() * cv,
+                  1);
 
         // front faces
-        glNormal3f(0,0,1);
+        glNormal3f(0, 0, 1);
         // face v0-v1-v2
-        glVertex3f(1+x,1+y,1+z);
-        glVertex3f(-1+x,1+y,1+z);
-        glVertex3f(-1+x,-1+y,1+z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
+        glVertex3f(-1 + x, 1 + y, 1 + z);
+        glVertex3f(-1 + x, -1 + y, 1 + z);
         // face v2-v3-v0
-        glVertex3f(-1+x,-1+y,1+z);
-        glVertex3f(1+x,-1+y,1+z);
-        glVertex3f(1+x,1+y,1+z);
+        glVertex3f(-1 + x, -1 + y, 1 + z);
+        glVertex3f(1 + x, -1 + y, 1 + z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
 
         // right faces
-        glNormal3f(1,0,0);
+        glNormal3f(1, 0, 0);
         // face v0-v3-v4
-        glVertex3f(1+x,1+y,1+z);
-        glVertex3f(1+x,-1+y,1+z);
-        glVertex3f(1+x,-1+y,-1+z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
+        glVertex3f(1 + x, -1 + y, 1 + z);
+        glVertex3f(1 + x, -1 + y, -1 + z);
         // face v4-v5-v0
-        glVertex3f(1+x,-1+y,-1+z);
-        glVertex3f(1+x,1+y,-1+z);
-        glVertex3f(1+x,1+y,1+z);
+        glVertex3f(1 + x, -1 + y, -1 + z);
+        glVertex3f(1 + x, 1 + y, -1 + z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
 
         // top faces
-        glNormal3f(0,1,0);
+        glNormal3f(0, 1, 0);
         // face v0-v5-v6
-        glVertex3f(1+x,1+y,1+z);
-        glVertex3f(1+x,1+y,-1+z);
-        glVertex3f(-1+x,1+y,-1+z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
+        glVertex3f(1 + x, 1 + y, -1 + z);
+        glVertex3f(-1 + x, 1 + y, -1 + z);
         // face v6-v1-v0
-        glVertex3f(-1+x,1+y,-1+z);
-        glVertex3f(-1+x,1+y,1+z);
-        glVertex3f(1+x,1+y,1+z);
+        glVertex3f(-1 + x, 1 + y, -1 + z);
+        glVertex3f(-1 + x, 1 + y, 1 + z);
+        glVertex3f(1 + x, 1 + y, 1 + z);
 
         // left faces
-        glNormal3f(-1,0,0);
+        glNormal3f(-1, 0, 0);
         // face  v1-v6-v7
-        glVertex3f(-1+x,1+y,1+z);
-        glVertex3f(-1+x,1+y,-1+z);
-        glVertex3f(-1+x,-1+y,-1+z);
+        glVertex3f(-1 + x, 1 + y, 1 + z);
+        glVertex3f(-1 + x, 1 + y, -1 + z);
+        glVertex3f(-1 + x, -1 + y, -1 + z);
         // face v7-v2-v1
-        glVertex3f(-1+x,-1+y,-1+z);
-        glVertex3f(-1+x,-1+y,1+z);
-        glVertex3f(-1+x,1+y,1+z);
+        glVertex3f(-1 + x, -1 + y, -1 + z);
+        glVertex3f(-1 + x, -1 + y, 1 + z);
+        glVertex3f(-1 + x, 1 + y, 1 + z);
 
         // bottom faces
-        glNormal3f(0,-1,0);
+        glNormal3f(0, -1, 0);
         // face v7-v4-v3
-        glVertex3f(-1+x,-1+y,-1+z);
-        glVertex3f(1+x,-1+y,-1+z);
-        glVertex3f(1+x,-1+y,1+z);
+        glVertex3f(-1 + x, -1 + y, -1 + z);
+        glVertex3f(1 + x, -1 + y, -1 + z);
+        glVertex3f(1 + x, -1 + y, 1 + z);
         // face v3-v2-v7
-        glVertex3f(1+x,-1+y,1+z);
-        glVertex3f(-1+x,-1+y,1+z);
-        glVertex3f(-1+x,-1+y,-1+z);
+        glVertex3f(1 + x, -1 + y, 1 + z);
+        glVertex3f(-1 + x, -1 + y, 1 + z);
+        glVertex3f(-1 + x, -1 + y, -1 + z);
 
         // back faces
-        glNormal3f(0,0,-1);
+        glNormal3f(0, 0, -1);
         // face v4-v7-v6
-        glVertex3f(1+x,-1+y,-1+z);
-        glVertex3f(-1+x,-1+y,-1+z);
-        glVertex3f(-1+x,1+y,-1+z);
+        glVertex3f(1 + x, -1 + y, -1 + z);
+        glVertex3f(-1 + x, -1 + y, -1 + z);
+        glVertex3f(-1 + x, 1 + y, -1 + z);
         // face v6-v5-v4
-        glVertex3f(-1+x,1+y,-1+z);
-        glVertex3f(1+x,1+y,-1+z);
-        glVertex3f(1+x,-1+y,-1+z);
+        glVertex3f(-1 + x, 1 + y, -1 + z);
+        glVertex3f(1 + x, 1 + y, -1 + z);
+        glVertex3f(1 + x, -1 + y, -1 + z);
     }
     glEnd();
     glEndList();
@@ -155,7 +157,7 @@ void cleanup()
     sprites.cleanup();
     fonts.cleanup();
     models.cleanup();
-    //shaders.cleanup();
+    // shaders.cleanup();
     ui_elem.cleanup();
 }
 
@@ -178,54 +180,66 @@ main_menu::main_menu(game& the_game)
     copyright_.setFont(*fonts("default"));
     logo_img_.setSmooth(true);
 
-    menus_.emplace_back(std::vector<button>{ button{L"Singleplayer"}, button{L"Multiplayer"}, button{L"Settings"}, button{L"Exit"} });
+    menus_.emplace_back(
+        std::vector<button>{button{L"Singleplayer"}, button{L"Multiplayer"},
+                            button{L"Settings"}, button{L"Exit"}});
     menus_.emplace_back(std::vector<button>());
 
-    auto& buttons (menus_[0]);
+    auto& buttons(menus_[0]);
 
-    buttons[0].on_clicked = [&]{ host_ = ""; port_ = 15556; done(); };
-    buttons[1].on_clicked = [&]{ switch_menu(1); };
-    buttons[2].on_clicked = [&]{ std::cout << "Settings" << std::endl; };
-    buttons[3].on_clicked = [&]{ exit_ = true; cleanup(); done(); };
+    buttons[0].on_clicked = [&] {
+        host_ = "";
+        port_ = 15556;
+        done();
+    };
+    buttons[1].on_clicked = [&] { switch_menu(1); };
+    buttons[2].on_clicked = [&] { std::cout << "Settings" << std::endl; };
+    buttons[3].on_clicked = [&] {
+        exit_ = true;
+        cleanup();
+        done();
+    };
 
-    for (auto& s : servers_)
-    {
+    for (auto& s : servers_) {
         std::wstring tmp;
-        sf::Utf8::toWide(s.name.begin(), s.name.end(), std::back_inserter(tmp), '*');
+        sf::Utf8::toWide(s.name.begin(), s.name.end(), std::back_inserter(tmp),
+                         '*');
         menus_[1].push_back(button(tmp));
-        menus_[1].back().on_clicked = [&]{ host_ = s.host; port_ = s.port; done(); };
+        menus_[1].back().on_clicked = [&] {
+            host_ = s.host;
+            port_ = s.port;
+            done();
+        };
     }
     menus_[1].push_back(button(L"< Back"));
-    menus_[1].back().on_clicked = [&]{ switch_menu(0); };
+    menus_[1].back().on_clicked = [&] { switch_menu(0); };
 
     setup_dl();
 }
 
-void main_menu::resize (unsigned int x, unsigned int y)
+void main_menu::resize(unsigned int x, unsigned int y)
 {
     width_ = x;
     height_ = y;
 
-    //float logo_scale (float(x - 100) / (float)logo_img_.getSize().x);
-    //logo_.setScale(logo_scale, logo_scale);
+    // float logo_scale (float(x - 100) / (float)logo_img_.getSize().x);
+    // logo_.setScale(logo_scale, logo_scale);
     logo_.setPosition(50, 30);
     copyright_.setPosition(0, y - 20);
 
-    int spacing (80);
+    int spacing(80);
 
-    for (auto& menu : menus_)
-    {
-        int py ((y - menu.size() * spacing) * 0.5);
-        for (auto& btn : menu)
-        {
-            //btn.set_position(x * 0.5, py);
+    for (auto& menu : menus_) {
+        int py((y - menu.size() * spacing) * 0.5);
+        for (auto& btn : menu) {
+            // btn.set_position(x * 0.5, py);
             btn.set_position(170, py);
             py += spacing;
         }
     }
 }
 
-void main_menu::update (double time_delta)
+void main_menu::update(double time_delta)
 {
     time_ += time_delta;
 }
@@ -236,21 +250,20 @@ void main_menu::switch_menu(int i)
         return;
 
     active_menu_ = i;
-    event ev (event::mouse_move_abs, game_.mouse_pos());
+    event ev(event::mouse_move_abs, game_.mouse_pos());
     process_event(ev);
 }
 
 bool main_menu::process_event(const event& ev)
 {
-    switch (ev.type)
-    {
-        case event::window_close:
-            exit_ = true;
-            done();
-            break;
+    switch (ev.type) {
+    case event::window_close:
+        exit_ = true;
+        done();
+        break;
 
-        default:
-            ; // ignore
+    default:
+        ; // ignore
     }
 
     for (auto& btn : menus_[active_menu_])
@@ -270,9 +283,10 @@ game_state::transition main_menu::next_state() const
     if (exit_)
         return game_state::transition();
 
-    auto view_dist (global_settings["viewdist"].as<unsigned int>());
+    auto view_dist(global_settings["viewdist"].as<unsigned int>());
 
-    return game_state::transition(std::make_unique<main_game>(game_, host_, port_, view_dist), false);
+    return game_state::transition(
+        std::make_unique<main_game>(game_, host_, port_, view_dist), false);
 }
 
 void main_menu::render()
@@ -280,7 +294,7 @@ void main_menu::render()
     if (exit_)
         return;
 
-    float step (time_ + 40.f);
+    float step(time_ + 40.f);
 
     glClearColor(0, 0, 0, 255);
     glCheck(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
@@ -290,7 +304,8 @@ void main_menu::render()
     glCheck(gluPerspective(60, (float)width_ / (float)height_, 1.0, 1000.));
     glCheck(glMatrixMode(GL_MODELVIEW));
     glCheck(glLoadIdentity());
-    glCheck(gluLookAt(0,0,-10, 0,0,0, std::sin(step*0.01),std::cos(step*0.01),0));
+    glCheck(gluLookAt(0, 0, -10, 0, 0, 0, std::sin(step * 0.01),
+                      std::cos(step * 0.01), 0));
     glCheck(glDepthFunc(GL_LEQUAL));
 
     glCheck(glEnable(GL_LIGHTING));
@@ -322,9 +337,9 @@ void main_menu::render()
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
 
-    auto& win (window());
+    auto& win(window());
 
-    sf::RectangleShape rect ({ 340.f, static_cast<float>(height_) });
+    sf::RectangleShape rect({340.f, static_cast<float>(height_)});
     rect.setFillColor(sf::Color(10, 10, 10, 80));
     win.draw(rect);
     win.draw(logo_);
@@ -341,10 +356,10 @@ void main_menu::expose()
 
     window().pushGLStates();
 
-    static const GLfloat fogColor[4] = { 0, 0, 0, 1.f };
-    static const GLfloat ambColor[4] = { 0.01f, 0.01f, 0.01f, 1.f };
-    static const GLfloat dffColor[4] = { 1.f, 1.f, 1.f, 1.f };
-    static const GLfloat lightpos[4] = { 2.f, 2.f, 2.f, 1.f };
+    static const GLfloat fogColor[4] = {0, 0, 0, 1.f};
+    static const GLfloat ambColor[4] = {0.01f, 0.01f, 0.01f, 1.f};
+    static const GLfloat dffColor[4] = {1.f, 1.f, 1.f, 1.f};
+    static const GLfloat lightpos[4] = {2.f, 2.f, 2.f, 1.f};
 
     glCheck(glEnable(GL_NORMALIZE));
 
@@ -367,6 +382,4 @@ void main_menu::expose()
     glCheck(glEnable(GL_LIGHT0));
 }
 
-
 } // namespace hexa
-

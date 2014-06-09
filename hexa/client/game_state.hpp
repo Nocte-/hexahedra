@@ -27,11 +27,13 @@
 #include <SFML/Window.hpp>
 #include "game.hpp"
 
-namespace sf {
+namespace sf
+{
 class Event;
 }
 
-namespace hexa {
+namespace hexa
+{
 
 struct event;
 
@@ -52,7 +54,8 @@ public:
         transition()
             : state(nullptr)
             , replace_current(false)
-        { }
+        {
+        }
 
         /** Transition to a new state.
          * @param s  The new game state
@@ -63,22 +66,31 @@ public:
         transition(std::unique_ptr<game_state>&& s, bool r)
             : state(std::move(s))
             , replace_current(r)
-        { }
+        {
+        }
 
 #ifdef _MSC_VER
-        transition(transition&& m) : state(std::move(m.state)), replace_current(m.replace_current) { }
+        transition(transition&& m)
+            : state(std::move(m.state))
+            , replace_current(m.replace_current)
+        {
+        }
 #else
         transition(transition&&) = default;
 #endif
 
         transition(const transition&) = delete;
 
-        std::unique_ptr<game_state>     state;
-        bool                            replace_current;
+        std::unique_ptr<game_state> state;
+        bool replace_current;
     };
 
 public:
-    game_state (game& the_game) : game_(the_game), is_done_(false) { }
+    game_state(game& the_game)
+        : game_(the_game)
+        , is_done_(false)
+    {
+    }
 
     virtual ~game_state() {}
 
@@ -95,12 +107,12 @@ public:
     /** Process an event, such as a mouse move or a keypress.
      * @return True if the event was processed, false if the event should
      *         be passed on to the next game state in the stack. */
-    virtual bool process_event (const event&) = 0;
+    virtual bool process_event(const event&) = 0;
 
-    virtual bool process_event (const sf::Event&) { return false; }
+    virtual bool process_event(const sf::Event&) { return false; }
 
     /** Gets called when the window was resized. */
-    virtual void resize (unsigned int x, unsigned int y) { }
+    virtual void resize(unsigned int x, unsigned int y) {}
 
     /** Another game state finished, and this state gets exposed as
      ** a consequence. */
@@ -112,25 +124,26 @@ public:
     virtual bool is_transparent() const { return false; }
 
     /** Return true if this game state is finished. */
-    bool         is_done() const { return is_done_; }
+    bool is_done() const { return is_done_; }
 
     /** After is_done() has returned true, the game object will call this
      ** function to determine how to transition into the next state. */
     virtual transition next_state() const = 0;
 
 public: // Some convenience functions
+    sf::RenderWindow& window() const { return game_.window(); }
 
-    sf::RenderWindow& window() const
-        { return game_.window(); }
+    bool key_pressed(key code) const { return game_.key_pressed(code); }
 
-    bool key_pressed (key code) const
-        { return game_.key_pressed(code); }
+    bool mouse_button_pressed(unsigned int button) const
+    {
+        return game_.mouse_button_pressed(button);
+    }
 
-    bool mouse_button_pressed (unsigned int button) const
-        { return game_.mouse_button_pressed(button); }
-
-    float joystick_pos (unsigned int axis) const
-        { return game_.joystick_pos(axis); }
+    float joystick_pos(unsigned int axis) const
+    {
+        return game_.joystick_pos(axis);
+    }
 
     unsigned int width() const { return game_.width(); }
     unsigned int height() const { return game_.height(); }
@@ -140,7 +153,7 @@ protected:
 
 protected:
     game& game_;
-    bool  is_done_;
+    bool is_done_;
 };
 
 } // namespace hexa

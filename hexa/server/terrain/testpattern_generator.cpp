@@ -26,28 +26,24 @@
 
 #include "../random.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-void
-testpattern_generator::generate (world_terraingen_access&,
-                                 const chunk_coordinates& pos, chunk& cnk)
+void testpattern_generator::generate(world_terraingen_access&,
+                                     const chunk_coordinates& pos, chunk& cnk)
 {
     make_pattern(pos, cnk);
 }
 
-void
-testpattern_generator::make_pattern (const chunk_coordinates& pos, chunk& cnk) const
+void testpattern_generator::make_pattern(const chunk_coordinates& pos,
+                                         chunk& cnk) const
 {
-    if (pos.x < world_chunk_center.x)
-    {
+    if (pos.x < world_chunk_center.x) {
         for (auto p : every_block_in_chunk)
             cnk[p] = ((manhattan_length(p) % 2 == 0) & 0x0001);
-    }
-    else
-    {
-        auto hash (fnv_hash(pos));
-        for (auto p : every_block_in_chunk)
-        {
+    } else {
+        auto hash(fnv_hash(pos));
+        for (auto p : every_block_in_chunk) {
             cnk[p] = (hash & 0x0001);
             hash = prng(hash);
         }
@@ -55,4 +51,3 @@ testpattern_generator::make_pattern (const chunk_coordinates& pos, chunk& cnk) c
 }
 
 } // namespace hexa
-

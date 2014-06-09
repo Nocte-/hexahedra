@@ -19,11 +19,12 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-namespace hexa {
-namespace iqm {
+namespace hexa
+{
+namespace iqm
+{
 
 struct header
 {
@@ -51,28 +52,26 @@ struct mesh
     uint32_t first_triangle, num_triangles;
 };
 
-enum field_type
-{
-    position     = 0,
-    texcoord     = 1,
-    normal       = 2,
-    tangent      = 3,
+enum field_type {
+    position = 0,
+    texcoord = 1,
+    normal = 2,
+    tangent = 3,
     blendindices = 4,
     blendweights = 5,
-    color        = 6,
-    custom       = 0x10
+    color = 6,
+    custom = 0x10
 };
 
-enum data_type
-{
-    byte_t   = 0,
-    ubyte_t  = 1,
-    short_t  = 2,
+enum data_type {
+    byte_t = 0,
+    ubyte_t = 1,
+    short_t = 2,
     ushort_t = 3,
-    int_t    = 4,
-    uint_t   = 5,
-    half_t   = 6,
-    float_t  = 7,
+    int_t = 4,
+    uint_t = 5,
+    half_t = 6,
+    float_t = 7,
     double_t = 8
 };
 
@@ -101,10 +100,7 @@ struct anim
     uint32_t flags;
 };
 
-enum flag_type
-{
-    loop = 1<<0
-};
+enum flag_type { loop = 1 << 0 };
 
 struct vertexarray
 {
@@ -128,5 +124,5 @@ struct extension
     uint32_t ofs_extensions;
 };
 
-}} // namespace hexa::iqm
-
+} // namespace iqm
+} // namespace hexa

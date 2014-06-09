@@ -24,7 +24,8 @@
 
 #include "terrain_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** This generator will create a test pattern.
  *  On the left half of the world (x < world_center.x), it generates
@@ -33,25 +34,21 @@ namespace hexa {
 class testpattern_generator : public terrain_generator_i
 {
 public:
-    testpattern_generator (world& w, const boost::property_tree::ptree& conf)
-        : terrain_generator_i (w)
-    { }
+    testpattern_generator(world& w, const boost::property_tree::ptree& conf)
+        : terrain_generator_i(w)
+    {
+    }
 
-    void generate (world_terraingen_access& data,
-                   const chunk_coordinates& pos,
-                   chunk& cnk) override;
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override;
 
-    void make_pattern (const chunk_coordinates& pos,
-                       chunk& cnk) const;
+    void make_pattern(const chunk_coordinates& pos, chunk& cnk) const;
 
-    chunk_height
-    estimate_height (world_terraingen_access&,
-                     map_coordinates,
-                     chunk_height) const override
+    chunk_height estimate_height(world_terraingen_access&, map_coordinates,
+                                 chunk_height) const override
     {
         return chunk_world_limit.z;
     }
 };
 
 } // namespace hexa
-

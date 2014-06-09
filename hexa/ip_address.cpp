@@ -23,11 +23,15 @@
 
 #include <stdexcept>
 
-namespace hexa {
+namespace hexa
+{
 
-static const std::array<uint16_t, 6> ipv4_mask {{ 0, 0, 0, 0, 0, 0xffff }};
+static const std::array<uint16_t, 6> ipv4_mask{{0, 0, 0, 0, 0, 0xffff}};
 
-ip_address::ip_address() { std::fill(begin(), end(), 0); }
+ip_address::ip_address()
+{
+    std::fill(begin(), end(), 0);
+}
 
 ip_address::ip_address(std::initializer_list<uint16_t> ipv6)
 {
@@ -41,27 +45,26 @@ ip_address::ip_address(uint32_t ipv4)
 {
     std::copy(ipv4_mask.begin(), ipv4_mask.end(), begin());
     (*this)[6] = static_cast<uint16_t>(ipv4 >> 16);
-    (*this)[7] = static_cast<uint16_t>(ipv4      );
+    (*this)[7] = static_cast<uint16_t>(ipv4);
 }
 
-ip_address::ip_address(const in6_addr &addr)
+ip_address::ip_address(const in6_addr& addr)
 {
     std::copy_n((const uint16_t*)&addr, 8, begin());
 }
 
 ip_address::ip_address(const std::string& addr)
 {
-
 }
 
 ip_address ip_address::unspecified()
 {
-    return ip_address({ 0, 0, 0, 0, 0, 0, 0, 0 });
+    return {0, 0, 0, 0, 0, 0, 0, 0};
 }
 
 ip_address ip_address::loopback()
 {
-    return ip_address({ 0, 0, 0, 0, 0, 0, 0, 1 });
+    return {0, 0, 0, 0, 0, 0, 0, 1};
 }
 
 bool ip_address::is_ipv4() const
@@ -86,12 +89,10 @@ bool ip_address::is_loopback() const
 namespace std
 {
 
-string to_string (const hexa::ip_address& addr)
+string to_string(const hexa::ip_address& addr)
 {
     string result;
 
     return result;
 }
-
 }
-

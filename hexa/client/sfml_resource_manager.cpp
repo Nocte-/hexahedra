@@ -18,33 +18,33 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "sfml_resource_manager.hpp"
 
 #include <boost/program_options/variables_map.hpp>
 #include <hexa/algorithm.hpp>
 #include "iqm_loader.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 extern boost::program_options::variables_map global_settings;
 
 texture_manager textures;
-sfml_image_manager   images;
+sfml_image_manager images;
 sfml_texture_manager sfml_textures;
-sprite_manager  sprites;
-font_manager    fonts;
-model_manager   models;
+sprite_manager sprites;
+font_manager fonts;
+model_manager models;
 ui_elem_manager ui_elem;
 
-std::string make_resource (const std::string& type, const std::string& file)
+std::string make_resource(const std::string& type, const std::string& file)
 {
-    boost::filesystem::path base (global_settings["datadir"].as<std::string>());
+    boost::filesystem::path base(global_settings["datadir"].as<std::string>());
     return (base / type / file).string();
 }
 
-texture_manager::resource
-texture_manager::load (const std::string& location)
+texture_manager::resource texture_manager::load(const std::string& location)
 {
     sf::Image img;
     if (!img.loadFromFile(resource_file(res_texture, location).string()))
@@ -54,9 +54,9 @@ texture_manager::load (const std::string& location)
 }
 
 sfml_image_manager::resource
-sfml_image_manager::load (const std::string& location)
+sfml_image_manager::load(const std::string& location)
 {
-    auto result (std::make_shared<sf::Texture>());
+    auto result(std::make_shared<sf::Texture>());
     if (result->loadFromFile(resource_file(res_image, location).string()))
         return result;
 
@@ -64,9 +64,9 @@ sfml_image_manager::load (const std::string& location)
 }
 
 sfml_texture_manager::resource
-sfml_texture_manager::load (const std::string& location)
+sfml_texture_manager::load(const std::string& location)
 {
-    auto result (std::make_shared<sf::Texture>());
+    auto result(std::make_shared<sf::Texture>());
     if (!result->loadFromFile(resource_file(res_texture, location).string()))
         return nullptr;
 
@@ -74,60 +74,54 @@ sfml_texture_manager::load (const std::string& location)
     return result;
 }
 
-sprite_manager::resource
-sprite_manager::load (const std::string& location)
+sprite_manager::resource sprite_manager::load(const std::string& location)
 {
-    auto img_res (std::make_shared<sf::Image>());
+    auto img_res(std::make_shared<sf::Image>());
     if (!img_res->loadFromFile(resource_file(res_icon, location).string()))
         return nullptr;
 
-    auto tx (new sf::Texture);
+    auto tx(new sf::Texture);
     tx->loadFromImage(*img_res);
-    auto result (std::make_shared<sf::Sprite>(*tx));
+    auto result(std::make_shared<sf::Sprite>(*tx));
     result->setScale(2, 2);
     return result;
 }
 
-font_manager::resource
-font_manager::load (const std::string& location)
+font_manager::resource font_manager::load(const std::string& location)
 {
-    auto result (std::make_shared<sf::Font>());
+    auto result(std::make_shared<sf::Font>());
     if (!result->loadFromFile(resource_file(res_font, location).string()))
         return nullptr;
 
     return result;
 }
 
-model_manager::resource
-model_manager::load (const std::string& location)
+model_manager::resource model_manager::load(const std::string& location)
 {
-    auto temp (iqm::load(resource_file(res_model, location)));
-    //return std::make_shared<gl::model>(temp.first);
-    gl::model* p (new gl::model(temp.first));
+    auto temp(iqm::load(resource_file(res_model, location)));
+    // return std::make_shared<gl::model>(temp.first);
+    gl::model* p(new gl::model(temp.first));
     return std::shared_ptr<gl::model>(p);
 }
 
-shader_manager::resource
-shader_manager::load (const std::string& location)
+shader_manager::resource shader_manager::load(const std::string& location)
 {
-    return std::make_shared<std::string>(file_contents(resource_file(res_shader, location)));
+    return std::make_shared<std::string>(
+        file_contents(resource_file(res_shader, location)));
 }
 
-ui_elem_manager::resource
-ui_elem_manager::load (const std::string& location)
+ui_elem_manager::resource ui_elem_manager::load(const std::string& location)
 {
-    auto img_res (std::make_shared<sf::Image>());
+    auto img_res(std::make_shared<sf::Image>());
     if (!img_res->loadFromFile(resource_file(res_ui, location).string()))
         return nullptr;
 
-    auto tx (new sf::Texture);
+    auto tx(new sf::Texture);
     tx->loadFromImage(*img_res);
     tx->setSmooth(false);
-    auto result (std::make_shared<sf::Sprite>(*tx));
+    auto result(std::make_shared<sf::Sprite>(*tx));
     result->setScale(2, 2);
     return result;
 }
 
-
 } // namespace hexa
-

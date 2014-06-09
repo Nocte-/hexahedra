@@ -21,33 +21,31 @@
 
 #include "render_surface.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-namespace {
+namespace
+{
 
 /** Optimize a single layer of tiles.
  *  This function tries to find rectangles of identical tiles in a 16x16
  *  grid.  It is a greedy algorithm, so it is built for speed rather than
  *  finding the optimal solution. */
-optimized_render_surface::layer
-optimize_greedy (render_surface::layer in)
+optimized_render_surface::layer optimize_greedy(render_surface::layer in)
 {
     // Max-size is set to 15, since the current OpenGL3 renderer only
     // supports quad sizes up to 15.  Not quite elegant, but it'll have
     // to do for now.
-    const unsigned int max_size (chunk_size - 1);
+    const unsigned int max_size(chunk_size - 1);
 
     optimized_render_surface::layer result;
-    size_t search (0);
+    size_t search(0);
 
-    while (true)
-    {
+    while (true) {
         // Find a suitable starting position
         optimized_render_surface::element rect;
-        for (; search < chunk_area; ++search)
-        {
-            if (in[search].texture != 0)
-            {
+        for (; search < chunk_area; ++search) {
+            if (in[search].texture != 0) {
                 rect = in[search];
                 break;
             }
@@ -59,21 +57,18 @@ optimize_greedy (render_surface::layer in)
 
         // Expand the rectangle horizontally until we encounter a different
         // tile.
-        map_index pos (search % chunk_size, search >> cnkshift);
+        map_index pos(search % chunk_size, search >> cnkshift);
 
-        while (   pos.x + rect.size.x < max_size
-               && rect == in[pos + map_index(rect.size.x, 0)])
-        {
+        while (pos.x + rect.size.x < max_size
+               && rect == in[pos + map_index(rect.size.x, 0)]) {
             ++rect.size.x;
             ++search;
         }
 
         // Same thing, this time vertically.
-        while (pos.y + rect.size.y < max_size)
-        {
-            bool expand (true);
-            for (int x (0); expand && x < rect.size.x; ++x)
-            {
+        while (pos.y + rect.size.y < max_size) {
+            bool expand(true);
+            for (int x(0); expand && x < rect.size.x; ++x) {
                 if (rect != in[pos + map_index(x, rect.size.y)])
                     expand = false;
             }
@@ -86,10 +81,9 @@ optimize_greedy (render_surface::layer in)
 
         // Remove the tiles from the original surface, so we don't process
         // them twice.
-        for (int y (pos.y); y < pos.y + rect.size.y; ++y)
-        {
-            for (int x (pos.x); x < pos.x + rect.size.x; ++x)
-                in(x,y).texture = 0;
+        for (int y(pos.y); y < pos.y + rect.size.y; ++y) {
+            for (int x(pos.x); x < pos.x + rect.size.x; ++x)
+                in(x, y).texture = 0;
         }
 
         // Add the rectagle to the result and continue.
@@ -102,19 +96,19 @@ optimize_greedy (render_surface::layer in)
 
 //---------------------------------------------------------------------------
 
-optimized_render_surface
-optimize_greedy (const render_surface& in)
+optimized_render_surface optimize_greedy(const render_surface& in)
 {
     optimized_render_surface result;
-    for (int i (0); i < 6; ++i)
-    {
+    for (int i(0); i < 6; ++i) {
         for (auto& j : in.dirs[i])
-        //for (uint8_t j (0); j < chunk_size; ++j)
+        // for (uint8_t j (0); j < chunk_size; ++j)
         {
             ///\todo Is this a memory leak in boost::flat_map?
-            //result.dirs[i].emplace(j, optimize_greedy(in.dirs[i][j]));
-            //result.dirs[i].insert(std::make_pair(j, optimize_greedy(in.dirs[i][j])));
-            result.dirs[i].insert(std::make_pair(j.first, optimize_greedy(j.second)));
+            // result.dirs[i].emplace(j, optimize_greedy(in.dirs[i][j]));
+            // result.dirs[i].insert(std::make_pair(j,
+            // optimize_greedy(in.dirs[i][j])));
+            result.dirs[i].insert(
+                std::make_pair(j.first, optimize_greedy(j.second)));
         }
     }
 
@@ -122,4 +116,3 @@ optimize_greedy (const render_surface& in)
 }
 
 } // namespace hexa
-

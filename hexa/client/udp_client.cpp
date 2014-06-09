@@ -27,18 +27,18 @@
 
 using boost::format;
 
-namespace hexa {
-
-udp_client::udp_client (std::string host, uint16_t port)
-    : connected_ (false)
+namespace hexa
 {
-    boost::lock_guard<boost::mutex> lock (host_mutex_);
+
+udp_client::udp_client(std::string host, uint16_t port)
+    : connected_(false)
+{
+    boost::lock_guard<boost::mutex> lock(host_mutex_);
     host_ = enet_host_create(nullptr, 1, UDP_CHANNELS, 0, 0);
     if (host_ == nullptr)
         throw network_error("could not set up UDP host");
 
-    if (host.empty())
-    {
+    if (host.empty()) {
 #ifdef ENET_IPV6
         host = "::1";
 #else
@@ -60,19 +60,18 @@ udp_client::~udp_client()
     enet_host_destroy(host_);
 }
 
-bool udp_client::connect (unsigned int timeout)
+bool udp_client::connect(unsigned int timeout)
 {
     disconnect();
 
     ENetEvent ev;
     {
-    boost::lock_guard<boost::mutex> lock (host_mutex_);
-    if (   enet_host_service(host_, &ev, timeout) > 0
-        && ev.type == ENET_EVENT_TYPE_CONNECT)
-    {
-        connected_ = true;
-        return true;
-    }
+        boost::lock_guard<boost::mutex> lock(host_mutex_);
+        if (enet_host_service(host_, &ev, timeout) > 0
+            && ev.type == ENET_EVENT_TYPE_CONNECT) {
+            connected_ = true;
+            return true;
+        }
     }
 
     enet_peer_reset(peer_);
@@ -88,19 +87,17 @@ bool udp_client::disconnect()
     enet_peer_disconnect(peer_, 0);
 
     {
-    boost::lock_guard<boost::mutex> lock (host_mutex_);
-    while (enet_host_service(host_, &ev, 3000))
-    {
-        switch (ev.type)
-        {
+        boost::lock_guard<boost::mutex> lock(host_mutex_);
+        while (enet_host_service(host_, &ev, 3000)) {
+            switch (ev.type) {
             case ENET_EVENT_TYPE_DISCONNECT:
                 connected_ = false;
                 return true;
 
             default:
                 enet_packet_destroy(ev.packet);
+            }
         }
-    }
     }
 
     enet_peer_reset(peer_);
@@ -112,30 +109,30 @@ void udp_client::poll(unsigned int milliseconds)
     ENetEvent ev;
     int result;
     {
-    boost::lock_guard<boost::mutex> lock (host_mutex_);
-    result = enet_host_service(host_, &ev, milliseconds);
+        boost::lock_guard<boost::mutex> lock(host_mutex_);
+        result = enet_host_service(host_, &ev, milliseconds);
     }
 
     if (result < 0)
-        throw std::runtime_error((format("network error %1%") % -result).str());
+        throw std::runtime_error(
+            (format("network error %1%") % -result).str());
 
-    switch (ev.type)
-    {
-        case ENET_EVENT_TYPE_CONNECT:
-            receive(packet(ev.packet->data, ev.packet->dataLength));
-            on_connect();
-            break;
+    switch (ev.type) {
+    case ENET_EVENT_TYPE_CONNECT:
+        receive(packet(ev.packet->data, ev.packet->dataLength));
+        on_connect();
+        break;
 
-        case ENET_EVENT_TYPE_RECEIVE:
-            receive(packet(ev.packet->data, ev.packet->dataLength));
-            break;
+    case ENET_EVENT_TYPE_RECEIVE:
+        receive(packet(ev.packet->data, ev.packet->dataLength));
+        break;
 
-        case ENET_EVENT_TYPE_DISCONNECT:
-            on_disconnect();
-            break;
+    case ENET_EVENT_TYPE_DISCONNECT:
+        on_disconnect();
+        break;
 
-        case ENET_EVENT_TYPE_NONE:
-            break;
+    case ENET_EVENT_TYPE_NONE:
+        break;
     }
 
     if (ev.packet != nullptr)
@@ -157,24 +154,25 @@ float udp_client::rtt() const
     return peer_->roundTripTime * 0.001f;
 }
 
-void udp_client::send (const binary_data& p, msg::reliability method)
+void udp_client::send(const binary_data& p, msg::reliability method)
 {
-    uint32_t flags (0);
+    uint32_t flags(0);
 
-    switch (method)
-    {
-    case msg::unreliable: flags = ENET_PACKET_FLAG_UNSEQUENCED; break;
+    switch (method) {
+    case msg::unreliable:
+        flags = ENET_PACKET_FLAG_UNSEQUENCED;
+        break;
     case msg::reliable:
-    case msg::sequenced:  flags = ENET_PACKET_FLAG_RELIABLE; break;
+    case msg::sequenced:
+        flags = ENET_PACKET_FLAG_RELIABLE;
+        break;
     }
 
-    ENetPacket* packet (enet_packet_create(&p[0], p.size(), flags));
+    ENetPacket* packet(enet_packet_create(&p[0], p.size(), flags));
     {
-    boost::lock_guard<boost::mutex> lock (host_mutex_);
-    enet_peer_send(peer_, 0, packet);
+        boost::lock_guard<boost::mutex> lock(host_mutex_);
+        enet_peer_send(peer_, 0, packet);
     }
 }
 
-
 } // namespace hexa
-

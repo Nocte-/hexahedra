@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <array>
@@ -30,32 +29,35 @@
 #include "compiler_fix.hpp"
 #include "serialize.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** A single block in the game world. */
 struct block
 {
     /** The material ID. \sa material() \sa material_prop */
-    uint16_t    type;
+    uint16_t type;
 
     /** Construct a block of a given type. */
-    block (uint16_t t = type::air) : type (t) {}
+    block(uint16_t t = type::air)
+        : type{t}
+    {
+    }
 
-    operator uint16_t () { return type; }
+    operator uint16_t() { return type; }
 
     /** Check if another block is of the same type. */
-    bool operator== (block compare) const
-        { return type == compare.type; }
+    bool operator==(block compare) const { return type == compare.type; }
 
-    bool operator== (uint16_t compare) const
-        { return type == compare; }
+    bool operator==(uint16_t compare) const { return type == compare; }
 
-    bool operator< (block compare) const
-        { return type < compare.type; }
+    bool operator<(block compare) const { return type < compare.type; }
 
-    template <class archive>
-    archive& serialize(archive& ar)
-        { return ar(type); }
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
+    {
+        return ar(type);
+    }
 
     bool is_air() const { return type == 0; }
 };
@@ -66,7 +68,7 @@ struct block
  *  for an example of how to use this class. */
 class chunk : public chunk_base<block>
 {
-    typedef chunk_base<block>   base;
+    typedef chunk_base<block> base;
 
 public:
     /** Chunk version number.
@@ -75,47 +77,50 @@ public:
      *  the chunk status (surfaces, compressed chunks, etc.) use this
      *  number to check if they need to be updated.  It is also used to
      *  determine if new data needs to be sent to clients. */
-    uint32_t        version;
+    uint32_t version;
 
 public:
     chunk()
-        : version(0)
-    { }
+        : version{0}
+    {
+    }
 
 #ifdef _MSC_VER
     chunk(chunk&& m)
         : base(std::move(m))
-    { }
+    {
+    }
 
     chunk(const chunk&) = default;
 
-    chunk& operator= (chunk&& m)
+    chunk& operator=(chunk&& m)
     {
-        if (this != &m)
-        {
+        if (this != &m) {
             version = m.version;
             base::operator=(std::move(m));
         }
         return *this;
     }
 
-    chunk& operator= (const chunk&) = default;
+    chunk& operator=(const chunk&) = default;
 #else
 
     chunk(chunk&&) = default;
     chunk(const chunk&) = default;
-    chunk& operator= (chunk&&) = default;
-    chunk& operator= (const chunk&) = default;
+    chunk& operator=(chunk&&) = default;
+    chunk& operator=(const chunk&) = default;
 
 #endif
 
-    bool    operator== (const chunk& compare) const
-        { return base::operator==(compare); }
-
-    template <class archive>
-    archive& serialize(archive& ar)
+    bool operator==(const chunk& compare) const
     {
-        return ar.raw_data(*this, chunk_volume)(version);
+        return base::operator==(compare);
+    }
+
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
+    {
+        return ar.raw_data (*this, chunk_volume)(version);
     }
 };
 
@@ -123,25 +128,22 @@ public:
 
 //---------------------------------------------------------------------------
 
-namespace std {
+namespace std
+{
 
-inline
-ostream& operator<< (ostream& str, hexa::block b)
+inline ostream& operator<<(ostream& str, hexa::block b)
 {
     return str << b.type;
 }
 
-inline
-ostream& operator<< (ostream& str, const hexa::chunk& cnk)
+inline ostream& operator<<(ostream& str, const hexa::chunk& cnk)
 {
-    for (int z (0); z < 16; ++z)
-    {
+    for (int z = 0; z < 16; ++z) {
         str << "Z " << z << std::endl;
-        for (int y (0); y < 16; ++y)
-        {
+        for (int y = 0; y < 16; ++y) {
             str << y << ": ";
-            for (int x (0); x < 16; ++x)
-                str << cnk(x,y,z) << " ";
+            for (int x = 0; x < 16; ++x)
+                str << cnk(x, y, z) << " ";
 
             str << std::endl;
         }
@@ -153,5 +155,3 @@ ostream& operator<< (ostream& str, const hexa::chunk& cnk)
 }
 
 } // namespace std
-
-

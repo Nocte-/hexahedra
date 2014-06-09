@@ -42,16 +42,17 @@
 #include "types.hpp"
 #include "vbo.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class player;
 
-typedef vertex_4< vtx_xyz<int32_t>,         // Position
-                  vtx_uv<uint8_t>,          // Texture coordinates
-                  vtx_scalar<uint16_t>,     // Texture index
-                  vtx_array<uint8_t, 2> >   // Light values, 4 nibbles
+typedef vertex_4<vtx_xyz<int32_t>,      // Position
+                 vtx_uv<uint8_t>,       // Texture coordinates
+                 vtx_scalar<uint16_t>,  // Texture index
+                 vtx_array<uint8_t, 2>> // Light values, 4 nibbles
 
-                  ogl3_terrain_vertex;
+    ogl3_terrain_vertex;
 
 class sfml_ogl3 : public sfml
 {
@@ -76,41 +77,56 @@ public:
     void draw_model(const wfpos& p, uint16_t m) override;
 
 protected:
-    virtual std::string gl_id() const override
-        { return "gl3"; }
+    virtual std::string gl_id() const override { return "gl3"; }
 
 private:
     std::list<sf::Image> textures_;
-    std::atomic<bool>    textures_ready_;
-    texture_array        texarr_;
+    std::atomic<bool> textures_ready_;
+    texture_array texarr_;
 
-    uniform_variable    terrain_matrix_;
-	uniform_variable    terrain_camera_;
-    uniform_variable    tex_;
-    uniform_variable    fog_color_;
-    uniform_variable    fog_distance_;
-    uniform_variable    ambient_light_;
-    uniform_variable    sunlight_;
-    uniform_variable    artificial_light_;
+    uniform_variable terrain_matrix_;
+    uniform_variable terrain_camera_;
+    uniform_variable tex_;
+    uniform_variable fog_color_;
+    uniform_variable fog_distance_;
+    uniform_variable ambient_light_;
+    uniform_variable sunlight_;
+    uniform_variable artificial_light_;
 
-    uniform_variable    model_matrix_;
-	uniform_variable    model_camera_;
-    uniform_variable    model_tex_;
+    uniform_variable model_matrix_;
+    uniform_variable model_camera_;
+    uniform_variable model_tex_;
 
     struct animated_texture
     {
         unsigned int slice;
         unsigned int frame_count;
-        gl::vbo      buffer;
+        gl::vbo buffer;
 
         animated_texture(unsigned int s, unsigned int f, gl::vbo&& b)
-            : slice(s), frame_count(f), buffer(std::move(b))
-        { }
+            : slice(s)
+            , frame_count(f)
+            , buffer(std::move(b))
+        {
+        }
 
 #ifdef _MSC_VER
         animated_texture(const animated_texture&) = delete;
-        animated_texture(animated_texture&& m) : slice(m.slice), frame_count(m.frame_count), buffer(std::move(m.buffer)) { }
-        animated_texture& operator= (animated_texture&& m) { if (this != &m) { slice = m.slice; frame_count = m.frame_count; buffer = std::move(m.buffer); } return *this; }
+        animated_texture(animated_texture&& m)
+            : slice(m.slice)
+            , frame_count(m.frame_count)
+            , buffer(std::move(m.buffer))
+        {
+        }
+        animated_texture& operator=(animated_texture&& m)
+        {
+            if (this != &m) {
+                slice = m.slice;
+                frame_count = m.frame_count;
+                buffer = std::move(m.buffer);
+            }
+            return *this;
+        }
 #endif
     };
 
@@ -118,4 +134,3 @@ private:
 };
 
 } // namespace hexa
-

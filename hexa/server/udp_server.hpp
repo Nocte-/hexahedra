@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <vector>
@@ -27,7 +26,8 @@
 #include <enet/enet.h>
 #include <hexa/protocol.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class udp_server
 {
@@ -35,25 +35,23 @@ public:
     udp_server(uint16_t port, uint16_t max_users = 32);
     virtual ~udp_server();
 
-    void poll (uint16_t milliseconds);
+    void poll(uint16_t milliseconds);
 
-    void send (ENetPeer* dest, const binary_data& msg,
-               msg::reliability method) const;
+    void send(ENetPeer* dest, const binary_data& msg,
+              msg::reliability method) const;
 
-    void broadcast (const binary_data& msg,
-                    msg::reliability method) const;
+    void broadcast(const binary_data& msg, msg::reliability method) const;
 
-    void disconnect (ENetPeer* peer);
+    void disconnect(ENetPeer* peer);
 
-    virtual void on_connect (ENetPeer* peer) = 0;
-    virtual void on_receive (ENetPeer* peer, const packet& pkt) = 0;
-    virtual void on_disconnect (ENetPeer* peer) = 0;
+    virtual void on_connect(ENetPeer* peer) = 0;
+    virtual void on_receive(ENetPeer* peer, const packet& pkt) = 0;
+    virtual void on_disconnect(ENetPeer* peer) = 0;
 
 private:
-    ENetAddress             addr_;
-    ENetHost*               sv_;
-    mutable boost::mutex    enet_mutex_;
+    ENetAddress addr_;
+    ENetHost* sv_;
+    mutable boost::mutex enet_mutex_;
 };
 
 } // namespace hexa
-

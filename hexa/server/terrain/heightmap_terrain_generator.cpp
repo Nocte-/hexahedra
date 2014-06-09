@@ -37,46 +37,46 @@
 using namespace boost::property_tree;
 using namespace boost::range;
 
-namespace hexa {
+namespace hexa
+{
 
 struct heightmap_terrain_generator::impl
 {
     std::string hm_name_;
-    int         height_idx_;
-    block       fill_material_;
+    int height_idx_;
+    block fill_material_;
 
     impl(world& w, const ptree& conf)
-        : hm_name_      (conf.get<std::string>("area", "heightmap"))
-        , height_idx_   (w.find_area_generator(hm_name_))
-        , fill_material_(find_material(conf.get<std::string>("material", "stone"), 1))
+        : hm_name_(conf.get<std::string>("area", "heightmap"))
+        , height_idx_(w.find_area_generator(hm_name_))
+        , fill_material_(
+              find_material(conf.get<std::string>("material", "stone"), 1))
     {
         if (height_idx_ < 0)
-            throw std::runtime_error("heightmap_terrain requires area data named '"+hm_name_+"'");
+            throw std::runtime_error(
+                "heightmap_terrain requires area data named '" + hm_name_
+                + "'");
     }
 
-    ~impl()
-    { }
+    ~impl() {}
 
-    void generate(world_terraingen_access& data,
-                  const chunk_coordinates& pos, chunk& cnk)
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk)
     {
-        trace("heightmap terrain generation for %1%", world_vector(pos - world_chunk_center));
+        trace("heightmap terrain generation for %1%",
+              world_vector(pos - world_chunk_center));
 
-        auto& hm (data.get_area_data(pos, height_idx_));
-        uint32_t bottom (pos.z * chunk_size);
+        auto& hm(data.get_area_data(pos, height_idx_));
+        uint32_t bottom(pos.z * chunk_size);
 
-        for (int x (0); x < chunk_size; ++x)
-        {
-            for (int y (0); y < chunk_size; ++y)
-            {
+        for (int x(0); x < chunk_size; ++x) {
+            for (int y(0); y < chunk_size; ++y) {
                 // Absolute height
-                uint32_t h (world_center.z + hm(x, y));
-                if (h > bottom)
-                {
-                    auto range (std::min<uint16_t>(h - bottom, chunk_size));
-                    for (uint16_t z (0); z < range; ++z)
-                    {
-                        auto& blk (cnk(x,y,z));
+                uint32_t h(world_center.z + hm(x, y));
+                if (h > bottom) {
+                    auto range(std::min<uint16_t>(h - bottom, chunk_size));
+                    for (uint16_t z(0); z < range; ++z) {
+                        auto& blk(cnk(x, y, z));
                         if (blk == type::air)
                             blk = fill_material_;
                     }
@@ -85,55 +85,54 @@ struct heightmap_terrain_generator::impl
         }
     }
 
-    void generate (world_terraingen_access& data,
-                   map_coordinates xy, area_data& sm)
+    void generate(world_terraingen_access& data, map_coordinates xy,
+                  area_data& sm)
     {
-        auto& hm (data.get_area_data(xy, height_idx_));
-        auto j (hm.begin());
-        for (auto i (sm.begin()); i != sm.end(); ++i, ++j)
+        auto& hm(data.get_area_data(xy, height_idx_));
+        auto j(hm.begin());
+        for (auto i(sm.begin()); i != sm.end(); ++i, ++j)
             *i = std::max(*i, *j);
     }
 
-    chunk_height estimate_height (world_terraingen_access& data,
-                                  map_coordinates xy,
-                                  chunk_height prev) const
+    chunk_height estimate_height(world_terraingen_access& data,
+                                 map_coordinates xy, chunk_height prev) const
     {
-        auto& hm (data.get_area_data(xy, height_idx_));
-        uint32_t highest (world_center.z + *std::max_element(hm.begin(), hm.end()));
+        auto& hm(data.get_area_data(xy, height_idx_));
+        uint32_t highest(world_center.z
+                         + *std::max_element(hm.begin(), hm.end()));
 
         return (highest >> cnkshift) + 1;
     }
 };
 
-heightmap_terrain_generator::heightmap_terrain_generator (world& w,
-                                                          const ptree& conf)
-    : terrain_generator_i (w)
-    , pimpl_ (std::make_unique<impl>(w, conf))
-{ }
+heightmap_terrain_generator::heightmap_terrain_generator(world& w,
+                                                         const ptree& conf)
+    : terrain_generator_i(w)
+    , pimpl_(std::make_unique<impl>(w, conf))
+{
+}
 
 heightmap_terrain_generator::~heightmap_terrain_generator()
-{ }
+{
+}
 
-void
-heightmap_terrain_generator::generate(world_terraingen_access& data,
-                                      const chunk_coordinates& pos, chunk& cnk)
+void heightmap_terrain_generator::generate(world_terraingen_access& data,
+                                           const chunk_coordinates& pos,
+                                           chunk& cnk)
 {
     pimpl_->generate(data, pos, cnk);
 }
 
-chunk_height
-heightmap_terrain_generator::estimate_height (world_terraingen_access& data,
-                                              map_coordinates xy,
-                                              chunk_height prev) const
+chunk_height heightmap_terrain_generator::estimate_height(
+    world_terraingen_access& data, map_coordinates xy, chunk_height prev) const
 {
     return pimpl_->estimate_height(data, xy, prev);
 }
 
-bool
-heightmap_terrain_generator::generate (world_terraingen_access& proxy,
-                                       const std::string& type,
-                                       map_coordinates pos,
-                                       area_data& data) const
+bool heightmap_terrain_generator::generate(world_terraingen_access& proxy,
+                                           const std::string& type,
+                                           map_coordinates pos,
+                                           area_data& data) const
 {
     if (type != "surface")
         return false;
@@ -144,4 +143,3 @@ heightmap_terrain_generator::generate (world_terraingen_access& proxy,
 }
 
 } // namespace hexa
-

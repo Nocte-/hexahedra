@@ -17,9 +17,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <cassert>
@@ -35,25 +34,23 @@
 
 #include "opengl.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-namespace gl { class vbo; }
+namespace gl
+{
+class vbo;
+}
 
 class texture
 {
 public:
-    typedef enum
-    {
-        transparent,
-        opaque
-    }
-    transparency_t;
+    typedef enum { transparent, opaque } transparency_t;
 
 public:
     texture();
 
-    texture(const sf::Image& image,
-            transparency_t alpha = opaque);
+    texture(const sf::Image& image, transparency_t alpha = opaque);
 
     texture(const boost::filesystem::path& image,
             transparency_t alpha = opaque);
@@ -62,7 +59,11 @@ public:
 
     operator bool() const { return id_.get() != nullptr; }
 
-    GLuint id() const { assert(id_.get() != nullptr); return *id_; }
+    GLuint id() const
+    {
+        assert(id_.get() != nullptr);
+        return *id_;
+    }
 
     void bind() const { glCheck(glBindTexture(GL_TEXTURE_2D, id())); }
 
@@ -85,28 +86,27 @@ class texture_array : public texture
 {
 public:
     texture_array()
-        : texture()
-        , width_(0)
-        , height_(0)
-    { }
+        : texture{}
+        , width_{0}
+        , height_{0}
+    {
+    }
 
-    texture_array(const std::list<sf::Image>& imagelist,
-                  uint16_t width, uint16_t height,
-                  transparency_t alpha = opaque);
+    texture_array(const std::list<sf::Image>& imagelist, uint16_t width,
+                  uint16_t height, transparency_t alpha = opaque);
 
     void bind() const { glBindTexture(GL_TEXTURE_2D_ARRAY, id()); }
 
     static void unbind() { glBindTexture(GL_TEXTURE_2D_ARRAY, 0); }
 
-    void load(const std::list<sf::Image>& imagelist,
-              uint16_t width, uint16_t height, transparency_t alpha);
+    void load(const std::list<sf::Image>& imagelist, uint16_t width,
+              uint16_t height, transparency_t alpha);
 
     void load(const gl::vbo& tx, unsigned int index, unsigned int y_offset);
 
 private:
-    uint16_t    width_;
-    uint16_t    height_;
+    uint16_t width_;
+    uint16_t height_;
 };
 
 } // namespace hexa
-

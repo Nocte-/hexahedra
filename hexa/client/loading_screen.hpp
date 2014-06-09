@@ -19,27 +19,27 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "game_state.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** A simple game state that just shows "connecting...", and fades out
  ** to the main game state when it is done. */
 class loading_screen : public game_state
 {
 public:
-    loading_screen (game& the_game, const bool& waiting,
-                    std::string text = "Connecting ...",
-                    double fadeout_seconds = 0.5);
+    loading_screen(game& the_game, const bool& waiting,
+                   std::string text = "Connecting ...",
+                   double fadeout_seconds = 0.5);
 
     std::string name() const { return "loading screen"; }
 
-    void update (double time_delta);
+    void update(double time_delta);
     void render();
-    bool process_event (const event&);
+    bool process_event(const event&);
     bool is_transparent() const { return true; }
     transition next_state() const;
 
@@ -47,11 +47,10 @@ public:
 
 private:
     const bool& waiting_;
-    double      time_;
-    double      fade_timer_;
+    double time_;
+    double fade_timer_;
     std::string text_;
-    double      fadeout_seconds_;
+    double fadeout_seconds_;
 };
 
 } // namespace hexa
-

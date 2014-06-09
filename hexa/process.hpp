@@ -31,39 +31,41 @@
 
 struct pid_type
 {
-    pid_t  internal_;
+    pid_t internal_;
 
-    pid_type(pid_t init = 0) : internal_(init) {}
+    pid_type(pid_t init = 0)
+        : internal_(init)
+    {
+    }
 };
 
 #elif defined(BOOST_WINDOWS_API)
 
 #include <windows.h>
 
-typedef PROCESS_INFORMATION  pid_type;
+typedef PROCESS_INFORMATION pid_type;
 
 #else
 
-# error "Only Windows and POSIX are supported."
+#error "Only Windows and POSIX are supported."
 
 #endif
 
-
-namespace hexa {
+namespace hexa
+{
 
 /** Start a new process in the background.
  * \throw std::runtime_error
  * \param exe   Path to executable
  * \param args  Arguments
  * \return Process handle */
-pid_type start_process (const boost::filesystem::path& exe,
-                        const std::vector<std::string>& args);
+pid_type start_process(const boost::filesystem::path& exe,
+                       const std::vector<std::string>& args);
 
 /** Terminate a process.
  * \return true if the process could be terminated succesfully */
-bool terminate_process (pid_type id);
+bool terminate_process(pid_type id);
 
 /** Forcefully end a process. */
-void kill_process (pid_type id);
-
+void kill_process(pid_type id);
 }

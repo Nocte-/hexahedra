@@ -19,13 +19,14 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "../basic_types.hpp"
 
-namespace hexa {
-namespace clock {
+namespace hexa
+{
+namespace clock
+{
 
 void init();
 
@@ -35,5 +36,5 @@ void sync(gameclock_t time);
 
 clientclock_t time();
 
-}} // namespace hexa::clock
-
+} // namespace clock
+} // namespace hexa

@@ -19,7 +19,6 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
@@ -30,6 +29,5 @@
  * @throw std::runtime_error If any operation could not be completed
  * @param username      The new UID to run as
  * @param chroot_path   Set a chroot jail to this location */
-void drop_privileges (const std::string& username,
-                      const std::string& chroot_path);
-
+void drop_privileges(const std::string& username,
+                     const std::string& chroot_path);

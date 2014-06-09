@@ -34,19 +34,20 @@
 using namespace boost;
 namespace fs = boost::filesystem;
 
-namespace hexa {
+namespace hexa
+{
 
-namespace {
+namespace
+{
 
 static const uint32_t type_entity = 16;
 
-
-void check (const leveldb::Status& rc)
+void check(const leveldb::Status& rc)
 {
     if (!rc.ok())
-        throw std::runtime_error((boost::format("persistence_leveldb: %1%") % rc.ToString()).str());
+        throw std::runtime_error(
+            (boost::format("persistence_leveldb: %1%") % rc.ToString()).str());
 }
-
 }
 
 persistence_leveldb::persistence_leveldb(const fs::path& db_file)
@@ -65,17 +66,15 @@ persistence_leveldb::~persistence_leveldb()
     delete options_.filter_policy;
 }
 
-void
-persistence_leveldb::close()
+void persistence_leveldb::close()
 {
     db_ = nullptr;
     delete options_.filter_policy;
     options_.filter_policy = nullptr;
 }
 
-void
-persistence_leveldb::store (data_type type, chunk_coordinates xyz,
-                            const compressed_data& data)
+void persistence_leveldb::store(data_type type, chunk_coordinates xyz,
+                                const compressed_data& data)
 {
     uint32_t key[4];
     key[0] = type;
@@ -83,33 +82,35 @@ persistence_leveldb::store (data_type type, chunk_coordinates xyz,
     key[2] = xyz.y;
     key[3] = xyz.z;
 
-    auto serialized (serialize(data));
-    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
-    leveldb::Slice db_value (reinterpret_cast<const char*>(&*serialized.begin()), serialized.size());
+    binary_data serialized{serialize(data)};
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+    leveldb::Slice db_value{
+        reinterpret_cast<const char*>(&*serialized.begin()),
+        serialized.size()};
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
 }
 
-void
-persistence_leveldb::store (map_coordinates xy, chunk_height z)
+void persistence_leveldb::store(map_coordinates xy, chunk_height z)
 {
     uint32_t key[3];
     key[0] = data_type::cnk_height;
     key[1] = xy.x;
     key[2] = xy.y;
 
-    auto ser (serialize(z));
+    binary_data ser{serialize(z)};
 
-    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
-    leveldb::Slice db_value (reinterpret_cast<const char*>(&*ser.begin()), ser.size());
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+    leveldb::Slice db_value{reinterpret_cast<const char*>(&*ser.begin()),
+                            ser.size()};
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
 }
 
 //---------------------------------------------------------------------------
 
-compressed_data
-persistence_leveldb::retrieve (data_type type, chunk_coordinates xyz)
+compressed_data persistence_leveldb::retrieve(data_type type,
+                                              chunk_coordinates xyz)
 {
     uint32_t key[4];
     key[0] = type;
@@ -117,7 +118,7 @@ persistence_leveldb::retrieve (data_type type, chunk_coordinates xyz)
     key[2] = xyz.y;
     key[3] = xyz.z;
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
     std::string result;
 
     check(db_->Get(leveldb::ReadOptions(), db_key, &result));
@@ -125,15 +126,14 @@ persistence_leveldb::retrieve (data_type type, chunk_coordinates xyz)
     return deserialize_as<compressed_data>(result);
 }
 
-chunk_height
-persistence_leveldb::retrieve (map_coordinates xy)
+chunk_height persistence_leveldb::retrieve(map_coordinates xy)
 {
     uint32_t key[3];
     key[0] = data_type::cnk_height;
     key[1] = xy.x;
     key[2] = xy.y;
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
     std::string result;
     check(db_->Get(leveldb::ReadOptions(), db_key, &result));
     assert(result.size() == sizeof(chunk_height));
@@ -143,8 +143,7 @@ persistence_leveldb::retrieve (map_coordinates xy)
 
 //---------------------------------------------------------------------------
 
-bool
-persistence_leveldb::is_available (data_type type, chunk_coordinates xyz)
+bool persistence_leveldb::is_available(data_type type, chunk_coordinates xyz)
 {
     uint32_t key[4];
     key[0] = type;
@@ -152,38 +151,35 @@ persistence_leveldb::is_available (data_type type, chunk_coordinates xyz)
     key[2] = xyz.y;
     key[3] = xyz.z;
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
     std::string result;
 
-    auto rc (db_->Get(leveldb::ReadOptions(), db_key, &result));
+    auto rc(db_->Get(leveldb::ReadOptions(), db_key, &result));
 
     return !rc.IsNotFound();
 }
 
-bool
-persistence_leveldb::is_available (map_coordinates xy)
+bool persistence_leveldb::is_available(map_coordinates xy)
 {
     uint32_t key[3];
     key[0] = data_type::cnk_height;
     key[1] = xy.x;
     key[2] = xy.y;
 
-    leveldb::Slice db_key (reinterpret_cast<const char*>(key), sizeof(key));
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
     std::string result;
 
-    auto rc (db_->Get(leveldb::ReadOptions(), db_key, &result));
+    auto rc(db_->Get(leveldb::ReadOptions(), db_key, &result));
 
     return !rc.IsNotFound();
 }
 
 //---------------------------------------------------------------------------
 
-void
-persistence_leveldb::store (const es::storage& es)
+void persistence_leveldb::store(const es::storage& es)
 {
     std::vector<char> buffer;
-    for (auto i (es.begin()); i != es.end(); ++i)
-    {
+    for (auto i = es.begin(); i != es.end(); ++i) {
         uint32_t key[2];
         key[0] = type_entity;
         key[1] = i->first;
@@ -191,15 +187,15 @@ persistence_leveldb::store (const es::storage& es)
         buffer.clear();
         es.serialize(i, buffer);
 
-        leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
-        leveldb::Slice db_value (reinterpret_cast<const char*>(&buffer[0]), buffer.size());
+        leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+        leveldb::Slice db_value{reinterpret_cast<const char*>(&buffer[0]),
+                                buffer.size()};
 
         check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
     }
 }
 
-void
-persistence_leveldb::store (const es::storage& es, es::storage::iterator i)
+void persistence_leveldb::store(const es::storage& es, es::storage::iterator i)
 {
     std::vector<char> buffer;
     uint32_t key[2];
@@ -208,16 +204,17 @@ persistence_leveldb::store (const es::storage& es, es::storage::iterator i)
 
     es.serialize(i, buffer);
 
-    leveldb::Slice db_key   (reinterpret_cast<const char*>(key), sizeof(key));
-    leveldb::Slice db_value (reinterpret_cast<const char*>(&buffer[0]), buffer.size());
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+    leveldb::Slice db_value{reinterpret_cast<const char*>(&buffer[0]),
+                            buffer.size()};
 
     check(db_->Put(leveldb::WriteOptions(), db_key, db_value));
 }
 
-void
-persistence_leveldb::retrieve (es::storage& es)
+void persistence_leveldb::retrieve(es::storage& es)
 {
-    std::unique_ptr<leveldb::Iterator> iter (db_->NewIterator(leveldb::ReadOptions()));
+    std::unique_ptr<leveldb::Iterator> iter{
+        db_->NewIterator(leveldb::ReadOptions())};
 
     uint32_t start_key[2];
     start_key[0] = type_entity;
@@ -227,36 +224,34 @@ persistence_leveldb::retrieve (es::storage& es)
     end_key[0] = type_entity;
     end_key[1] = 0xffffffff;
 
-    leveldb::Slice start (reinterpret_cast<const char*>(start_key), sizeof(start_key));
-    leveldb::Slice end   (reinterpret_cast<const char*>(end_key), sizeof(end_key));
+    leveldb::Slice start{reinterpret_cast<const char*>(start_key),
+                         sizeof(start_key)};
+    leveldb::Slice end{reinterpret_cast<const char*>(end_key),
+                       sizeof(end_key)};
 
     for (iter->Seek(start);
          iter->Valid() && options_.comparator->Compare(iter->key(), end) <= 0;
-         iter->Next())
-    {
-        const leveldb::Slice value (iter->value());
-        if (value.empty())
-        {
+         iter->Next()) {
+        const leveldb::Slice value{iter->value()};
+        if (value.empty()) {
             continue;
         }
-        const leveldb::Slice key (iter->key());
-        const uint32_t entity (*reinterpret_cast<const uint32_t*>(key.data() + 4));
+        const leveldb::Slice key{iter->key()};
+        const uint32_t entity{
+            *reinterpret_cast<const uint32_t*>(key.data() + 4)};
 
-        es.deserialize(es.make(entity), { value.data(), value.data() + value.size() });
+        es.deserialize(es.make(entity),
+                       {value.data(), value.data() + value.size()});
     }
 }
 
-void
-persistence_leveldb::retrieve (es::storage& es, es::entity entity_id)
+void persistence_leveldb::retrieve(es::storage& es, es::entity entity_id)
 {
-
 }
 
-bool
-persistence_leveldb::is_available (es::entity entity_id)
+bool persistence_leveldb::is_available(es::entity entity_id)
 {
     return false;
 }
 
 } // namespace hexa
-

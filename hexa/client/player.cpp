@@ -18,7 +18,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "player.hpp"
 
 #include <cassert>
@@ -29,18 +29,20 @@
 
 using namespace boost::math::constants;
 
-namespace hexa {
+namespace hexa
+{
 
 player::player()
-    : position_ (0,0,0)
-    , position_fraction_ (0.5f, 0.5f, 0.5f)
-    , look_at_ (0.0f, pi<float>() * 0.5f)
-    , height_ (1.7f)
-    , velocity (0,0,0)
-    , active_slot (0)
-    , hotbar_needs_update (false)
-    , is_airborne (true)
-{ }
+    : position_(0, 0, 0)
+    , position_fraction_(0.5f, 0.5f, 0.5f)
+    , look_at_(0.0f, pi<float>() * 0.5f)
+    , height_(1.7f)
+    , velocity(0, 0, 0)
+    , active_slot(0)
+    , hotbar_needs_update(false)
+    , is_airborne(true)
+{
+}
 
 void player::move_to(const world_coordinates& pos, const vector& fraction)
 {
@@ -56,22 +58,26 @@ void player::look_at(const yaw_pitch& direction)
 yaw_pitch player::turn_head(const yaw_pitch& amount)
 {
     look_at_ += amount;
-    if (look_at_.x >  pi<float>()) look_at_.x -= 2. * pi<float>();
-    if (look_at_.x < -pi<float>()) look_at_.x += 2. * pi<float>();
+    if (look_at_.x > pi<float>())
+        look_at_.x -= 2. * pi<float>();
+    if (look_at_.x < -pi<float>())
+        look_at_.x += 2. * pi<float>();
 
-    float b (0.01f);
-    if (look_at_.y > pi<float>() - b) look_at_.y = pi<float>() - b;
-    if (look_at_.y < 0.0f + b       ) look_at_.y = 0.0f + b;
+    float b(0.01f);
+    if (look_at_.y > pi<float>() - b)
+        look_at_.y = pi<float>() - b;
+    if (look_at_.y < 0.0f + b)
+        look_at_.y = 0.0f + b;
 
     return look_at_;
 }
 
 void player::move(const vector& delta)
 {
-    vector no_z (delta.x, delta.y, 0);
+    vector no_z(delta.x, delta.y, 0);
 
     position_fraction_ += delta; // no_z;
-    vector3<int> quantize (floor(position_fraction_));
+    vector3<int> quantize(floor(position_fraction_));
     position_fraction_ -= quantize;
 
     assert(position_fraction_.x >= 0.f && position_fraction_.x < 1.f);
@@ -86,7 +92,7 @@ yaw_pitch player::head_angle() const
 
 yaw_pitch player::walk_angle() const
 {
-    yaw_pitch result (look_at_);
+    yaw_pitch result(look_at_);
     result.y = 0;
 
     return result;
@@ -98,4 +104,3 @@ float player::height() const
 }
 
 } // namespace hexa
-

@@ -17,9 +17,8 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <cstddef>
@@ -29,7 +28,8 @@
 #include <utility>
 #include <boost/optional.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Associative container for in a Least Recently Used cache.
  * Example:
@@ -57,43 +57,46 @@ cache.touch(8);
 cache.prune(2);
 
 // 'for_each' accesses all elements, newest to oldest.
-cache.for_each([](int k, std::string v){ std::cout << k << " -> " << v << std::endl; });
+cache.for_each([](int k, std::string v){ std::cout << k << " -> " << v <<
+std::endl; });
 // Prints:
 // 8 -> eight
 // 10 -> ten
 
 * @endcode */
-template <class key, class value>
+template <typename Key, typename Value>
 class lru_cache
 {
-    typedef std::pair<key, value> pair_t;
-    typedef std::list<pair_t>     list_t;
-    typedef std::unordered_map<key, typename list_t::iterator>   map_t;
+    typedef std::pair<Key, Value> pair_t;
+    typedef std::list<pair_t> list_t;
+    typedef std::unordered_map<Key, typename list_t::iterator> map_t;
 
-    list_t      list_;
-    map_t       map_;
-    size_t      size_;
+    list_t list_;
+    map_t map_;
+    size_t size_;
 
 public:
-    typedef key          key_type;    /**< The cache is indexed by this type */
-    typedef value        mapped_type; /**< The cache returns this type */
-    typedef pair_t       value_type;  /**<  */
-
-    typedef typename list_t::const_iterator  const_iterator;
+    typedef Key key_type;
+    typedef Value mapped_type;
+    typedef pair_t value_type;
+    
+    typedef typename list_t::const_iterator const_iterator;
 
 public:
     /** Construct an empty cache. */
-    lru_cache() : size_ (0) { }
+    lru_cache()
+        : size_{0}
+    {
+    }
 
     /** Prune the cache back to a given size.
      *  If the cache is larger than the maximum, the oldest entries
      *  will be deleted.
      * @post size() <= max_size
      * @param max_size  The maximum cache size */
-    void prune (size_t max_size)
+    void prune(size_t max_size)
     {
-        while (size_ > max_size)
-        {
+        while (size_ > max_size) {
             map_.erase(list_.back().first);
             list_.pop_back();
             --size_;
@@ -107,17 +110,15 @@ public:
      *  cache will be smaller than max_size after the function returns.
      * @param max_size  The maximum cache size
      * @param op        Only elements for which op(x) is true are pruned */
-    template <typename pred>
-    void prune_if (size_t max_size, pred op)
+    template <typename Pred>
+    void prune_if(size_t max_size, Pred op)
     {
         if (list_.empty())
             return;
 
-        auto i (std::prev(list_.end()));
-        while (size_ > max_size)
-        {
-            if (op(*i))
-            {
+        auto i = std::prev(list_.end());
+        while (size_ > max_size) {
+            if (op(*i)) {
                 map_.erase(i->first);
                 i = list_.erase(i);
                 --size_;
@@ -136,12 +137,11 @@ public:
      * @post size() <= max_size
      * @param max_size  The maximum cache size
      * @param on_remove Callback for removed elements */
-    template <class func>
-    void prune (size_t max_size, func on_remove)
+    template <typename Func>
+    void prune(size_t max_size, Func on_remove)
     {
-        while (size_ > max_size)
-        {
-            pair_t& tbr (list_.back());
+        while (size_ > max_size) {
+            pair_t& tbr = list_.back();
             on_remove(tbr.first, tbr.second);
             map_.erase(tbr.first);
             list_.pop_back();
@@ -158,9 +158,9 @@ public:
     }
 
     /** Mark an element as recently used. */
-    void touch (const key_type& k)
+    void touch(const key_type& k)
     {
-        auto found (map_.find(k));
+        auto found = map_.find(k);
         assert(found != map_.end());
         if (found != map_.end())
             list_.splice(list_.begin(), list_, found->second);
@@ -169,11 +169,10 @@ public:
     /** Fetch an element from the cache.
      *  If the key does not exist yet, a new empty element will be
      *  created. */
-    mapped_type& operator[] (const key_type& k)
+    mapped_type& operator[](const key_type& k)
     {
-        auto found (map_.find(k));
-        if (found == map_.end())
-        {
+        auto found = map_.find(k);
+        if (found == map_.end()) {
             list_.push_front(pair_t(k, mapped_type()));
             map_[k] = list_.begin();
             ++size_;
@@ -186,9 +185,9 @@ public:
     }
 
     /** Remove an element from the cache. */
-    void remove (const key_type& k)
+    void remove(const key_type& k)
     {
-        auto found (map_.find(k));
+        auto found = map_.find(k);
         if (found == map_.end())
             return;
 
@@ -197,10 +196,9 @@ public:
         --size_;
     }
 
-
     /** Count the number of elements for a given key.
      *  The returned value is always 0 or 1. */
-    size_t count (const key_type& k) const   { return map_.count(k); }
+    size_t count(const key_type& k) const { return map_.count(k); }
 
     /** Get the number of elements in the cache. */
     size_t size() const { return size_; }
@@ -209,27 +207,27 @@ public:
     bool empty() const { return size_ == 0; }
 
     /** Get an element from the cache without changing its age. */
-    mapped_type& get (const key_type& k) const
+    mapped_type& get(const key_type& k) const
     {
-        auto found (map_.find(k));
+        auto found = map_.find(k);
         if (found == map_.end())
             throw std::runtime_error("lru_cache::get: key not found");
 
         return found->second->second;
     }
 
-    boost::optional<mapped_type&> try_get (const key_type& k) const
+    boost::optional<mapped_type&> try_get(const key_type& k) const
     {
-        auto found (map_.find(k));
+        auto found = map_.find(k);
         if (found == map_.end())
             return boost::optional<mapped_type&>();
 
         return found->second->second;
     }
 
-    boost::optional<mapped_type&> try_get (const key_type& k)
+    boost::optional<mapped_type&> try_get(const key_type& k)
     {
-        auto found (map_.find(k));
+        auto found = map_.find(k);
         if (found == map_.end())
             return boost::optional<mapped_type&>();
 
@@ -238,8 +236,8 @@ public:
     }
 
     /** Call a function for every key-value pair in the cache. */
-    template <class func>
-    func for_each (func op) const
+    template <typename Func>
+    Func for_each(Func op) const
     {
         for (const pair_t& p : list_)
             op(p.first, p.second);
@@ -248,8 +246,7 @@ public:
     }
 
     const_iterator begin() const { return std::begin(list_); }
-    const_iterator end()   const { return std::end(list_);   }
+    const_iterator end() const { return std::end(list_); }
 };
 
 } // namespace hexa
-

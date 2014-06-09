@@ -19,7 +19,6 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <cmath>
@@ -27,35 +26,30 @@
 #include "vector3.hpp"
 #include "algorithm.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-inline
-std::vector<vector3<int>>
-voxel_raycast(vector from, vector to)
+inline std::vector<vector3<int>> voxel_raycast(vector from, vector to)
 {
     std::vector<vector3<int>> result;
     result.reserve(manhattan_distance(from, to) + 1);
 
     // This algorithm is a cleaned up version of the one found in PolyVox.
     // http://www.volumesoffun.com/
-    vector3<int> cur (floor(from)), 
-                 end (floor(to)),
-                 sig (signs(to - from));
+    vector3<int> cur(floor(from)), end(floor(to)), sig(signs(to - from));
 
-    vector delta (vector(1,1,1) / absolute(to - from));
-    vector min (floor(cur)), max (min + vector(1,1,1));
-    vector t (((from.x > to.x) ? (from.x - min.x) : (max.x - from.x)),
-              ((from.y > to.y) ? (from.y - min.y) : (max.y - from.y)),
-              ((from.z > to.z) ? (from.z - min.z) : (max.z - from.z)));
+    vector delta(vector(1, 1, 1) / absolute(to - from));
+    vector min(floor(cur)), max(min + vector(1, 1, 1));
+    vector t(((from.x > to.x) ? (from.x - min.x) : (max.x - from.x)),
+             ((from.y > to.y) ? (from.y - min.y) : (max.y - from.y)),
+             ((from.z > to.z) ? (from.z - min.z) : (max.z - from.z)));
 
     t /= absolute(to - from);
 
-    for(;;)
-    {
+    for (;;) {
         result.push_back(cur);
 
-        if (t.x <= t.y && t.x <= t.z)
-        {
+        if (t.x <= t.y && t.x <= t.z) {
             if (cur.x == end.x)
                 break;
 
@@ -63,17 +57,15 @@ voxel_raycast(vector from, vector to)
             cur.x += sig.x;
         }
 
-        else if (t.y <= t.z)
-        {
+        else if (t.y <= t.z) {
             if (cur.y == end.y)
                 break;
-            
+
             t.y += delta.y;
             cur.y += sig.y;
         }
 
-        else
-        {
+        else {
             if (cur.z == end.z)
                 break;
 
@@ -85,30 +77,25 @@ voxel_raycast(vector from, vector to)
 }
 
 template <class func>
-func
-voxel_raycast(vector from, vector to, func op)
+func voxel_raycast(vector from, vector to, func op)
 {
     // This algorithm is a cleaned up version of the one found in PolyVox.
     // http://www.volumesoffun.com/
-    vector3<int> cur (floor(from)), 
-                 end (floor(to)),
-                 sig (signs(to - from));
+    vector3<int> cur(floor(from)), end(floor(to)), sig(signs(to - from));
 
-    vector delta (vector(1,1,1) / absolute(to - from));
-    vector min (floor(cur)), max (min + vector(1,1,1));
-    vector t (((from.x > to.x) ? (from.x - min.x) : (max.x - from.x)),
-              ((from.y > to.y) ? (from.y - min.y) : (max.y - from.y)),
-              ((from.z > to.z) ? (from.z - min.z) : (max.z - from.z)));
+    vector delta(vector(1, 1, 1) / absolute(to - from));
+    vector min(floor(cur)), max(min + vector(1, 1, 1));
+    vector t(((from.x > to.x) ? (from.x - min.x) : (max.x - from.x)),
+             ((from.y > to.y) ? (from.y - min.y) : (max.y - from.y)),
+             ((from.z > to.z) ? (from.z - min.z) : (max.z - from.z)));
 
     t /= absolute(to - from);
 
-    for(;;)
-    {
+    for (;;) {
         if (op(cur))
             return op;
 
-        if (t.x <= t.y && t.x <= t.z)
-        {
+        if (t.x <= t.y && t.x <= t.z) {
             if (cur.x == end.x)
                 break;
 
@@ -116,17 +103,15 @@ voxel_raycast(vector from, vector to, func op)
             cur.x += sig.x;
         }
 
-        else if (t.y <= t.z)
-        {
+        else if (t.y <= t.z) {
             if (cur.y == end.y)
                 break;
-            
+
             t.y += delta.y;
             cur.y += sig.y;
         }
 
-        else
-        {
+        else {
             if (cur.z == end.z)
                 break;
 
@@ -136,20 +121,18 @@ voxel_raycast(vector from, vector to, func op)
     }
     return op;
 }
-inline
-std::vector<vector3<int>>
-dumbass_line(vector3<float> f, vector3<float> to)
+inline std::vector<vector3<int>> dumbass_line(vector3<float> f,
+                                              vector3<float> to)
 {
     std::vector<vector3<int>> result;
     result.emplace_back(floor(f));
 
-    int lim (10000 * distance(f, to));
-    vector3<double> from (f);
-    vector3<double> step ((to - f) / (double)lim);
-    for (int i (0); i < lim; ++i)
-    {
+    int lim(10000 * distance(f, to));
+    vector3<double> from(f);
+    vector3<double> step((to - f) / (double)lim);
+    for (int i(0); i < lim; ++i) {
         from += step;
-        vector3<int> a (floor(from));
+        vector3<int> a(floor(from));
         if (a != result.back())
             result.push_back(a);
     }
@@ -157,13 +140,12 @@ dumbass_line(vector3<float> f, vector3<float> to)
     return result;
 }
 
-inline
-std::vector<vector3<int>>
-dumbass_line(vector3<int> from, vector3<int> to)
+inline std::vector<vector3<int>> dumbass_line(vector3<int> from,
+                                              vector3<int> to)
 {
-    vector3<float> half (0.5f, 0.5f, 0.5f);
-    return dumbass_line(vector3<float>(from) + half, vector3<float>(to) + half);
+    vector3<float> half(0.5f, 0.5f, 0.5f);
+    return dumbass_line(vector3<float>(from) + half,
+                        vector3<float>(to) + half);
 }
 
 } // namespace hexa
-

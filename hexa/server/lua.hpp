@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 extern "C" {
@@ -41,7 +40,8 @@ extern "C" {
 #include <hexa/ray.hpp>
 #include "network.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class player;
 class server_entity_system;
@@ -51,77 +51,62 @@ class network;
 class lua
 {
 public:
-    lua (server_entity_system& entities, world& w);
+    lua(server_entity_system& entities, world& w);
     ~lua();
 
-    bool load (const boost::filesystem::path& script);
+    bool load(const boost::filesystem::path& script);
 
     std::string get_error() const;
 
-    static void
-    define_material(uint16_t material, const luabind::object& data);
+    static void define_material(uint16_t material,
+                                const luabind::object& data);
 
-    static int
-    define_component(const std::string& name, int type);
+    static int define_component(const std::string& name, int type);
 
-    static const luabind::object&
-    material_definition(uint16_t material);
+    static const luabind::object& material_definition(uint16_t material);
 
-    static void
-    on_authenticate_player(const luabind::object& callback);
+    static void on_authenticate_player(const luabind::object& callback);
 
-    static void
-    on_approach(const world_coordinates& p, unsigned int radius,
-                unsigned int radius_off, const luabind::object& callback);
+    static void on_approach(const world_coordinates& p, unsigned int radius,
+                            unsigned int radius_off,
+                            const luabind::object& callback);
 
-    static void
-    on_action(int type, const luabind::object& callback);
+    static void on_action(int type, const luabind::object& callback);
 
-    static void
-    on_stop_action(int type, const luabind::object& callback);
+    static void on_stop_action(int type, const luabind::object& callback);
 
-    static void
-    on_login(const luabind::object& callback);
+    static void on_login(const luabind::object& callback);
 
-    static void
-    on_component_change(int component_id, const luabind::object& callback);
+    static void on_component_change(int component_id,
+                                    const luabind::object& callback);
 
-    static void
-    on_console(const luabind::object& callback);
+    static void on_console(const luabind::object& callback);
 
+    static void change_block(const world_coordinates& p, uint16_t type);
 
-    static void
-    change_block(const world_coordinates& p, uint16_t type);
+    static void change_block_s(const world_coordinates& p,
+                               const std::string& type);
 
-    static void
-    change_block_s(const world_coordinates& p, const std::string& type);
+    static void place_block(const world_coordinates& p, uint16_t type);
 
-    static void
-    place_block(const world_coordinates& p, uint16_t type);
+    static void place_block_s(const world_coordinates& p,
+                              const std::string& type);
 
-    static void
-    place_block_s(const world_coordinates& p, const std::string& type);
+    static uint16_t get_block(const world_coordinates& p);
 
-    static uint16_t
-    get_block(const world_coordinates& p);
-
-    static luabind::object
-    raycast(const wfpos& origin, const yaw_pitch& dir, float range);
+    static luabind::object raycast(const wfpos& origin, const yaw_pitch& dir,
+                                   float range);
 
     static int material_id(const std::string& name);
 
-    static void
-    send_console_message(es::entity plr,
-                         const std::string& json);
+    static void send_console_message(es::entity plr, const std::string& json);
 
-    static void
-    broadcast_console_message(const std::string& json);
+    static void broadcast_console_message(const std::string& json);
 
-    static void
-    server_log(const std::string& msg);
+    static void server_log(const std::string& msg);
 
     template <class ret>
-    ret call (const std::string& func, ...)
+    ret call(const std::string& func, ...)
     {
         va_list va;
         return luabind::call_function<ret>(state_, func.c_str(), va);
@@ -136,7 +121,7 @@ public:
     static lua_State* state() { return state_; }
 
 public:
-    void player_logged_in (es::entity plr);
+    void player_logged_in(es::entity plr);
 
     void start_action(es::entity plr, uint8_t button, uint8_t slot,
                       yaw_pitch look, wfpos pos);
@@ -149,9 +134,9 @@ public:
                       const std::string& passwd);
 
     static std::array<uint16_t, 6>
-         find_textures (const std::vector<std::string>& textures);
+    find_textures(const std::vector<std::string>& textures);
 
-    void uglyhack (network*);
+    void uglyhack(network*);
     static network* net_;
 
 private:
@@ -164,15 +149,14 @@ private:
     static std::unordered_map<int, luabind::object> cb_on_place;
     static std::unordered_map<int, luabind::object> cb_on_remove;
     static std::unordered_map<int, luabind::object> material_definitions;
-    static std::list<luabind::object>               cb_on_login;
-    static std::list<luabind::object>               cb_console;
-    static luabind::object                          cb_authenticate_player;
+    static std::list<luabind::object> cb_on_login;
+    static std::list<luabind::object> cb_console;
+    static luabind::object cb_authenticate_player;
 
-    server_entity_system&   entities_;
+    server_entity_system& entities_;
 
     // hack
-    static world*           world_;
+    static world* world_;
 };
 
 } // namespace hexa
-

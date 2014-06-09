@@ -37,35 +37,32 @@ namespace fs = boost::filesystem;
 #include <sys/wait.h>
 #include <signal.h>
 
-namespace hexa {
-
-void
-zombie_handler (int code)
+namespace hexa
 {
-    //std::cout << "Child exited with code " << code << std::endl;
+
+void zombie_handler(int code)
+{
+    // std::cout << "Child exited with code " << code << std::endl;
 }
 
-pid_type
-start_process (const boost::filesystem::path &exe,
-               const std::vector<std::string>& args)
+pid_type start_process(const boost::filesystem::path& exe,
+                       const std::vector<std::string>& args)
 {
     if (!fs::exists(exe))
-        throw std::runtime_error((format("program file '%1%' does not exist") % exe.string()).str());
+        throw std::runtime_error((format("program file '%1%' does not exist")
+                                  % exe.string()).str());
 
-    auto pid (::fork());
-    if (pid == -1)
-    {
-        throw std::runtime_error((format("fork() failed for '%1%'") % exe.string()).str());
-    }
-    else if (pid == 0)
-    {
+    auto pid = ::fork();
+    if (pid == -1) {
+        throw std::runtime_error(
+            (format("fork() failed for '%1%'") % exe.string()).str());
+    } else if (pid == 0) {
         std::vector<char*> argv;
-        std::string filename (exe.string());
+        std::string filename(exe.string());
         argv.push_back(const_cast<char*>(filename.c_str())); // :(
 
-        for (auto& arg : args)
-        {
-            auto buf (new char[arg.size() + 1]);
+        for (auto& arg : args) {
+            auto buf(new char[arg.size() + 1]);
             std::copy(arg.begin(), arg.end(), buf);
             buf[arg.size()] = 0;
             argv.push_back(buf);
@@ -75,19 +72,16 @@ start_process (const boost::filesystem::path &exe,
         ::execv(exe.string().c_str(), &argv[0]);
 
         for (auto ptr : argv)
-            delete [] ptr;
+            delete[] ptr;
 
         throw std::runtime_error("execve() failed");
-    }
-    else
-    {
+    } else {
         ::signal(SIGCHLD, zombie_handler);
     }
     return pid;
 }
 
-bool
-terminate_process (pid_type id)
+bool terminate_process(pid_type id)
 {
     if (id.internal_ == 0)
         return false;
@@ -95,31 +89,30 @@ terminate_process (pid_type id)
     if (::kill(id.internal_, SIGTERM) == -1)
         return false;
 
-    int status (0);
+    int status = 0;
     ::waitpid(id.internal_, &status, 0);
     return true;
 }
 
-void
-kill_process (pid_type id)
+void kill_process(pid_type id)
 {
-    if (id.internal_ != 0)
-    {
+    if (id.internal_ != 0) {
         ::kill(id.internal_, SIGKILL);
-        int status (0);
+        
+        int status = 0;
         ::waitpid(id.internal_, &status, 0);
     }
 }
 
-}
+} // namespace hexa
 
 #elif defined(BOOST_WINDOWS_API)
 
-namespace hexa {
+namespace hexa
+{
 
-pid_type
-start_process (const boost::filesystem::path &exe,
-               const std::vector<std::string>& args)
+pid_type start_process(const boost::filesystem::path& exe,
+                       const std::vector<std::string>& args)
 {
     PROCESS_INFORMATION proc_info;
     ZeroMemory(&proc_info, sizeof(proc_info));
@@ -128,63 +121,60 @@ start_process (const boost::filesystem::path &exe,
     ZeroMemory(&start_info, sizeof(start_info));
     start_info.cb = sizeof(start_info);
 
-    std::string cmdline_params (exe.string());
-    for (auto& arg : args)
-    {
+    std::string cmdline_params(exe.string());
+    for (auto& arg : args) {
         cmdline_params.push_back(' ');
         cmdline_params += arg;
     }
     // Can't use c_str() here, add our own null terminator.
     cmdline_params.push_back(0);
 
-    auto launch (exe);
+    auto launch(exe);
     if (launch.extension() != ".exe")
         launch += ".exe";
 
     log_msg(launch.string());
-    if (!CreateProcess(launch.string().c_str(), &cmdline_params[0],
-                       nullptr, nullptr,
-                       FALSE, CREATE_BREAKAWAY_FROM_JOB, nullptr, nullptr,
-                       &start_info, &proc_info))
-    {
-        throw std::runtime_error((format("CreateProcess failed, error code %1%") % GetLastError()).str());
+    if (!CreateProcess(launch.string().c_str(), &cmdline_params[0], nullptr,
+                       nullptr, FALSE, CREATE_BREAKAWAY_FROM_JOB, nullptr,
+                       nullptr, &start_info, &proc_info)) {
+        throw std::runtime_error(
+            (format("CreateProcess failed, error code %1%") % GetLastError())
+                .str());
     }
 
     // Set up a Job, so the child process is ended after the parent
     // exits.
-    HANDLE job_obj (CreateJobObject(0, 0));
-    if (job_obj)
-    {
+    HANDLE job_obj(CreateJobObject(0, 0));
+    if (job_obj) {
         JOBOBJECT_EXTENDED_LIMIT_INFORMATION ext_info;
         ZeroMemory(&ext_info, sizeof(ext_info));
         ext_info.BasicLimitInformation.LimitFlags
-                = 0x00002000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
+            = 0x00002000; // JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE
 
         if (SetInformationJobObject(job_obj, JobObjectExtendedLimitInformation,
-                                    &ext_info, sizeof(ext_info)) == 0)
-        {
-            throw std::runtime_error((format("SetInformationJobObject failed, error code %1%") % GetLastError()).str());
+                                    &ext_info, sizeof(ext_info)) == 0) {
+            throw std::runtime_error(
+                (format("SetInformationJobObject failed, error code %1%")
+                 % GetLastError()).str());
         }
-        if (AssignProcessToJobObject(job_obj, proc_info.hProcess) == 0)
-        {
-            throw std::runtime_error((format("AssignProcessToJobObject failed, error code %1%") % GetLastError()).str());
+        if (AssignProcessToJobObject(job_obj, proc_info.hProcess) == 0) {
+            throw std::runtime_error(
+                (format("AssignProcessToJobObject failed, error code %1%")
+                 % GetLastError()).str());
         }
-    }
-    else
-    {
+    } else {
         log_msg("Cannot create JobObject, child process might not exit.");
     }
 
     return proc_info;
 }
 
-bool
-terminate_process (pid_type id)
+bool terminate_process(pid_type id)
 {
     GenerateConsoleCtrlEvent(CTRL_BREAK_EVENT, id.dwProcessId);
     return CloseHandle(id.hThread) && CloseHandle(id.hProcess);
 }
 
-}
+} // namespace hexa
 
 #endif

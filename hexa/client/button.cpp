@@ -18,33 +18,36 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "button.hpp"
 #include "event.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 template <typename t>
-void center (t& obj)
+void center(t& obj)
 {
-    auto rect (obj.getLocalBounds());
+    auto rect(obj.getLocalBounds());
     obj.setOrigin((int)rect.width * 0.5, (int)rect.height * 0.5);
 }
 
 template <typename t>
-void align_right (t& obj, int w)
+void align_right(t& obj, int w)
 {
-    auto rect (obj.getLocalBounds());
+    auto rect(obj.getLocalBounds());
     obj.setOrigin(rect.width - w, (int)rect.height * 0.5);
 }
 
 button::button(const std::wstring& label)
     : button(0, 0, label)
-{ }
+{
+}
 
 button::button(int x, int y, const std::wstring& label)
-    : is_hl_ (false)
-    , x_ (x), y_ (y)
+    : is_hl_(false)
+    , x_(x)
+    , y_(y)
 {
     label_.setString(label);
     label_.setFont(*fonts("armata"));
@@ -58,15 +61,16 @@ button::button(int x, int y, const std::wstring& label)
     highlight_.setTexture(*images("button_hl"));
     highlight_.setPosition(x, y);
 
-    //center(label_);
+    // center(label_);
     align_right(label_, 140);
     center(normal_);
     center(highlight_);
 }
 
-void button::set_position (int x, int y)
+void button::set_position(int x, int y)
 {
-    x_ = x; y_ = y;
+    x_ = x;
+    y_ = y;
     label_.setPosition(x, y - 2);
     normal_.setPosition(x, y);
     highlight_.setPosition(x, y);
@@ -74,35 +78,32 @@ void button::set_position (int x, int y)
 
 void button::draw(sf::RenderWindow& win)
 {
-    //win.draw(is_hl_ ? highlight_ : normal_);
-    if (is_hl_) win.draw(highlight_);
+    // win.draw(is_hl_ ? highlight_ : normal_);
+    if (is_hl_)
+        win.draw(highlight_);
     win.draw(label_);
 }
 
-void button::process_event (const event& ev)
+void button::process_event(const event& ev)
 {
-    switch (ev.type)
-    {
-        case event::mouse_move_abs:
-            {
-            sf::Vector2f fmp (ev.xy.x, ev.xy.y);
-            bool hl (normal_.getGlobalBounds().contains(fmp));
-            if (hl != is_hl_)
-            {
-                if (hl)
-                    on_mouse_enter();
-                else
-                    on_mouse_leave();
-            }
-            }
-            break;
+    switch (ev.type) {
+    case event::mouse_move_abs: {
+        sf::Vector2f fmp(ev.xy.x, ev.xy.y);
+        bool hl(normal_.getGlobalBounds().contains(fmp));
+        if (hl != is_hl_) {
+            if (hl)
+                on_mouse_enter();
+            else
+                on_mouse_leave();
+        }
+    } break;
 
-        case event::mouse_button_down:
-            if (is_hl_)
-                on_clicked();
+    case event::mouse_button_down:
+        if (is_hl_)
+            on_clicked();
 
-        default:
-            ;
+    default:
+        ;
     }
 }
 
@@ -119,4 +120,3 @@ void button::on_mouse_leave()
 }
 
 } // namespace hexa
-

@@ -18,10 +18,11 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "player.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 player::player()
     : conn(nullptr)
@@ -37,5 +38,4 @@ player::~player()
 {
 }
 
-}
-
+} // namespace hexa

@@ -18,17 +18,20 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "clock.hpp"
 
 #include <boost/chrono.hpp>
 
 using namespace boost::chrono;
 
-namespace hexa {
-namespace clock {
+namespace hexa
+{
+namespace clock
+{
 
-namespace {
+namespace
+{
 
 steady_clock::time_point start_;
 int32_t adjustment_;
@@ -55,6 +58,5 @@ clientclock_t time()
 {
     return elapsed_() + adjustment_;
 }
-
-}} // namespace hexa::clock
-
+}
+} // namespace hexa::clock

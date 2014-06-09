@@ -35,14 +35,15 @@
 #include "texture.hpp"
 #include "vbo.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-typedef vertex_4< vtx_xyz<float>,     // Position
-                  vtx_uv<float>,      // Texture coordinates
-                  vtx_rgb<uint8_t>,   // RGB light
-                  vtx_padding<1>>     // Round to 8 bytes
+typedef vertex_4<vtx_xyz<float>,   // Position
+                 vtx_uv<float>,    // Texture coordinates
+                 vtx_rgb<uint8_t>, // RGB light
+                 vtx_padding<1>>   // Round to 8 bytes
 
-                  ogl2_terrain_vertex;
+    ogl2_terrain_vertex;
 
 class sfml_ogl2 : public sfml
 {
@@ -68,14 +69,12 @@ public:
     void load_textures(const std::vector<std::string>& name_list);
 
 protected:
-    virtual std::string gl_id() const override
-        { return "gl2"; }
+    virtual std::string gl_id() const override { return "gl2"; }
 
 private:
     sf::Image temp_img_;
-    texture   texture_atlas_;
-    bool      textures_ready_;
+    texture texture_atlas_;
+    bool textures_ready_;
 };
 
 } // namespace hexa
-

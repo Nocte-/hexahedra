@@ -23,18 +23,17 @@
 
 #include <utf8.h>
 
-namespace hexa {
+namespace hexa
+{
 
-std::string
-utf32_to_utf8 (const std::u32string& in)
+std::string utf32_to_utf8(const std::u32string& in)
 {
     std::string result;
     utf8::utf32to8(in.begin(), in.end(), std::back_inserter(result));
     return result;
 }
 
-std::u32string
-utf8_to_utf32 (const std::string& in)
+std::u32string utf8_to_utf32(const std::string& in)
 {
     std::u32string result;
     utf8::utf8to32(in.begin(), in.end(), std::back_inserter(result));

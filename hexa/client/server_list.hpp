@@ -19,26 +19,26 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <cstdint>
 #include <string>
 #include <vector>
 
-namespace hexa {
+namespace hexa
+{
 
 struct server_info
 {
-    std::string     host;
-    uint16_t        port;
-    std::string     name;
-    std::string     desc;
-    std::string     icon;
-    std::string     screenshot;
+    std::string host;
+    uint16_t port;
+    std::string name;
+    std::string desc;
+    std::string icon;
+    std::string screenshot;
 };
 
 std::vector<server_info> get_server_list(const std::string& json_uri);
 
 } // namespace hexa
-

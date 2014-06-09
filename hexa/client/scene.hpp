@@ -33,7 +33,8 @@
 #include "terrain_mesher_i.hpp"
 #include "occlusion_query.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class main_game;
 class surface_data;
@@ -47,15 +48,33 @@ private:
     // start out undefined.
     struct chunk_data
     {
-        gl::vbo             opaque;
-        gl::vbo             transparent;
+        gl::vbo opaque;
+        gl::vbo transparent;
         gl::occlusion_query occ_qry;
 
 #if defined(_MSC_VER)
-        chunk_data() { }
-        chunk_data(gl::vbo&& o, gl::vbo&& t, gl::occlusion_query& q) :opaque(std::move(o)), transparent(std::move(t)), occ_qry(std::move(q)) { }
-        chunk_data(chunk_data&& m) : opaque(std::move(m.opaque)), transparent(std::move(m.transparent)), occ_qry(std::move(occ_qry)) { }
-        chunk_data& operator=(chunk_data&& m) { if (&m != this) { opaque = std::move(m.opaque); transparent = std::move(m.transparent); occ_qry = std::move(occ_qry); } return *this; }
+        chunk_data() {}
+        chunk_data(gl::vbo&& o, gl::vbo&& t, gl::occlusion_query& q)
+            : opaque(std::move(o))
+            , transparent(std::move(t))
+            , occ_qry(std::move(q))
+        {
+        }
+        chunk_data(chunk_data&& m)
+            : opaque(std::move(m.opaque))
+            , transparent(std::move(m.transparent))
+            , occ_qry(std::move(occ_qry))
+        {
+        }
+        chunk_data& operator=(chunk_data&& m)
+        {
+            if (&m != this) {
+                opaque = std::move(m.opaque);
+                transparent = std::move(m.transparent);
+                occ_qry = std::move(occ_qry);
+            }
+            return *this;
+        }
 #endif
     };
 
@@ -68,102 +87,89 @@ public:
     scene(main_game& g);
     ~scene();
 
-    void
-    view_distance (size_t distance);
+    void view_distance(size_t distance);
 
-    size_t
-    view_distance () const
+    size_t view_distance() const { return terrain_.view_radius(); }
+
+    void set_chunk_offset(chunk_coordinates new_offset)
     {
-        return terrain_.view_radius();
+        chunk_offset_ = new_offset;
     }
-	
-	void set_chunk_offset(chunk_coordinates new_offset)
-	{
-		chunk_offset_ = new_offset;
-	}
 
-    void
-    move_camera_to (chunk_coordinates pos);
+    void move_camera_to(chunk_coordinates pos);
 
-    void
-    set (chunk_coordinates pos, const surface_data& surface, const light_data& light);
+    void set(chunk_coordinates pos, const surface_data& surface,
+             const light_data& light);
 
-    void
-    set_coarse_height (map_coordinates pos, chunk_height h, chunk_height old_height);
+    void set_coarse_height(map_coordinates pos, chunk_height h,
+                           chunk_height old_height);
 
-    void
-    pre_render();
+    void pre_render();
 
-    void
-    post_render();
+    void post_render();
 
 public:
     template <typename func>
-    void
-    for_each_opaque_vbo (func op) const
+    void for_each_opaque_vbo(func op) const
     {
-        terrain_.for_each([&](const dsmap::value_type& info)
-        {
+        terrain_.for_each([&](const dsmap::value_type& info) {
             if (info.second.opaque)
                 op(info.first, info.second.opaque);
         });
     }
 
     template <typename func>
-    void
-    for_each_transparent_vbo (func op) const
+    void for_each_transparent_vbo(func op) const
     {
-        terrain_.for_each_reverse([&](const dsmap::value_type& info)
-        {
+        terrain_.for_each_reverse([&](const dsmap::value_type& info) {
             if (info.second.transparent)
                 op(info.first, info.second.transparent);
         });
     }
 
     template <typename func>
-    void
-    for_each_occlusion_query (func op)
+    void for_each_occlusion_query(func op)
     {
-        terrain_.for_each([&](dsmap::value_type& info)
-        {
+        terrain_.for_each([&](dsmap::value_type& info) {
             if (info.second.occ_qry)
                 op(info.first, info.second.occ_qry);
         });
     }
 
 private:
-    void
-    chunk_became_visible (chunk_coordinates pos);
+    void chunk_became_visible(chunk_coordinates pos);
 
-    void
-    make_occlusion_query (chunk_coordinates pos);
+    void make_occlusion_query(chunk_coordinates pos);
 
 private:
     struct finished_mesh
     {
-        chunk_coordinates                   pos;
-        std::unique_ptr<terrain_mesher_i>   opaque;
-        std::unique_ptr<terrain_mesher_i>   transparent;
+        chunk_coordinates pos;
+        std::unique_ptr<terrain_mesher_i> opaque;
+        std::unique_ptr<terrain_mesher_i> transparent;
 
 #if defined(_MSC_VER)
-        finished_mesh() { }
+        finished_mesh() {}
 
-        finished_mesh(chunk_coordinates p, std::unique_ptr<terrain_mesher_i>&& o, std::unique_ptr<terrain_mesher_i>&& t)
+        finished_mesh(chunk_coordinates p,
+                      std::unique_ptr<terrain_mesher_i>&& o,
+                      std::unique_ptr<terrain_mesher_i>&& t)
             : pos(p)
             , opaque(std::move(o))
             , transparent(std::move(t))
-        { }
+        {
+        }
 
         finished_mesh(finished_mesh&& m)
             : pos(m.pos)
             , opaque(std::move(m.opaque))
             , transparent(std::move(m.transparent))
-        { }
-
-        finished_mesh& operator= (finished_mesh&& m)
         {
-            if (&m != this)
-            {
+        }
+
+        finished_mesh& operator=(finished_mesh&& m)
+        {
+            if (&m != this) {
                 pos = m.pos;
                 opaque = std::move(m.opaque);
                 transparent = std::move(m.transparent);
@@ -173,29 +179,25 @@ private:
 #endif
     };
 
-    finished_mesh
-    build_mesh (chunk_coordinates pos,
-                const surface_data& surface,
-                const light_data& light) const;
+    finished_mesh build_mesh(chunk_coordinates pos,
+                             const surface_data& surface,
+                             const light_data& light) const;
 
-    void
-    place_finished_mesh (const finished_mesh& m);
+    void place_finished_mesh(const finished_mesh& m);
 
-    void
-    request_chunk_from_server (chunk_coordinates pos) const;
+    void request_chunk_from_server(chunk_coordinates pos) const;
 
 private:
-    main_game&  game_;
-    dsmap       terrain_;
-    threadpool  threads_;
-	chunk_coordinates	chunk_offset_;
+    main_game& game_;
+    dsmap terrain_;
+    threadpool threads_;
+    chunk_coordinates chunk_offset_;
 
-    std::array<std::vector<world_vector>, 6>    edge_of_view_;
+    std::array<std::vector<world_vector>, 6> edge_of_view_;
 
-    std::mutex                              pending_lock_;
-    std::list<std::future<finished_mesh>>   pending_;
-    std::list<chunk_data>                   awaiting_cleanup_;
+    std::mutex pending_lock_;
+    std::list<std::future<finished_mesh>> pending_;
+    std::list<chunk_data> awaiting_cleanup_;
 };
 
 } // namespace hexa
-

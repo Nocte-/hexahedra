@@ -20,17 +20,16 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "world_subsection.hpp"
 #include <hexa/surface.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Initialize the lookup tables. */
-void
-init_surface_extraction();
+void init_surface_extraction();
 
 /** Find all potentially visible opaque faces in a chunk.
  *  If two solid blocks are right next to each other, the two touching
@@ -43,8 +42,7 @@ init_surface_extraction();
  * @param terrain  The chunk to determine the surface of, with its
  *                 six immediate neighboring chunks
  * @return The potentially visible surface */
-surface
-extract_opaque_surface (const world_subsection_read& terrain);
+surface extract_opaque_surface(const world_subsection_read& terrain);
 
 /** Find all potentially visible transparent faces in a chunk.
  *  If two solid blocks are right next to each other, the two touching
@@ -57,8 +55,6 @@ extract_opaque_surface (const world_subsection_read& terrain);
  * @param terrain  The chunk to determine the surface of, with its
  *                 six immediate neighboring chunks
  * @return The potentially visible surface */
-surface
-extract_transparent_surface (const world_subsection_read& terrain);
+surface extract_transparent_surface(const world_subsection_read& terrain);
 
 } // namespace hexa
-

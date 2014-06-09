@@ -19,25 +19,26 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
 
 #ifdef __MINGW32__
 
-namespace std {
-string to_string (int i);
+namespace std
+{
+string to_string(int i);
 }
 
 #endif
 
-namespace hexa {
+namespace hexa
+{
 
 #ifdef NDEBUG
-#  define trace(...) ((void)0)
+#define trace(...) ((void)0)
 #else
-#  define trace(...) (trace_impl(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__))
+#define trace(...) (trace_impl(__FUNCTION__, __FILE__, __LINE__, __VA_ARGS__))
 
 void trace_impl(const char* func, const char* file, unsigned int line,
                 const std::string& msg);
@@ -53,58 +54,59 @@ void trace_impl_s(const char* func, const char* file, unsigned int line,
                   const std::string& msg, const std::string& a,
                   const std::string& b, const std::string& c);
 
-template <typename ta> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                  const std::string& msg, const ta& a)
+template <typename ta>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const ta& a)
 {
     trace_impl_s(func, file, line, msg, std::to_string(a));
 }
 
-template <> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const std::string& a)
+template <>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const std::string& a)
 {
     trace_impl_s(func, file, line, msg, a);
 }
 
-template <typename ta, typename tb> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const ta& a, const tb& b)
+template <typename ta, typename tb>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const ta& a, const tb& b)
 {
     trace_impl_s(func, file, line, msg, std::to_string(a), std::to_string(b));
 }
 
-template <> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const std::string& a, const std::string& b)
+template <>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const std::string& a,
+                       const std::string& b)
 {
     trace_impl_s(func, file, line, msg, a, b);
 }
 
-template <typename tb> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const std::string& a, const tb& b)
+template <typename tb>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const std::string& a,
+                       const tb& b)
 {
     trace_impl_s(func, file, line, msg, a, std::to_string(b));
 }
 
-template <typename ta> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const ta& a, const std::string& b)
+template <typename ta>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const ta& a,
+                       const std::string& b)
 {
     trace_impl_s(func, file, line, msg, std::to_string(a), b);
 }
 
-template <typename ta, typename tb, typename tc> inline
-void trace_impl(const char* func, const char* file, unsigned int line,
-                const std::string& msg, const ta& a, const tb& b, const tc& c)
+template <typename ta, typename tb, typename tc>
+inline void trace_impl(const char* func, const char* file, unsigned int line,
+                       const std::string& msg, const ta& a, const tb& b,
+                       const tc& c)
 {
     trace_impl_s(func, file, line, msg, std::to_string(a), std::to_string(b),
                  std::to_string(c));
 }
-
-
-
 
 #endif
 

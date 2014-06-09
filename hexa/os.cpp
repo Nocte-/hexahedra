@@ -18,7 +18,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "os.hpp"
 
 #include <cstdlib>
@@ -26,17 +26,17 @@
 #include <boost/format.hpp>
 
 #if (defined(HEXAHEDRA_LINUX))
-#  include <unistd.h>
-#  include <sys/types.h>
-#  include <paths.h>
-#  include <pwd.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <paths.h>
+#include <pwd.h>
 
-#elif (defined(HEXAHEDRA_WINDOWS))
+#elif(defined(HEXAHEDRA_WINDOWS))
 
 #include <windows.h>
 
-#elif (defined(HEXAHEDRA_MACOS))
-#  include <unistd.h>
+#elif(defined(HEXAHEDRA_MACOS))
+#include <unistd.h>
 
 #endif
 
@@ -45,7 +45,8 @@
 namespace fs = boost::filesystem;
 using boost::format;
 
-namespace hexa {
+namespace hexa
+{
 
 fs::path app_user_dir()
 {
@@ -56,32 +57,29 @@ fs::path app_user_dir()
 
 #if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
 
-    static const char* subdir (".hexahedra");
-    auto env (::getenv("HOME"));
-    if (env)
-    {
+    static const char* subdir = ".hexahedra";
+    auto env = ::getenv("HOME");
+    if (env) {
         result = fs::path(env) / subdir;
-    }
-    else
-    {
+    } else {
         // No $HOME set, fall back to the home dir from the passwd file.
-        struct passwd* pw (::getpwuid(::getuid()));
+        struct passwd* pw = ::getpwuid(::getuid());
         result = fs::path(pw->pw_dir) / subdir;
     }
 
-#elif (defined(HEXAHEDRA_WINDOWS))
+#elif(defined(HEXAHEDRA_WINDOWS))
 
     // Not using SHGet(Known)FolderPath here because of MinGW.
 
-    auto env (::getenv("APPDATA"));
+    auto env = ::getenv("APPDATA");
     if (!env)
         throw std::runtime_error("%APPDATA% not set");
 
     result = fs::path(env) / "Hexahedra";
 
-#elif (defined(HEXAHEDRA_MACOS))
+#elif(defined(HEXAHEDRA_MACOS))
 
-    auto env (::getenv("HOME"));
+    auto env = ::getenv("HOME");
     if (!env)
         throw std::runtime_error("$HOME not set");
 
@@ -101,26 +99,29 @@ fs::path executable_path()
 #if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
 
     char buf[1024];
-    int count (::readlink("/proc/self/exe", buf, sizeof(buf)));
+    int count = ::readlink("/proc/self/exe", buf, sizeof(buf));
     if (count < 0)
         throw std::runtime_error("readlink() failed on /proc/self/exe");
 
     buf[count] = 0;
     return buf;
 
-#elif (defined(HEXAHEDRA_WINDOWS))
+#elif(defined(HEXAHEDRA_WINDOWS))
 
     char buf[1024];
-    auto len (::GetModuleFileName(NULL, buf, sizeof(buf)));
+    auto len = ::GetModuleFileName(NULL, buf, sizeof(buf));
     if (len == 0 || len >= sizeof(buf))
-        throw std::runtime_error((format("GetModuleFileName failed, error code %1%") % GetLastError()).str());
+        throw std::runtime_error(
+            (format("GetModuleFileName failed, error code %1%")
+             % GetLastError()).str());
 
     buf[len] = 0;
     return buf;
 
 #else
 
-    I have no idea how to fetch the executable's' path on your platform, sorry.
+    I have no idea how to fetch the executable 's' path on your platform,
+        sorry.
 
 #endif
 }
@@ -129,7 +130,7 @@ fs::path temp_dir()
 {
 #if (defined(HEXAHEDRA_LINUX) || defined(HEXAHEDRA_BSD))
 
-    auto env (::getenv("TMPDIR"));
+    auto env = ::getenv("TMPDIR");
     if (env)
         return env;
 
@@ -138,12 +139,14 @@ fs::path temp_dir()
 
     return _PATH_TMP;
 
-#elif (defined(HEXAHEDRA_WINDOWS))
+#elif(defined(HEXAHEDRA_WINDOWS))
 
     char buf[MAX_PATH + 1];
-    auto len (::GetTempPath(sizeof(buf), buf));
+    auto len = ::GetTempPath(sizeof(buf), buf);
     if (len == 0 || len >= sizeof(buf))
-        throw std::runtime_error((format("GetModuleFileName failed, error code %1%") % GetLastError()).str());
+        throw std::runtime_error(
+            (format("GetModuleFileName failed, error code %1%")
+             % GetLastError()).str());
 
     return buf;
 
@@ -153,4 +156,3 @@ fs::path temp_dir()
 }
 
 } // namespace hexa
-

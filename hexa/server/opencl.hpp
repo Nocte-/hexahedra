@@ -19,15 +19,16 @@
 //
 // Copyright (C) 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-namespace cl {
-    class Context;
-    class Device;
+namespace cl
+{
+class Context;
+class Device;
 }
 
-namespace hexa {
+namespace hexa
+{
 
 void init_opencl();
 
@@ -38,4 +39,3 @@ cl::Context& opencl_context();
 cl::Device& opencl_device();
 
 } // namespace hexa
-

@@ -19,39 +19,41 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <deque>
 #include <hexa/basic_types.hpp>
 #include <hexa/pos_dir.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class visibility_test : public pos_dir<chunk_coordinates>
 {
 public:
-    enum state_t
+    enum state_t { unknown, pending_query, processing, visible, occluded };
+
+    visibility_test(const chunk_coordinates& position, direction_type side,
+                    state_t status_ = pending_query)
+        : pos_dir(position, side)
+        , status(status_)
     {
-        unknown, pending_query, processing, visible, occluded
-    };
+    }
 
-    visibility_test (const chunk_coordinates& position, 
-                     direction_type side,
-                     state_t status_ = pending_query)
-        : pos_dir (position, side), status (status_)
-    { }
+    bool operator==(const chunk_coordinates& compare) const
+    {
+        return pos == compare;
+    }
 
-    bool operator== (const chunk_coordinates& compare) const
-        { return pos == compare; }
+    bool operator==(const visibility_test& compare) const
+    {
+        return pos == compare.pos && dir == compare.dir;
+    }
 
-    bool operator== (const visibility_test& compare) const
-        { return pos == compare.pos && dir == compare.dir; }
-
-    state_t             status;
+    state_t status;
 };
 
 typedef std::deque<visibility_test> visibility_tests;
 
 } // namespace hexa
-

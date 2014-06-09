@@ -18,7 +18,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "resource_manager.hpp"
 
 #include <cassert>
@@ -27,59 +27,83 @@
 
 using namespace boost::filesystem;
 
-namespace hexa {
+namespace hexa
+{
 
 extern boost::program_options::variables_map global_settings;
 
-path
-resource_path (resource_type type)
+path resource_path(resource_type type)
 {
-    path base (global_settings["datadir"].as<std::string>());
+    path base(global_settings["datadir"].as<std::string>());
 
-    switch(type)
-    {
-    case res_block_texture: base /= "blocks"; break;
-    case res_model:         base /= "models"; break;
-    case res_texture:       base /= "textures"; break;
-    case res_image:         base /= "img"; break;
-    case res_icon:          base /= "icons"; break;
-    case res_sound_fx:      base /= "sfx"; break;
-    case res_music:         base /= "music"; break;
-    case res_ui:            base /= "ui"; break;
-    case res_font:          base /= "fonts"; break;
-    case res_shader:        base /= "shaders"; break;
-    default: assert(false);
+    switch (type) {
+    case res_block_texture:
+        base /= "blocks";
+        break;
+    case res_model:
+        base /= "models";
+        break;
+    case res_texture:
+        base /= "textures";
+        break;
+    case res_image:
+        base /= "img";
+        break;
+    case res_icon:
+        base /= "icons";
+        break;
+    case res_sound_fx:
+        base /= "sfx";
+        break;
+    case res_music:
+        base /= "music";
+        break;
+    case res_ui:
+        base /= "ui";
+        break;
+    case res_font:
+        base /= "fonts";
+        break;
+    case res_shader:
+        base /= "shaders";
+        break;
+    default:
+        assert(false);
     };
 
     return base;
 }
 
-std::vector<std::string>
-resource_extensions (resource_type type)
+std::vector<std::string> resource_extensions(resource_type type)
 {
-    switch(type)
-    {
-    case res_block_texture: return {".png"};
-    case res_model:         return {".iqm"};
+    switch (type) {
+    case res_block_texture:
+        return {".png"};
+    case res_model:
+        return {".iqm"};
     case res_texture:
     case res_image:
-    case res_icon:          return {".png"};
+    case res_icon:
+        return {".png"};
     case res_sound_fx:
-    case res_music:         return {".ogg", ".mp3"};
-    case res_ui:            return {".png"};
-    case res_font:          return {".ttf", ".otf"};
-    case res_shader:        return {""};
-    default: assert(false);
+    case res_music:
+        return {".ogg", ".mp3"};
+    case res_ui:
+        return {".png"};
+    case res_font:
+        return {".ttf", ".otf"};
+    case res_shader:
+        return {""};
+    default:
+        assert(false);
     };
-    return { };
+    return {};
 }
 
-path
-resource_file (resource_type type, const std::string& name)
+path resource_file(resource_type type, const std::string& name)
 {
-    for (auto& ext : resource_extensions(type))
-    {
-        path file (resource_path(type) / (name + ext));
+    for (auto& ext : resource_extensions(type)) {
+        path file(resource_path(type) / (name + ext));
         if (exists(file))
             return file;
     }
@@ -88,4 +112,3 @@ resource_file (resource_type type, const std::string& name)
 }
 
 } // namespace hexa
-

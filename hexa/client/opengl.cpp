@@ -18,79 +18,83 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "opengl.hpp"
 
 #include <hexa/log.hpp>
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 void check_error(const char* file, unsigned int line)
 {
-    auto errorCode (glGetError());
+    auto errorCode(glGetError());
 
     if (errorCode == GL_NO_ERROR)
         return;
 
-    std::string error ("unknown error");
+    std::string error("unknown error");
     std::string description;
 
-    switch (errorCode)
-    {
-        case GL_INVALID_ENUM:
-            return; // too many false positives on virtualbox
-            error = "GL_INVALID_ENUM";
-            description = "an unacceptable value has been specified for an enumerated argument";
-            break;
+    switch (errorCode) {
+    case GL_INVALID_ENUM:
+        return; // too many false positives on virtualbox
+        error = "GL_INVALID_ENUM";
+        description = "an unacceptable value has been specified for an "
+                      "enumerated argument";
+        break;
 
-        case GL_INVALID_VALUE:
-            error = "GL_INVALID_VALUE";
-            description = "a numeric argument is out of range";
-            break;
+    case GL_INVALID_VALUE:
+        error = "GL_INVALID_VALUE";
+        description = "a numeric argument is out of range";
+        break;
 
-        case GL_INVALID_OPERATION:
-            error = "GL_INVALID_OPERATION";
-            description = "the specified operation is not allowed in the current state";
-            break;
+    case GL_INVALID_OPERATION:
+        error = "GL_INVALID_OPERATION";
+        description
+            = "the specified operation is not allowed in the current state";
+        break;
 
-        case GL_INVALID_FRAMEBUFFER_OPERATION:
-            error = "GL_INVALID_FRAMEBUFFER_OPERATION";
-            description = "the framebuffer object is not complete";
-            break;
+    case GL_INVALID_FRAMEBUFFER_OPERATION:
+        error = "GL_INVALID_FRAMEBUFFER_OPERATION";
+        description = "the framebuffer object is not complete";
+        break;
 
-        case GL_OUT_OF_MEMORY:
-            error = "GL_OUT_OF_MEMORY";
-            description = "there is not enough memory left to execute the command";
-            break;
+    case GL_OUT_OF_MEMORY:
+        error = "GL_OUT_OF_MEMORY";
+        description = "there is not enough memory left to execute the command";
+        break;
 
-        case GL_STACK_UNDERFLOW:
-            error = "GL_STACK_UNDERFLOW";
-            description = "an attempt has been made to perform an operation that would cause an internal stack to underflow";
-            break;
+    case GL_STACK_UNDERFLOW:
+        error = "GL_STACK_UNDERFLOW";
+        description = "an attempt has been made to perform an operation that "
+                      "would cause an internal stack to underflow";
+        break;
 
-        case GL_STACK_OVERFLOW:
-            error = "GL_STACK_OVERFLOW";
-            description = "an attempt has been made to perform an operation that would cause an internal stack to overflow";
-            break;
+    case GL_STACK_OVERFLOW:
+        error = "GL_STACK_OVERFLOW";
+        description = "an attempt has been made to perform an operation that "
+                      "would cause an internal stack to overflow";
+        break;
 
-        default:
-            ;
+    default:
+        ;
     }
 
     log_msg("An OpenGL call failed in %1% line %2%:", file, line);
     log_msg("%1%, %2%: %3%", errorCode, error, description);
 }
 
-void cube_face (float size, direction_type d, float grow)
+void cube_face(float size, direction_type d, float grow)
 {
     glBegin(GL_QUADS);
 
-    float zero (-grow);
+    float zero(-grow);
     size += grow;
 
-    switch (d)
-    {
+    switch (d) {
     case dir_east:
         glVertex3f(size, size, zero);
         glVertex3f(size, size, size);
@@ -131,17 +135,16 @@ void cube_face (float size, direction_type d, float grow)
         glVertex3f(size, size, zero);
         glVertex3f(size, zero, zero);
         break;
-
     }
     glEnd();
 }
 
-void box (const aabb<vector>& box)
+void box(const aabb<vector>& box)
 {
     glBegin(GL_QUADS);
 
-    const vector& a (box.first);
-    const vector& b (box.second);
+    const vector& a(box.first);
+    const vector& b(box.second);
 
     glVertex3f(b.x, b.y, a.z);
     glVertex3f(b.x, b.y, b.z);
@@ -175,6 +178,5 @@ void box (const aabb<vector>& box)
 
     glEnd();
 }
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

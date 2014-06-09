@@ -25,10 +25,13 @@
 
 using namespace boost::chrono;
 
-namespace hexa {
-namespace clock {
+namespace hexa
+{
+namespace clock
+{
 
-namespace {
+namespace
+{
 
 steady_clock::time_point start_;
 
@@ -44,7 +47,7 @@ uint64_t now()
     return duration_cast<milliseconds>(steady_clock::now() - start_).count();
 }
 
-gameclock_t game_time ()
+gameclock_t game_time()
 {
     return static_cast<gameclock_t>(now() / 100);
 }
@@ -54,5 +57,5 @@ clientclock_t client_time(uint64_t client_offset)
     return static_cast<clientclock_t>(now() - client_offset);
 }
 
-}} // namespace hexa::clock
-
+} // namespace clock
+} // namespace hexa

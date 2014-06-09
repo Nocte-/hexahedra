@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <list>
@@ -27,19 +26,21 @@
 #include <boost/filesystem/path.hpp>
 #include "model.hpp"
 
-namespace hexa {
-namespace iqm {
+namespace hexa
+{
+namespace iqm
+{
 
 /** Load an IQM model from a memory buffer. */
-model
-load_meshes (const std::vector<char>& buf);
+model load_meshes(const std::vector<char>& buf);
 
 /** Load IQM animations from a memory buffer. */
-std::list<animation>
-load_anims (const std::vector<char>& buf);
+std::list<animation> load_anims(const std::vector<char>& buf);
 
 /** Load a model and animations from an IQM file. */
 std::pair<model, std::list<animation>>
-load (const boost::filesystem::path& file);
+load(const boost::filesystem::path& file);
 
-}} // namespace hexa::iqm
+} // namespace iqm
+} // namespace hexa
+

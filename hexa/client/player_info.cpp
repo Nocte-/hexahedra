@@ -34,11 +34,13 @@ namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace pt = boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
 extern po::variables_map global_settings;
 
-namespace {
+namespace
+{
 
 fs::path filename_()
 {
@@ -51,8 +53,7 @@ fs::path filename_()
 
 player_info get_player_info()
 {
-    if (!fs::exists(filename_()))
-    {
+    if (!fs::exists(filename_())) {
         player_info new_info;
         generate_new_key(new_info);
         generate_new_uid(new_info);
@@ -63,14 +64,14 @@ player_info get_player_info()
     pt::ptree json;
     pt::json_parser::read_json(filename_().string(), json);
 
-    return { json.get<std::string>("name", ""),
-             json.get<std::string>("uid", ""),
-             json.get<std::string>("public_key", ""),
-             json.get<std::string>("private_key", ""),
-             json.get<std::string>("password", "") };
+    return {json.get<std::string>("name", ""),
+            json.get<std::string>("uid", ""),
+            json.get<std::string>("public_key", ""),
+            json.get<std::string>("private_key", ""),
+            json.get<std::string>("password", "")};
 }
 
-void write_player_info (const player_info& info)
+void write_player_info(const player_info& info)
 {
     pt::ptree json;
     json.put("name", info.name);
@@ -83,18 +84,17 @@ void write_player_info (const player_info& info)
     fs::permissions(filename_(), fs::perms::owner_read);
 }
 
-void generate_new_key (player_info& info)
+void generate_new_key(player_info& info)
 {
-    auto key (crypto::make_new_key());
+    auto key(crypto::make_new_key());
 
-    info.public_key  = crypto::serialize_public_key(key);
+    info.public_key = crypto::serialize_public_key(key);
     info.private_key = crypto::serialize_private_key(key);
 }
 
-void generate_new_uid (player_info& info)
+void generate_new_uid(player_info& info)
 {
     info.uid = base58_encode(crypto::make_random(8));
 }
 
 } // namespace hexa
-

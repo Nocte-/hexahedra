@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <algorithm>
@@ -29,33 +28,43 @@
 #include <boost/filesystem/path.hpp>
 #include <boost/format.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Integer divide, round negative down. */
-template <typename t, typename div_t>
-const t divd (const t x, const div_t d)
+template <typename T, typename Div>
+const T divd(const T x, const Div d)
 {
     return (x < 0) ? ((x - d + 1) / d) : (x / d);
 }
 
 /** Round a number to the nearest integer. */
-template <typename type>
-const int round (type x) { return std::lround(x); }
+template <typename T>
+const int round(T x)
+{
+    return std::lround(x);
+}
 
 /** Integer specialization for round()
  * This may look stupid, but it is required for some algorithms that work
  * on both integer and floating point geometry. */
-inline const int round (int in) { return in; }
+inline const int round(int in)
+{
+    return in;
+}
 
 /** Round a number towards zero. */
-template <typename type>
-const int round_to_zero (type x)
+template <typename T>
+const int round_to_zero(T x)
 {
     return x >= 0 ? std::floor(x) : std::ceil(x);
 }
 
 /** Integer specialization for round_to_zero(). */
-inline int round_to_zero (int in) { return in; }
+inline int round_to_zero(int in)
+{
+    return in;
+}
 
 /** Linear interpolation.
  * @param from  The start point
@@ -63,24 +72,24 @@ inline int round_to_zero (int in) { return in; }
  * @param amount  Where to interpolate between the two.  A value of zero
  *                will return \a from, a value of one will return \a to,
  *                and everything in between will be interpolated. */
-template <typename type>
-const type lerp (const type& from, const type& to, double amount)
+template <typename T>
+const T lerp(const T& from, const T& to, double amount)
 {
     return from * (1.0 - amount) + to * amount;
 }
 
 /** Return the value that is halfway between two given values.
  * @sa lerp() */
-template <typename type>
-const type halfway (const type& from, const type& to)
+template <typename T>
+const T halfway(const T& from, const T& to)
 {
     return lerp(from, to, 0.5);
 }
 
 /** Return the difference between two values.
  * @return  The difference between a and b  (always positive) */
-template <typename type>
-auto diff (type a, type b) -> decltype(a - b)
+template <typename T>
+auto diff(T a, T b) -> decltype(a - b)
 {
     return (a > b) ? a - b : b - a;
 }
@@ -88,32 +97,34 @@ auto diff (type a, type b) -> decltype(a - b)
 /** Limit a given value to a minimum and maximum.
  * @pre min <= max
  * @return The value \a in, limited by \a min and \a max */
-template <typename type>
-const type clamp (type in, type min, type max)
+template <typename T>
+const T clamp(T in, T min, T max)
 {
     assert(min <= max);
-    if (in < min) return min;
-    if (in > max) return max;
+    if (in < min)
+        return min;
+    if (in > max)
+        return max;
     return in;
 }
 
 /** Clamp a value between zero and one. */
-template <typename type>
-const type saturate (type in)
+template <typename T>
+const T saturate(T in)
 {
-    return clamp<type>(in, 0, 1);
+    return clamp<T>(in, 0, 1);
 }
 
-template <typename type>
-const type square (type in)
+template <typename T>
+const T square(T in)
 {
     return in * in;
 }
 
 /** Return -1, 0, or 1, depending on the sign of the input.
  * @return -1 if v < 0, 0 if v = 0, 1 if v > 0 */
-template <typename type>
-const int sign (type v)
+template <typename T>
+const int sign(T v)
 {
     if (v > 0)
         return 1;
@@ -125,24 +136,24 @@ const int sign (type v)
 }
 
 /** smoothstep(t) = 3t^2 - 2t^3 */
-template <typename type>
-const type smoothstep (type t)
+template <typename T>
+const T smoothstep(T v)
 {
-    return t * t * (type(3) - type(2) * t);
+    return v * v * (T{3} - T{2} * v);
 }
 
 /** smootherstep(t) = 6t^5 - 15t^4 + 10t^3 */
-template <typename type>
-const type smootherstep (type t)
+template <typename T>
+const T smootherstep(T v)
 {
-    return t * t * t * (t * (t * 6 - 15) + 10);
+    return v * v * v * (v * (v * 6 - 15) + 10);
 }
 
 /** Check if two ranges overlap.
  * The edges are not included, so two ranges that only touch return false.
  * @pre start1 <= end1 && start2 <= end2 */
-template <typename type>
-bool ranges_overlap (type start1, type end1, type start2, type end2)
+template <typename T>
+bool ranges_overlap(T start1, T end1, T start2, T end2)
 {
     assert(start1 <= end1);
     assert(start2 <= end2);
@@ -150,18 +161,17 @@ bool ranges_overlap (type start1, type end1, type start2, type end2)
 }
 
 /** Check whether a value exists in a container. */
-template<class element, class container>
-bool exists_in (element elem, const container& c)
+template <typename element, typename container>
+bool exists_in(element elem, const container& c)
 {
     return std::find(std::begin(c), std::end(c), elem) != c.end();
 }
 
 /** Erase all values from a container that satisfy a given predicate. */
-template<class container, class pred>
-void erase_if (container& c, pred op)
+template <typename container, typename Pred>
+void erase_if(container& c, Pred op)
 {
-    for (auto i (std::begin(c)); i != std::end(c);)
-    {
+    for (auto i = std::begin(c); i != std::end(c);) {
         if (op(*i))
             i = c.erase(i);
         else
@@ -171,17 +181,17 @@ void erase_if (container& c, pred op)
 
 /** Return the contents of a file as a string.
  * @throw std::runtime_error if the file could not be read */
-inline const std::string
-file_contents(const boost::filesystem::path& file)
+inline const std::string file_contents(const boost::filesystem::path& file)
 {
     std::string result;
-    std::ifstream fs (file.string(), std::ios::binary);
+    std::ifstream fs{file.string(), std::ios::binary};
 
     if (!fs)
-        throw std::runtime_error((boost::format("cannot open %1% for reading") % file.string()).str());
+        throw std::runtime_error((boost::format("cannot open %1% for reading")
+                                  % file.string()).str());
 
     fs.seekg(0, std::ios::end);
-    std::streamoff len (fs.tellg());
+    std::streamoff len = fs.tellg();
     fs.seekg(0);
     result.resize(static_cast<std::string::size_type>(len));
     fs.read(&*begin(result), len);
@@ -204,11 +214,10 @@ std::cout << lookup(some_map, 3) << std::endl;
 std::cout << lookup(some_map, 8) << std::endl;
 
  * @endcode */
-template <typename map_t>
-typename map_t::mapped_type&
-lookup (map_t& map, const typename map_t::key_type& key)
+template <typename Map>
+typename Map::mapped_type& lookup(Map& map, const typename Map::key_type& key)
 {
-    auto found (map.find(key));
+    auto found = map.find(key);
     if (found == std::end(map))
         throw std::logic_error("hexa::lookup");
 
@@ -229,21 +238,20 @@ std::cout << lookup(some_map, 3, "unknown") << std::endl;
 std::cout << lookup(some_map, 8, "unknown") << std::endl;
 
  * @endcode */
-template <typename map_t>
-typename map_t::mapped_type&
-lookup (map_t& map, const typename map_t::key_type& key,
-        const typename map_t::mapped_type& default_value)
+template <typename Map>
+typename Map::mapped_type&
+lookup(Map& map, const typename Map::key_type& key,
+       const typename Map::mapped_type& default_value)
 {
-    auto found (map.find(key));
+    auto found = map.find(key);
     if (found == std::end(map))
         return default_value;
 
     return found->second;
 }
 
-template <typename t, typename pred_t>
-bool
-any_of (const t& p, pred_t pred)
+template <typename T, typename Pred>
+bool any_of(const T& p, Pred pred)
 {
     return std::any_of(std::begin(p), std::end(p), pred);
 }
@@ -251,22 +259,22 @@ any_of (const t& p, pred_t pred)
 //---------------------------------------------------------------------------
 
 /** Calculate the product of all elements in a vector. */
-template <typename t>
-const typename t::value_type prod(const t& v)
+template <typename T>
+const typename T::value_type prod(const T& v)
 {
-    typename t::value_type result (1);
-    for (size_t i (0); i < sizeof(t) / sizeof(typename t::value_type); ++i)
+    typename T::value_type result = 1;
+    for (size_t i = 0; i < sizeof(T) / sizeof(typename T::value_type); ++i)
         result *= v[i];
 
     return result;
 }
 
 /** Calculate the dot product of two vectors. */
-template <typename t>
-const typename t::value_type dot_prod(const t& lhs, const t& rhs)
+template <typename T>
+const typename T::value_type dot_prod(const T& lhs, const T& rhs)
 {
-    typename t::value_type result (0);
-    for (size_t i (0); i < sizeof(t) / sizeof(typename t::value_type); ++i)
+    typename T::value_type result = 0;
+    for (size_t i = 0; i < sizeof(T) / sizeof(typename T::value_type); ++i)
         result += lhs[i] * rhs[i];
 
     return result;
@@ -274,67 +282,65 @@ const typename t::value_type dot_prod(const t& lhs, const t& rhs)
 
 /** Calculate the Manhattan length.
  *  This is the sum of the absolute values. */
-template <typename t>
-const typename t::value_type manhattan_length (const t& v)
+template <typename T>
+const typename T::value_type manhattan_length(const T& v)
 {
-    typename t::value_type result (0);
-    for (size_t i (0); i < sizeof(t) / sizeof(typename t::value_type); ++i)
+    typename T::value_type result = 0;
+    for (size_t i = 0; i < sizeof(T) / sizeof(typename T::value_type); ++i)
         result += std::abs(v[i]);
 
     return result;
 }
 
 /** Find the greatest length along any coordinate dimension. */
-template <typename t>
-const typename t::value_type chebyshev_length (const t& v)
+template <typename T>
+const typename T::value_type chebyshev_length(const T& v)
 {
-    typename t::value_type result (0);
-    for (size_t i (0); i < sizeof(t) / sizeof(typename t::value_type); ++i)
+    typename T::value_type result = 0;
+    for (size_t i(0); i < sizeof(T) / sizeof(typename T::value_type); ++i)
         result = std::max(result, std::abs(v[i]));
 
     return result;
 }
 
 /** Calculate the squared length of a vector. */
-template <typename t>
-const double squared_length (const t& v)
+template <typename T>
+const double squared_length(const T& v)
 {
     return dot_prod(v, v);
 }
 
 /** Calculate the length of a vector. */
-template <typename t>
-const double length (const t& v)
+template <typename T>
+const double length(const T& v)
 {
     return std::sqrt(squared_length(v));
 }
 
 /** Calculate the squared distance between two points. */
-template <typename t>
-const double squared_distance (const t& lhs, const t& rhs)
+template <typename T>
+const double squared_distance(const T& lhs, const T& rhs)
 {
     return squared_length(lhs - rhs);
 }
 
 /** Calculate the distance between two points. */
-template <typename t>
-const double distance (const t& lhs, const t& rhs)
+template <typename T>
+const double distance(const T& lhs, const T& rhs)
 {
     return length(lhs - rhs);
 }
 
 /** Calculate the Manhattan distance between two points. */
-template <typename t>
-const typename t::value_type
-manhattan_distance (const t& lhs, const t& rhs)
+template <typename T>
+const typename T::value_type manhattan_distance(const T& lhs, const T& rhs)
 {
     return manhattan_length(diff(lhs, rhs));
 }
 
 /** Calculate the greatest distance along any coordinate dimension. */
-template <typename t>
-const typename t::value_type
-chebyshev_distance (const t& lhs, const t& rhs)
+template <typename T>
+const typename T::value_type chebyshev_distance(const T& lhs, const T& rhs)
 {
     return chebyshev_length(diff(lhs, rhs));
 }
@@ -343,37 +349,37 @@ chebyshev_distance (const t& lhs, const t& rhs)
  *  The result is a vector with the same direction, and length 1.
  * \pre length(in) != 0
  * \post length(result) == 1 */
-template <typename t>
-const t normalize(const t& in)
+template <typename T>
+const T normalize(const T& in)
 {
-    assert (length(in) != 0);
-    return in / static_cast<typename t::value_type>(length(in));
+    assert(length(in) != 0);
+    return in / static_cast<typename T::value_type>(length(in));
 }
 
 /** Calculate the angle between two vectors. */
-template <typename t>
-const double angle(const t& a, const t& b)
+template <typename T>
+const double angle(const T& a, const T& b)
 {
-    double length_prod (length(a) * length(b));
+    double length_prod = length(a) * length(b);
     assert(length_prod > 1e-8);
     return std::acos(clamp(dot_prod(a, b) / length_prod), -1.0, 1.0);
 }
 
 /** Project a vector onto another. */
-template <typename t>
-const t project_vector (const t& a, const t& b)
+template <typename T>
+const T project_vector(const T& a, const T& b)
 {
-    assert(b != t::zero());
+    assert(b != T::zero());
     return dot_prod(a, b) / squared_length(b) * b;
 }
 
 /** Minkowski sum of two sets.
  * The result is formed by adding each element in set a to each element in
  * set b. */
-template <typename t>
-const t minkowski_sum (const t& a, const t& b)
+template <typename T>
+const T minkowski_sum(const T& a, const T& b)
 {
-    t result;
+    T result;
     for (auto& i : a)
         for (auto& j : b)
             result.insert(i + j); // no emplace in gcc 4.7
@@ -382,4 +388,3 @@ const t minkowski_sum (const t& a, const t& b)
 }
 
 } // namespace hexa
-

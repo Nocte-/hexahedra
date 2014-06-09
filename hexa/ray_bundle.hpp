@@ -17,15 +17,15 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <vector>
 #include "ray.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** A bundle of rays through voxels.
  *  This is used often in light calculations, where several rays have a
@@ -37,27 +37,31 @@ namespace hexa {
 class ray_bundle
 {
 public:
-    typedef std::vector<world_vector>   value_type;
+    typedef std::vector<world_vector> value_type;
 
     /** Every part of the tree has a weight, usually it relates linearly
      *  to the number of rays in this branch. */
-    float                   weight;
+    float weight;
     /** The voxels that all rays traverse in this section of the tree. */
-    value_type              trunk;
+    value_type trunk;
     /** After going through all voxels in \a trunk, the rays diverge into
      ** different branches. */
     std::vector<ray_bundle> branches;
 
 public:
-    ray_bundle() : weight(0) {}
+    ray_bundle()
+        : weight{0}
+    {
+    }
 
     ray_bundle(value_type ray, float w)
-        : weight (w)
-        , trunk  (ray)
-    { }
+        : weight{w}
+        , trunk{ray}
+    {
+    }
 
     /** Add a ray with a given weight to the bundle. */
-    void add (value_type ray, float weight);
+    void add(value_type ray, float weight);
 
     /** Normalize the weights across the tree, so the root has a weight of
      ** 1. */
@@ -66,9 +70,7 @@ public:
     /** Multiply all weights in the tree by a given value. */
     void multiply_weight(float factor);
 
-    bool operator==(world_vector comp) const
-        { return trunk.front() == comp; }
+    bool operator==(world_vector comp) const { return trunk.front() == comp; }
 };
 
 } // namespace hexa
-

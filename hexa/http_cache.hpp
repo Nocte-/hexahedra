@@ -17,36 +17,35 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright (C) 2013, nocte@hippie.nu
+// Copyright (C) 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <functional>
 #include <string>
 #include <boost/filesystem/path.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class http_cache
 {
 public:
     http_cache(const boost::filesystem::path& directory);
 
-    bool is_in_cache (const std::string& url) const;
+    bool is_in_cache(const std::string& url) const;
 
-    void get (const std::string& url, int timeout_msec,
-              std::function<void(std::string)> callback) const;
+    void get(const std::string& url, int timeout_msec,
+             std::function<void(std::string)> callback) const;
 
-    void refresh (const std::string& url, int timeout_msec,
-                  std::function<void(std::string)> callback) const;
+    void refresh(const std::string& url, int timeout_msec,
+                 std::function<void(std::string)> callback) const;
 
 private:
-    boost::filesystem::path cache_file (const std::string& url) const;
+    boost::filesystem::path cache_file(const std::string& url) const;
 
 private:
     boost::filesystem::path dir_;
 };
 
 } // namespace hexa
-

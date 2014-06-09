@@ -18,13 +18,15 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "persistent_storage_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-persistent_storage_i::raii_transaction::raii_transaction(persistent_storage_i& ref)
-    : ref_ (ref)
+persistent_storage_i::raii_transaction::raii_transaction(
+    persistent_storage_i& ref)
+    : ref_(ref)
 {
     ref_.begin_transaction();
 }
@@ -35,4 +37,3 @@ persistent_storage_i::raii_transaction::~raii_transaction()
 }
 
 } // namespace hexa
-

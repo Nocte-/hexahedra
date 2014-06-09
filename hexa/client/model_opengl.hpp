@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "model.hpp"
@@ -27,25 +27,27 @@
 #include "vbo.hpp"
 #include "resource_manager.hpp"
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 class model
 {
 public:
-    typedef hexa::model::vertex         vertex;
-    typedef hexa::model::vertex_col     vertex_col;
-    typedef hexa::model::triangle       triangle;
+    typedef hexa::model::vertex vertex;
+    typedef hexa::model::vertex_col vertex_col;
+    typedef hexa::model::triangle triangle;
 
 public:
     model(const hexa::model& init);
-	/*
-    model(const model&) = delete;
-    model& operator= (const model&) = delete;
+    /*
+model(const model&) = delete;
+model& operator= (const model&) = delete;
 
-    model(model&&) = default;
-    model& operator= (model&&) = default;
-	*/
+model(model&&) = default;
+model& operator= (model&&) = default;
+    */
 
     struct mesh
     {
@@ -53,14 +55,12 @@ public:
 
         uint16_t first_triangle;
         uint16_t nr_of_triangles;
-        resource_manager<texture>::resource   tex;
+        resource_manager<texture>::resource tex;
     };
 
-    std::vector<mesh>       meshes;
-    vbo                     vertices;
-    edge_buffer<uint16_t>   triangles;
+    std::vector<mesh> meshes;
+    vbo vertices;
+    edge_buffer<uint16_t> triangles;
 };
-
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

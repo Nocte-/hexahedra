@@ -19,7 +19,6 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <array>
@@ -28,7 +27,8 @@
 #include "ray.hpp"
 #include "vector3.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Determine the intersection between a ray and an axis-aligned box.
  *  This function is based on the "Fast Ray-Box Intersection Test" by
@@ -36,36 +36,30 @@ namespace hexa {
  * @param r The ray
  * @param b The box to test against
  * @return The intersection point, or 'false' if they don't intersect */
-template <class t>
-boost::optional<vector3<t>>
-ray_box_intersection (const ray<t>& r, const aabb<vector3<t>>& b)
+template <typename T>
+boost::optional<vector3<T>> ray_box_intersection(const ray<T>& r,
+                                                 const aabb<vector3<T>>& b)
 {
-    const int dim(3);
+    const int dim = 3;
 
     typedef enum { left, right, middle } quadrant_t;
 
-    bool inside (true);
+    bool inside = true;
     std::array<quadrant_t, dim> quadrant;
-    std::array<t, dim> max_t;
-    std::array<t, dim> candidate_plane;
+    std::array<T, dim> max_t;
+    std::array<T, dim> candidate_plane;
 
     // Find the candidate planes
-    for (int i (0); i < dim; ++i)
-    {
-        if (r.origin[i] < b.first[i])
-        {
+    for (int i = 0; i < dim; ++i) {
+        if (r.origin[i] < b.first[i]) {
             quadrant[i] = left;
             candidate_plane[i] = b.first[i];
             inside = false;
-        }
-        else if (r.origin[i] > b.second[i])
-        {
+        } else if (r.origin[i] > b.second[i]) {
             quadrant[i] = right;
             candidate_plane[i] = b.second[i];
             inside = false;
-        }
-        else
-        {
+        } else {
             quadrant[i] = middle;
         }
     }
@@ -75,8 +69,7 @@ ray_box_intersection (const ray<t>& r, const aabb<vector3<t>>& b)
         return r.origin;
 
     // Calculate distances to candidate planes.
-    for (int i (0); i < dim; ++i)
-    {
+    for (int i = 0; i < dim; ++i) {
         if (quadrant[i] != middle && r.dir[i] != 0)
             max_t[i] = (candidate_plane[i] - r.origin[i]) / r.dir[i];
         else
@@ -84,46 +77,42 @@ ray_box_intersection (const ray<t>& r, const aabb<vector3<t>>& b)
     }
 
     // Get the largest of max_t for final choice of intersection.
-    int which_plane(0);
-    for (int i (1); i < dim; ++i)
-    {
+    int which_plane = 1;
+    for (int i = 1; i < dim; ++i) {
         if (max_t[which_plane] < max_t[i])
             which_plane = i;
     }
 
     // Check if the final candidate is actually in the aabb.
     if (max_t[which_plane] < 0)
-        return boost::optional<vector3<t>>();
+        return boost::optional<vector3<T>>{};
 
     vector result;
-    for (int i (0); i < dim; ++i)
-    {
-        if (which_plane != i)
-        {
+    for (int i = 0; i < dim; ++i) {
+        if (which_plane != i) {
             result[i] = r.origin[i] + max_t[which_plane] * r.dir[i];
 
             if (result[i] < b.first[i] || result[i] > b.second[i])
-                return boost::optional<vector3<t>>();
-        }
-        else
-        {
+                return boost::optional<vector3<T>>{};
+        } else {
             result[i] = candidate_plane[i];
         }
     }
     return result;
 }
 
-/** Rotate a point. */
-template <typename vtx>
-vtx rotate (vtx p, double angle)
+/** Rotate a point around (0,0).
+ * @param p     The point to rotate
+ * @param angle The angle in radians, counter-clockwise */
+template <typename Vertex>
+Vertex rotate(Vertex p, double angle)
 {
-    double sina (std::sin(angle)), cosa (std::cos(angle));
-    auto x (p.x);
+    double sina = std::sin(angle), cosa = std::cos(angle);
+    auto x = p.x;
     p.x = p.x * cosa - p.y * sina;
-    p.y =   x * sina + p.y * cosa;
+    p.y = x * sina + p.y * cosa;
 
     return p;
 }
 
 } // namespace hexa
-

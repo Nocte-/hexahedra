@@ -19,7 +19,6 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <mutex>
@@ -30,7 +29,8 @@
 #include <hexa/lru_cache.hpp>
 #include <hexa/surface.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class persistent_storage_i;
 
@@ -40,26 +40,25 @@ class persistent_storage_i;
 class chunk_cache
 {
 public:
-    chunk_cache (persistent_storage_i& store, size_t limit = 8192);
+    chunk_cache(persistent_storage_i& store, size_t limit = 8192);
 
-    void                cleanup();
+    void cleanup();
 
-    bool                is_coarse_height_available (const map_coordinates& pos) const;
-    chunk_height        get_coarse_height (const map_coordinates& pos);
-    void                store_coarse_height (const map_coordinates& pos,
-                                             chunk_height value);
+    bool is_coarse_height_available(const map_coordinates& pos) const;
+    chunk_height get_coarse_height(const map_coordinates& pos);
+    void store_coarse_height(const map_coordinates& pos, chunk_height value);
 
-    bool                is_surface_available (const chunk_coordinates& pos) const;
-    const surface_data& get_surface (const chunk_coordinates& pos);
-    void                store_surface (const chunk_coordinates& pos,
-                                       const compressed_data& data);
+    bool is_surface_available(const chunk_coordinates& pos) const;
+    const surface_data& get_surface(const chunk_coordinates& pos);
+    void store_surface(const chunk_coordinates& pos,
+                       const compressed_data& data);
 
-    bool                is_lightmap_available (const chunk_coordinates& pos) const;
-    const light_data&   get_lightmap (const chunk_coordinates& pos);
-    void                store_lightmap (const chunk_coordinates& pos,
-                                        const compressed_data& data);
+    bool is_lightmap_available(const chunk_coordinates& pos) const;
+    const light_data& get_lightmap(const chunk_coordinates& pos);
+    void store_lightmap(const chunk_coordinates& pos,
+                        const compressed_data& data);
 
-    inline bool         is_air (const chunk_coordinates& pos)
+    inline bool is_air(const chunk_coordinates& pos)
     {
         if (!is_coarse_height_available(pos))
             return false;
@@ -69,16 +68,16 @@ public:
 
 private:
     persistent_storage_i& store_;
-    size_t                limit_;
+    size_t limit_;
 
-    lru_cache<map_coordinates,   chunk_height>  heights_;
-    mutable std::mutex                          heights_mutex_;
+    lru_cache<map_coordinates, chunk_height> heights_;
+    mutable std::mutex heights_mutex_;
 
-    lru_cache<chunk_coordinates, surface_data>  surfaces_;
-    mutable std::mutex                          surfaces_mutex_;
+    lru_cache<chunk_coordinates, surface_data> surfaces_;
+    mutable std::mutex surfaces_mutex_;
 
-    lru_cache<chunk_coordinates, light_data>    lightmaps_;
-    mutable std::mutex                          lightmaps_mutex_;
+    lru_cache<chunk_coordinates, light_data> lightmaps_;
+    mutable std::mutex lightmaps_mutex_;
 };
 
 } // namespace hexa

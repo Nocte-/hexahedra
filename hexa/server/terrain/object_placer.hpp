@@ -25,27 +25,24 @@
 #include "terrain_generator_i.hpp"
 #include "../voxel_sprite.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class object_placer : public terrain_generator_i
 {
 public:
-    object_placer(world& w,
-                  const boost::property_tree::ptree& conf);
+    object_placer(world& w, const boost::property_tree::ptree& conf);
 
-    void generate (world_terraingen_access& data,
-                   const chunk_coordinates& pos,
-                   chunk& cnk) override;
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override;
 
-    chunk_height
-    estimate_height (world_terraingen_access& data,
-                     map_coordinates xy,
-                     chunk_height prev) const override;
+    chunk_height estimate_height(world_terraingen_access& data,
+                                 map_coordinates xy,
+                                 chunk_height prev) const override;
 
 private:
     int density_map_;
-    std::vector<voxel_sprite>   sprites_;
+    std::vector<voxel_sprite> sprites_;
 };
 
 } // namespace hexa
-

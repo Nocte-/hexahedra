@@ -17,60 +17,53 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <iostream>
 #include <string>
 #include <boost/format.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
-void set_log_output (std::ostream& str);
+void set_log_output(std::ostream& str);
 
-void log_msg (const std::string& msg);
+void log_msg(const std::string& msg);
 
 template <typename par1>
-void log_msg (const std::string& msg, const par1& p1)
+void log_msg(const std::string& msg, const par1& p1)
 {
-    try
-    {
+    try {
         log_msg((boost::format(msg) % p1).str());
-    }
-    catch (std::exception& e)
-    {
-        log_msg((boost::format("cannot log '%1%', %2%: %3%") % msg % p1 % e.what()).str());
+    } catch (std::exception& e) {
+        log_msg((boost::format("cannot log '%1%', %2%: %3%") % msg % p1
+                 % e.what()).str());
     }
 }
 
 template <typename par1, typename par2>
-void log_msg (const std::string& msg, const par1& p1, const par2& p2)
+void log_msg(const std::string& msg, const par1& p1, const par2& p2)
 {
-    try
-    {
+    try {
         log_msg((boost::format(msg) % p1 % p2).str());
-    }
-    catch (std::exception& e)
-    {
-        log_msg((boost::format("cannot log '%1%', %2%, %3%: %4%") % msg % p1 % p2 % e.what()).str());
+    } catch (std::exception& e) {
+        log_msg((boost::format("cannot log '%1%', %2%, %3%: %4%") % msg % p1
+                 % p2 % e.what()).str());
     }
 }
 
 template <typename par1, typename par2, typename par3>
-void log_msg (const std::string& msg, const par1& p1, const par2& p2,
-              const par3& p3)
+void log_msg(const std::string& msg, const par1& p1, const par2& p2,
+             const par3& p3)
 {
-    try
-    {
+    try {
         log_msg((boost::format(msg) % p1 % p2 % p3).str());
-    }
-    catch (std::exception& e)
-    {
-        log_msg((boost::format("cannot log '%1%', %2%, %3%, %4%: %5%") % msg % p1 % p2 % p3 % e.what()).str());
+    } catch (std::exception& e) {
+        log_msg((boost::format("cannot log '%1%', %2%, %3%, %4%: %5%") % msg
+                 % p1 % p2 % p3 % e.what()).str());
     }
 }
 
 } // namespace hexa
-

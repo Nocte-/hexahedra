@@ -19,36 +19,36 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <enet/enet.h>
 #include <hexa/packet.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** */
 class connection
 {
 public:
-    connection(ENetPeer* peer) : peer_(peer), channel_jump_(0) {}
-
-    uint8_t pick_channel() const
+    connection(ENetPeer* peer)
+        : peer_(peer)
+        , channel_jump_(0)
     {
-        return 0;
     }
 
+    uint8_t pick_channel() const { return 0; }
+
     uint32_t address() const { return peer_->address.host; }
-    uint16_t port() const    { return peer_->address.port; }
-    uint32_t ping() const    { return peer_->roundTripTime; }
+    uint16_t port() const { return peer_->address.port; }
+    uint32_t ping() const { return peer_->roundTripTime; }
 
 private:
-    ENetPeer*   peer_;
-    uint8_t     channel_jump_;
+    ENetPeer* peer_;
+    uint8_t channel_jump_;
 };
 
 /// Smart pointer for connections
-typedef boost::shared_ptr<connection>  connection_ptr;
+typedef boost::shared_ptr<connection> connection_ptr;
 
 } // namespace hexa
-

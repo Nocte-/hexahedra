@@ -23,12 +23,11 @@
 
 #include <string>
 
-namespace hexa {
+namespace hexa
+{
 
-std::string
-utf32_to_utf8 (const std::u32string& in);
+std::string utf32_to_utf8(const std::u32string& in);
 
-std::u32string
-utf8_to_utf32 (const std::string& in);
+std::u32string utf8_to_utf32(const std::string& in);
 
 } // namespace hexa

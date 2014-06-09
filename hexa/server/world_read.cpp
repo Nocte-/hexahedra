@@ -28,82 +28,71 @@
 
 #include "world.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-world_read::world_read (world &w)
+world_read::world_read(world& w)
     : w_(w)
     , lock_(w_.single_lock)
 {
 }
 
-uint16_t
-world_read::get_block (world_coordinates pos)
+uint16_t world_read::get_block(world_coordinates pos)
 {
     return get_chunk(pos >> cnkshift)[pos % chunk_size];
 }
 
-const area_data&
-world_read::get_area_data (map_coordinates pos, uint16_t index)
+const area_data& world_read::get_area_data(map_coordinates pos, uint16_t index)
 {
     return w_.get_area_data(pos, index);
 }
 
-const chunk&
-world_read::get_chunk (chunk_coordinates pos)
+const chunk& world_read::get_chunk(chunk_coordinates pos)
 {
     return w_.get_chunk(pos);
 }
 
-const surface_data&
-world_read::get_surface (chunk_coordinates pos)
+const surface_data& world_read::get_surface(chunk_coordinates pos)
 {
     return w_.get_surface(pos);
 }
 
-compressed_data
-world_read::get_compressed_surface (chunk_coordinates pos)
+compressed_data world_read::get_compressed_surface(chunk_coordinates pos)
 {
     return w_.get_compressed_surface(pos);
 }
 
-compressed_data
-world_read::get_compressed_lightmap(chunk_coordinates pos)
+compressed_data world_read::get_compressed_lightmap(chunk_coordinates pos)
 {
     return w_.get_compressed_lightmap(pos);
 }
 
-chunk_height
-world_read::get_coarse_height (map_coordinates pos)
+chunk_height world_read::get_coarse_height(map_coordinates pos)
 {
     return w_.get_coarse_height(pos);
 }
 
-bool
-world_read::is_area_available (map_coordinates pos, uint16_t index) const
+bool world_read::is_area_available(map_coordinates pos, uint16_t index) const
 {
     return w_.is_area_available(pos, index);
 }
 
-bool
-world_read::is_chunk_available (chunk_coordinates pos) const
+bool world_read::is_chunk_available(chunk_coordinates pos) const
 {
     return w_.is_chunk_available(pos);
 }
 
-bool
-world_read::is_surface_available (chunk_coordinates pos) const
+bool world_read::is_surface_available(chunk_coordinates pos) const
 {
     return w_.is_surface_available(pos);
 }
 
-bool
-world_read::is_lightmap_available (chunk_coordinates pos) const
+bool world_read::is_lightmap_available(chunk_coordinates pos) const
 {
     return w_.is_lightmap_available(pos);
 }
 
-bool
-world_read::is_air_chunk (chunk_coordinates pos) const
+bool world_read::is_air_chunk(chunk_coordinates pos) const
 {
     return hexa::is_air_chunk(pos, w_.get_coarse_height(pos));
 }

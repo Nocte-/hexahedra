@@ -19,7 +19,7 @@
 //
 // Copyright 2012-2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <functional>
@@ -31,10 +31,10 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/filesystem/path.hpp>
 
-namespace hexa {
-
-enum resource_type
+namespace hexa
 {
+
+enum resource_type {
     res_block_texture,
     res_model,
     res_texture,
@@ -48,39 +48,38 @@ enum resource_type
     res_shader
 };
 
-boost::filesystem::path resource_path (resource_type type);
+boost::filesystem::path resource_path(resource_type type);
 
-std::vector<std::string> resource_extensions (resource_type type);
+std::vector<std::string> resource_extensions(resource_type type);
 
-boost::filesystem::path resource_file (resource_type type, const std::string& name);
-
+boost::filesystem::path resource_file(resource_type type,
+                                      const std::string& name);
 
 /** Base class for resource managers. */
 template <class type>
 class resource_manager
 {
 public:
-    typedef type                            value_type;
+    typedef type value_type;
 
     /** Resources are passed around as shared pointers.
      *  The reference counting is also used in cleanup(), to make sure no
      *  resources get unloaded that are still in use by some part of the
      *  application. */
-    typedef std::shared_ptr<value_type>     resource;
+    typedef std::shared_ptr<value_type> resource;
 
 public:
     /** Get a resource by its name, load it if necessary.
      * @param name  The resource's name
      * @return A shared pointer to the resource, or nullptr if it could
      *         not be found. */
-    resource operator() (const std::string& name)
+    resource operator()(const std::string& name)
     {
-        boost::mutex::scoped_lock lock (mutex_);
+        boost::mutex::scoped_lock lock(mutex_);
 
-        auto find (resources_.find(name));
-        if (find == resources_.end())
-        {
-            auto loaded (load(name));
+        auto find(resources_.find(name));
+        if (find == resources_.end()) {
+            auto loaded(load(name));
             find = resources_.insert(std::make_pair(name, loaded)).first;
         }
 
@@ -90,34 +89,32 @@ public:
     /** Map a function to every loaded resource.
      *  The function should take two parameters: the resource's name,
      *  and the shared pointer. */
-    void for_each (std::function<void(std::string, resource)> func)
+    void for_each(std::function<void(std::string, resource)> func)
     {
-        boost::mutex::scoped_lock lock (mutex_);
+        boost::mutex::scoped_lock lock(mutex_);
 
-        for (auto p : resources_)
-        {
+        for (auto p : resources_) {
             if (p.second != nullptr)
                 func(p.first, p.second);
         }
     }
 
     /** Unload all resources that are no longer referenced. */
-    void cleanup ()
+    void cleanup()
     {
-        boost::mutex::scoped_lock lock (mutex_);
+        boost::mutex::scoped_lock lock(mutex_);
 
-        for (auto i (resources_.begin()); i != resources_.end();)
-        {
-            auto j (i++);
+        for (auto i(resources_.begin()); i != resources_.end();) {
+            auto j(i++);
             if (j->second.unique())
                 resources_.erase(j);
         }
     }
 
 protected:
-    virtual resource load (const std::string& location) = 0;
+    virtual resource load(const std::string& location) = 0;
 
-    virtual void     unload (const std::string& location)  { }
+    virtual void unload(const std::string& location) {}
 
 private:
     boost::mutex mutex_;
@@ -125,4 +122,3 @@ private:
 };
 
 } // namespace hexa
-

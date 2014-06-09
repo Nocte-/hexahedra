@@ -21,31 +21,29 @@
 //---------------------------------------------------------------------------
 #pragma once
 
-namespace hexa {
+namespace hexa
+{
 
 /** Fowler-Noll-Vo 1a hash function.
  * @param in    Pointer to start of byte array
  * @param count Number of bytes to hash
  * @return FNV-1a  hash value of the input */
-inline const uint32_t
-fnv_hash (const uint8_t* in, uint32_t count)
+inline const uint32_t fnv_hash(const uint8_t* in, uint32_t count)
 {
-    uint32_t hash (2166136261);
-    for(; count > 0; --count)
+    uint32_t hash(2166136261);
+    for (; count > 0; --count)
         hash = (hash ^ *in++) * 16777619;
 
     return hash;
 }
 
 template <typename t>
-inline const uint32_t
-fnv_hash (const t& in)
+inline const uint32_t fnv_hash(const t& in)
 {
     return fnv_hash(reinterpret_cast<const uint8_t*>(&in), sizeof(t));
 }
 
-inline const uint32_t
-fnv_hash (const std::string& in)
+inline const uint32_t fnv_hash(const std::string& in)
 {
     return fnv_hash(reinterpret_cast<const uint8_t*>(&in[0]), sizeof(in));
 }
@@ -54,8 +52,7 @@ fnv_hash (const std::string& in)
  *  This is the standard glibc linear congruential generator.
  * @param i  Seed value, or previous round of the PRNG
  * @return  Next random value */
-inline const uint32_t
-prng (const uint32_t i)
+inline const uint32_t prng(const uint32_t i)
 {
     return (1103515245 * i + 12345) & 0x7FFFFFFF;
 }
@@ -63,27 +60,24 @@ prng (const uint32_t i)
 /** Use the PRNG to generate a random 32-bit integer coordinate.
  * @param n  PRNG value
  * @return A random position based on the next 3 numbers from the PRNG */
-inline const chunk_coordinates
-prng_next_pos(uint32_t& n)
+inline const chunk_coordinates prng_next_pos(uint32_t& n)
 {
-    auto x (prng(n));
-    auto y (prng(x));
-    auto z (prng(y));
+    auto x(prng(n));
+    auto y(prng(x));
+    auto z(prng(y));
     n = z;
 
-    return { x, y, z };
+    return {x, y, z};
 }
 
 /** Get the next number from the PRNG. */
-inline const uint32_t
-prng_next (uint32_t& n)
+inline const uint32_t prng_next(uint32_t& n)
 {
     return n = prng(n);
 }
 
 /** Get a floating point number ranged -1..1 from the PRNG. */
-inline const float
-prng_next_f (uint32_t& n)
+inline const float prng_next_f(uint32_t& n)
 {
     n = prng(n);
     return static_cast<int32_t>(n << 1) / 2147483647.f;

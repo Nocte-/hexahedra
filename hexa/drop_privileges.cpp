@@ -18,7 +18,7 @@
 //
 // Copyright 2011, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "drop_privileges.hpp"
 
 #include <iostream>
@@ -27,26 +27,24 @@
 #include <stdexcept>
 
 #ifndef _WIN32
-# include <unistd.h>
-# include <pwd.h>
-# include <sys/types.h>
+#include <unistd.h>
+#include <pwd.h>
+#include <sys/types.h>
 #endif
 
- 
-void drop_privileges (const std::string& username,
-                      const std::string& chroot_path)
+void drop_privileges(const std::string& username,
+                     const std::string& chroot_path)
 {
-    ///\todo Find a suitable Win32 alternative
+///\todo Find a suitable Win32 alternative
 
 #ifndef _WIN32
     if (getuid() != 0 && geteuid() != 0)
         return; // Not root anyway, no need to drop privileges.
 
-    if (   access(chroot_path.c_str(), F_OK)
-        || access(chroot_path.c_str(), X_OK))
+    if (access(chroot_path.c_str(), F_OK) || access(chroot_path.c_str(), X_OK))
         throw std::runtime_error("cannot access chroot jail");
 
-    struct passwd* pw_ent (getpwnam(username.c_str()));
+    struct passwd* pw_ent(getpwnam(username.c_str()));
     if (!pw_ent)
         throw std::runtime_error(std::string("cannot find user ") + username);
 
@@ -57,6 +55,7 @@ void drop_privileges (const std::string& username,
         throw std::runtime_error("cannot switch working directory");
 
     if (setuid(pw_ent->pw_uid) < 0)
-        throw std::runtime_error(std::string("cannot switch to user ") + username);
+        throw std::runtime_error(std::string("cannot switch to user ")
+                                 + username);
 #endif
 }

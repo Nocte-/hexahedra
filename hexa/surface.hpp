@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <memory>
@@ -28,7 +27,8 @@
 #include "chunk.hpp"
 #include "pos_dir.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** All exposed faces of a block.
  *  The direction mask consists of six bits, one for every direction, and
@@ -38,23 +38,31 @@ namespace hexa {
 class faces : public pos_dirs<chunk_index>
 {
 public:
-    uint16_t                type;
+    uint16_t type;
 
-    faces ()
-        : pos_dirs(chunk_index(0,0,0), 0), type (0)
-    { }
+    faces()
+        : pos_dirs(chunk_index(0, 0, 0), 0)
+        , type(0)
+    {
+    }
 
-    faces (pos_dirs<chunk_index> f, uint16_t t)
-        : pos_dirs(f), type (t)
-    { }
+    faces(pos_dirs<chunk_index> f, uint16_t t)
+        : pos_dirs(f)
+        , type(t)
+    {
+    }
 
-    faces (chunk_index i, uint8_t d, uint16_t t)
-        : pos_dirs(i, d), type (t)
-    { }
+    faces(chunk_index i, uint8_t d, uint16_t t)
+        : pos_dirs(i, d)
+        , type(t)
+    {
+    }
 
     template <class archive>
     archive& serialize(archive& ar)
-        { return ar(type)(pos)(dirs); }
+    {
+        return ar(type)(pos)(dirs);
+    }
 };
 
 /** A list of faces in a chunk. */
@@ -64,33 +72,35 @@ typedef std::vector<faces> surface;
 class surface_data
 {
 public:
-    uint32_t    version;
-    surface     opaque;
-    surface     transparent;
+    uint32_t version;
+    surface opaque;
+    surface transparent;
 
 public:
-    surface_data ()
+    surface_data()
         : version(0)
-    { }
+    {
+    }
 
-    surface_data (surface&& o, surface&& t)
+    surface_data(surface&& o, surface&& t)
         : version(1)
         , opaque(std::move(o))
         , transparent(std::move(t))
-    { }
+    {
+    }
 
     surface_data(surface_data&& m)
         : version(m.version)
         , opaque(std::move(m.opaque))
         , transparent(std::move(m.transparent))
-    { }
-
-    surface_data(const surface_data& ) = default;
-
-    surface_data& operator= (surface_data&& m)
     {
-        if (this != &m)
-        {
+    }
+
+    surface_data(const surface_data&) = default;
+
+    surface_data& operator=(surface_data&& m)
+    {
+        if (this != &m) {
             version = m.version;
             opaque = std::move(m.opaque);
             transparent = std::move(m.transparent);
@@ -98,24 +108,23 @@ public:
         return *this;
     }
 
-    surface_data& operator= (const surface_data& m) = default;
+    surface_data& operator=(const surface_data& m) = default;
 
-    bool operator== (const surface_data& c) const
+    bool operator==(const surface_data& c) const
     {
         return opaque == c.opaque && transparent == c.transparent;
     }
 
-    bool empty() const
-        { return opaque.empty() && transparent.empty(); }
+    bool empty() const { return opaque.empty() && transparent.empty(); }
 
     template <class archive>
     archive& serialize(archive& ar)
-        { return ar(version)(opaque)(transparent); }
+    {
+        return ar(version)(opaque)(transparent);
+    }
 };
 
 /** Count the number of faces in a surface. */
-size_t count_faces (const surface& s);
-
+size_t count_faces(const surface& s);
 
 } // namespace hexa
-

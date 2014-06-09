@@ -19,7 +19,6 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "aabb.hpp"
@@ -28,56 +27,59 @@
 #include "trace.hpp"
 #include "voxel_range.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 template <typename chunk_ptr_type>
 class world_subsection
 {
-    typedef std::unordered_map<chunk_coordinates, chunk_ptr_type>
-                                                    storage_t;
+    typedef std::unordered_map<chunk_coordinates, chunk_ptr_type> storage_t;
 
 public:
-    typedef chunk_ptr_type                          chunk_pointer_type;
-    typedef typename chunk_ptr_type::element_type   chunk_type;
-    typedef typename chunk_type::value_type         value_type;
-    typedef typename chunk_type::size_type          size_type;
+    typedef chunk_ptr_type chunk_pointer_type;
+    typedef typename chunk_ptr_type::element_type chunk_type;
+    typedef typename chunk_type::value_type value_type;
+    typedef typename chunk_type::size_type size_type;
 
-    typedef typename storage_t::iterator            iterator;
-    typedef typename storage_t::const_iterator      const_iterator;
+    typedef typename storage_t::iterator iterator;
+    typedef typename storage_t::const_iterator const_iterator;
 
 public:
-    world_subsection() { }
+    world_subsection() {}
 
-    world_subsection(std::unordered_map<chunk_coordinates, chunk_ptr_type>&& init)
-        : cache_(std::move(init))
-    { }
+    world_subsection(
+        std::unordered_map<chunk_coordinates, chunk_ptr_type>&& init)
+        : cache_{std::move(init)}
+    {
+    }
 
     world_subsection(world_subsection&& m)
-        : cache_(std::move(m.cache_))
-    { }
+        : cache_{std::move(m.cache_)}
+    {
+    }
 
 public:
-    bool has_chunk (chunk_coordinates pos) const
+    bool has_chunk(chunk_coordinates pos) const
     {
         return cache_.count(pos) > 0;
     }
 
-    const chunk_type& get_chunk (chunk_coordinates pos) const
+    const chunk_type& get_chunk(chunk_coordinates pos) const
     {
         return *lookup(cache_, pos);
     }
 
-    chunk_type& get_chunk (chunk_coordinates pos)
+    chunk_type& get_chunk(chunk_coordinates pos)
     {
         return *lookup(cache_, pos);
     }
 
-    chunk_pointer_type& get_ptr (chunk_coordinates pos)
+    chunk_pointer_type& get_ptr(chunk_coordinates pos)
     {
         return lookup(cache_, pos);
     }
 
-    void set_chunk (chunk_coordinates pos, const chunk_pointer_type& ptr)
+    void set_chunk(chunk_coordinates pos, const chunk_pointer_type& ptr)
     {
         if (ptr != nullptr)
             cache_[pos] = ptr;
@@ -85,22 +87,22 @@ public:
             cache_.erase(pos);
     }
 
-    value_type& operator[] (world_coordinates o)
+    value_type& operator[](world_coordinates o)
     {
         return get_chunk(o >> cnkshift)[o % chunk_size];
     }
 
-    value_type& operator() (uint32_t x, uint32_t y, uint32_t z)
+    value_type& operator()(uint32_t x, uint32_t y, uint32_t z)
     {
         return operator[](world_coordinates(x, y, z));
     }
 
-    const value_type& operator[] (world_coordinates o) const
+    const value_type& operator[](world_coordinates o) const
     {
         return get_chunk(o >> cnkshift)[o % chunk_size];
     }
 
-    const value_type& operator() (uint32_t x, uint32_t y, uint32_t z) const
+    const value_type& operator()(uint32_t x, uint32_t y, uint32_t z) const
     {
         return operator[](world_coordinates(x, y, z));
     }
@@ -110,17 +112,15 @@ public:
 
     bool empty() const { return cache_.empty(); }
 
-    iterator        begin()         { return cache_.begin(); }
-    const_iterator  begin() const   { return cache_.begin(); }
-    const_iterator  cbegin() const  { return cache_.begin(); }
-    iterator        end()           { return cache_.end(); }
-    const_iterator  end() const     { return cache_.end(); }
-    const_iterator  cend() const    { return cache_.end(); }
+    iterator begin() { return cache_.begin(); }
+    const_iterator begin() const { return cache_.begin(); }
+    const_iterator cbegin() const { return cache_.begin(); }
+    iterator end() { return cache_.end(); }
+    const_iterator end() const { return cache_.end(); }
+    const_iterator cend() const { return cache_.end(); }
 
 protected:
     storage_t cache_;
 };
 
-
 } // namespace hexa
-

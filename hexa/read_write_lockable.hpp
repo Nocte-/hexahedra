@@ -26,24 +26,25 @@
 //#include <boost/thread/locks.hpp>
 //#include <boost/thread/shared_mutex.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Single writer, multiple reader locking. */
 class readers_writer_lock
 {
 public:
-//    typedef boost::shared_lock<boost::shared_mutex>  read_lock;
-//    typedef boost::unique_lock<boost::shared_mutex>  write_lock;
+    //    typedef boost::shared_lock<boost::shared_mutex>  read_lock;
+    //    typedef boost::unique_lock<boost::shared_mutex>  write_lock;
 
-    typedef std::unique_lock<std::mutex>        read_lock;
-    typedef std::unique_lock<std::mutex>        write_lock;
+    typedef std::unique_lock<std::mutex> read_lock;
+    typedef std::unique_lock<std::mutex> write_lock;
 
 public:
     /** Lock this object for reading.
      * Multiple readers can acquire this lock, and no writers can access
      * this object as long as a read lock is held.  The lock is released
      * once it goes out of scope. */
-    read_lock  acquire_read_lock()  { return read_lock(access_);  }
+    read_lock acquire_read_lock() { return read_lock(access_); }
 
     /** Lock this object for writing.
      * Only one writer can acquire this lock, and nobody else can access
@@ -52,9 +53,8 @@ public:
     write_lock acquire_write_lock() { return write_lock(access_); }
 
 private:
-    //boost::shared_mutex  access_;
+    // boost::shared_mutex  access_;
     std::mutex access_;
 };
 
 } // namespace hexa
-

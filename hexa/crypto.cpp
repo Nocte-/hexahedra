@@ -34,8 +34,10 @@
 
 using namespace CryptoPP;
 
-namespace hexa {
-namespace crypto {
+namespace hexa
+{
+namespace crypto
+{
 
 static AutoSeededRandomPool rng;
 
@@ -45,8 +47,7 @@ DL_PrivateKey_EC<ECP> make_new_key()
     return decr.GetKey();
 }
 
-std::vector<uint8_t>
-make_random(int bytes)
+std::vector<uint8_t> make_random(int bytes)
 {
     if (bytes < 1)
         throw std::runtime_error("'bytes' must be greater than zero");
@@ -56,34 +57,30 @@ make_random(int bytes)
     return out;
 }
 
-Integer
-make_random_128()
+Integer make_random_128()
 {
     byte out[16];
     rng.GenerateBlock(out, 16);
     return Integer(out, 16);
 }
 
-std::string
-serialize_private_key(const DL_PrivateKey_EC<ECP>& key)
+std::string serialize_private_key(const DL_PrivateKey_EC<ECP>& key)
 {
     auto num(key.GetPrivateExponent());
     std::string result;
     HexEncoder enc(new StringSink(result));
     num.DEREncode(enc);
-    //key.DEREncode(enc);
+    // key.DEREncode(enc);
 
     return result;
 }
 
-DL_PrivateKey_EC<ECP>
-deserialize_private_key(const std::string& privkey)
+DL_PrivateKey_EC<ECP> deserialize_private_key(const std::string& privkey)
 {
     throw 0;
 }
 
-std::string
-serialize_public_key(const DL_PrivateKey_EC<ECP>& privkey)
+std::string serialize_public_key(const DL_PrivateKey_EC<ECP>& privkey)
 {
     DL_PublicKey_EC<ECP> key;
     privkey.MakePublicKey(key);
@@ -96,8 +93,7 @@ serialize_public_key(const DL_PrivateKey_EC<ECP>& privkey)
     return result;
 }
 
-DL_PublicKey_EC<ECP>
-deserialize_public_key(const std::string& privkey)
+DL_PublicKey_EC<ECP> deserialize_public_key(const std::string& privkey)
 {
     throw 0;
     /*
@@ -115,4 +111,5 @@ deserialize_public_key(const std::string& privkey)
      */
 }
 
-}} // namespace hexa::crypto
+} // namespace crypto
+} // namespace hexa

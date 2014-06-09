@@ -29,14 +29,15 @@
 // Copyright 2014, The Bitcoin developers
 // https://github.com/bitcoin/bitcoin
 
-namespace hexa {
-
-static const char* pszBase58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
-
-binary_data
-base58_decode (const std::string& in)
+namespace hexa
 {
-    const char* psz (&in.c_str()[0]);
+
+static const char* pszBase58
+    = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+
+binary_data base58_decode(const std::string& in)
+{
+    const char* psz = &in.c_str()[0];
 
     // Skip and count leading '1's.
     int zeroes = 0;
@@ -46,20 +47,19 @@ base58_decode (const std::string& in)
     }
 
     // Allocate enough space in big-endian base256 representation.
-    binary_data b256 (strlen(psz) * 733 / 1000 + 1); // log(58) / log(256), rounded up.
+    // ( = log(58) / log(256), rounded up.)
+    binary_data b256(strlen(psz) * 733 / 1000 + 1);
 
     // Process the characters.
-    while (*psz)
-    {
+    while (*psz) {
         // Decode base58 character
-        const char *ch = strchr(pszBase58, *psz);
-        if (ch == NULL)
+        const char* ch = strchr(pszBase58, *psz);
+        if (ch == nullptr)
             throw base58_error();
 
         // Apply "b256 = b256 * 58 + ch".
         int carry = ch - pszBase58;
-        for (std::vector<unsigned char>::reverse_iterator it = b256.rbegin(); it != b256.rend(); it++)
-        {
+        for (auto it = b256.rbegin(); it != b256.rend(); it++) {
             carry += 58 * (*it);
             *it = carry % 256;
             carry /= 256;
@@ -69,10 +69,10 @@ base58_decode (const std::string& in)
     }
 
     if (*psz != 0)
-        throw base58_error();
+        throw base58_error{};
 
     // Skip leading zeroes in b256.
-    auto it (b256.begin());
+    auto it = b256.begin();
     while (it != b256.end() && *it == 0)
         ++it;
 
@@ -86,28 +86,25 @@ base58_decode (const std::string& in)
     return vch;
 }
 
-std::string
-base58_encode (const binary_data& in)
+std::string base58_encode(const binary_data& in)
 {
-    const uint8_t* pbegin (&*in.begin());
-    const uint8_t* pend   (&*in.end());
+    const uint8_t* pbegin = &*in.begin();
+    const uint8_t* pend = &*in.end();
 
     // Skip & count leading zeroes.
     int zeroes = 0;
-    while (pbegin != pend && *pbegin == 0)
-    {
+    while (pbegin != pend && *pbegin == 0) {
         pbegin++;
         zeroes++;
     }
     // Allocate enough space in big-endian base58 representation.
-    binary_data b58((pend - pbegin) * 138 / 100 + 1); // log(256) / log(58), rounded up.
+    // ( = log(256) / log(58), rounded up.)
+    binary_data b58((pend - pbegin) * 138 / 100 + 1); 
     // Process the bytes.
-    while (pbegin != pend)
-    {
+    while (pbegin != pend) {
         int carry = *pbegin;
         // Apply "b58 = b58 * 256 + ch".
-        for (auto it (b58.rbegin()); it != b58.rend(); ++it)
-        {
+        for (auto it(b58.rbegin()); it != b58.rend(); ++it) {
             carry += 256 * (*it);
             *it = carry % 58;
             carry /= 58;
@@ -116,7 +113,7 @@ base58_encode (const binary_data& in)
         pbegin++;
     }
     // Skip leading zeroes in base58 result.
-    auto it (b58.begin());
+    auto it = b58.begin();
     while (it != b58.end() && *it == 0)
         it++;
 

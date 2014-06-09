@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <algorithm>
@@ -28,7 +27,8 @@
 
 #include "basic_types.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** A group of blocks.
  * For performance reasons, the world is generated, swapped to disk,
@@ -45,16 +45,16 @@ namespace hexa {
  *  example[pos + offset] = 25;
  *
  * \endcode */
-template <class type, size_t dim=chunk_size>
-class chunk_base : private std::vector<type>
+template <typename Type, size_t dim = chunk_size>
+class chunk_base : private std::vector<Type>
 {
-    typedef std::vector<type>      array_t;
+    typedef std::vector<Type> array_t;
 
 public:
-    typedef typename array_t::value_type        value_type;
-    typedef typename array_t::size_type         size_type;
-    typedef typename array_t::iterator          iterator;
-    typedef typename array_t::const_iterator    const_iterator;
+    typedef typename array_t::value_type value_type;
+    typedef typename array_t::size_type size_type;
+    typedef typename array_t::iterator iterator;
+    typedef typename array_t::const_iterator const_iterator;
 
     using array_t::operator[];
     using array_t::size;
@@ -64,28 +64,26 @@ public:
 public:
     /** If this flag is set, the storage backends know they're dealing
      * with a chunk that has been modified in memory. */
-    bool    is_dirty;
+    bool is_dirty;
 
 public:
     chunk_base()
-        : is_dirty (true)
+        : is_dirty{true}
     {
         array_t::resize(volume());
     }
 
-
 #ifdef _MSC_VER
     chunk_base(chunk_base&& m)
-        : array_t (std::move(m))
-        , is_dirty (m.is_dirty)
+        : array_t{std::move(m)}
+        , is_dirty{m.is_dirty}
     {
         m.is_dirty = false;
     }
 
-    chunk_base& operator= (chunk_base&& m)
+    chunk_base& operator=(chunk_base&& m)
     {
-        if (&m != this)
-        {
+        if (&m != this) {
             is_dirty = m.is_dirty;
             m.is_dirty = false;
             array_t::operator=(std::move(m));
@@ -94,12 +92,11 @@ public:
     }
 #else
     chunk_base(const chunk_base&) = default;
-    chunk_base& operator= (const chunk_base&) = default;
+    chunk_base& operator=(const chunk_base&) = default;
 
     chunk_base(chunk_base&&) = default;
-    chunk_base& operator= (chunk_base&&) = default;
+    chunk_base& operator=(chunk_base&&) = default;
 #endif
-
 
     /** Fill this chunk with zeroes/air. */
     void clear(value_type v = 0)
@@ -110,42 +107,44 @@ public:
 
     /** Indexing operator.
      * \param idx The position of the element */
-    inline
-    value_type&     operator[](chunk_index idx)
-        { return operator()(idx.x, idx.y, idx.z); }
+    inline value_type& operator[](chunk_index idx)
+    {
+        return operator()(idx.x, idx.y, idx.z);
+    }
 
     /** Indexing operator.
      * \param idx The position of the element */
-    inline
-    value_type      operator[](chunk_index idx) const
-        { return operator()(idx.x, idx.y, idx.z); }
+    inline value_type operator[](chunk_index idx) const
+    {
+        return operator()(idx.x, idx.y, idx.z);
+    }
 
     /** Indexing operator. */
-    inline
-    value_type&     operator()(uint8_t x, uint8_t y, uint8_t z)
+    inline value_type& operator()(uint8_t x, uint8_t y, uint8_t z)
     {
         assert(size() == volume());
-        assert (x < length());
-        assert (y < length());
-        assert (z < length());
+        assert(x < length());
+        assert(y < length());
+        assert(z < length());
 
         return array_t::operator[](x + y * length() + z * area());
     }
 
     /** Indexing operator. */
-    inline
-    value_type      operator()(uint8_t x, uint8_t y, uint8_t z) const
+    inline value_type operator()(uint8_t x, uint8_t y, uint8_t z) const
     {
         assert(size() == volume());
-        assert (x < length());
-        assert (y < length());
-        assert (z < length());
+        assert(x < length());
+        assert(y < length());
+        assert(z < length());
 
         return array_t::operator[](x + y * length() + z * area());
     }
 
-    bool operator== (const chunk_base<type>& compare) const
-        { return std::equal(begin(), end(), compare.begin()); }
+    bool operator==(const chunk_base<Type>& compare) const
+    {
+        return std::equal(begin(), end(), compare.begin());
+    }
 
     /** Dummy resize function.
      * This function only exists so this class plays nice with some
@@ -167,7 +166,7 @@ public:
     constexpr size_t length() const { return dim; }
 
     /** Get the area of this chunk's faces (usually 256). */
-    constexpr size_t area() const   { return dim * dim; }
+    constexpr size_t area() const { return dim * dim; }
 
     /** Get the volume of this chunk (usually 4096). */
     constexpr size_t volume() const { return dim * dim * dim; }
@@ -177,7 +176,7 @@ public:
      * This function converts between the two. */
     chunk_index index_to_pos(size_type i) const
     {
-        return chunk_index(i % dim, (i / dim) % dim, (i / (dim*dim)) % dim);
+        return chunk_index(i % dim, (i / dim) % dim, (i / (dim * dim)) % dim);
     }
 
     /** Convert an iterator to a coordinate index.
@@ -190,8 +189,7 @@ public:
 
     bool is_air() const
     {
-        for (auto& blk : *this)
-        {
+        for (auto& blk : *this) {
             if (!blk.is_air())
                 return false;
         }
@@ -200,4 +198,3 @@ public:
 };
 
 } // namespace hexa
-

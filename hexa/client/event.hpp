@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <array>
@@ -28,47 +27,73 @@
 #include <hexa/vector2.hpp>
 #include "keycodes.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class game;
 
 /** A single event, like a keyboard button press, or a mouse move. */
 struct event
 {
-    typedef enum
-    { key_up, key_down, key_text,
-      mouse_move_rel, mouse_move_abs,
-      mouse_button_up, mouse_button_down, mouse_wheel,
-      joy_move, joy_button_up, joy_button_down,
-      window_close }
-    ev_type;
+    typedef enum {
+        key_up,
+        key_down,
+        key_text,
+        mouse_move_rel,
+        mouse_move_abs,
+        mouse_button_up,
+        mouse_button_down,
+        mouse_wheel,
+        joy_move,
+        joy_button_up,
+        joy_button_down,
+        window_close
+    } ev_type;
 
     /** Joystick axis identifier and position. */
     struct axis_info
     {
         /** Axis number. */
-        uint8_t     id;
+        uint8_t id;
         /** Position along the axis, range [-1 .. 1] */
-        float       position;
+        float position;
     };
 
     ev_type type;
 
     union
     {
-        key             keycode;
-        uint32_t        code;
-        axis_info       axis;
-        int             delta;
+        key keycode;
+        uint32_t code;
+        axis_info axis;
+        int delta;
     };
-    vector2<float>  xy;
+    vector2<float> xy;
 
-    event(ev_type t) : type (t) {}
-    event(ev_type t, uint32_t c) : type (t), code (c) {}
-    event(ev_type t, const vector2<float>& c) : type (t), xy (c) {}
-    event(ev_type t, const axis_info& c) : type (t), axis (c) {}
-    event(ev_type t, int c) : type (t), delta (c) {}
+    event(ev_type t)
+        : type(t)
+    {
+    }
+    event(ev_type t, uint32_t c)
+        : type(t)
+        , code(c)
+    {
+    }
+    event(ev_type t, const vector2<float>& c)
+        : type(t)
+        , xy(c)
+    {
+    }
+    event(ev_type t, const axis_info& c)
+        : type(t)
+        , axis(c)
+    {
+    }
+    event(ev_type t, int c)
+        : type(t)
+        , delta(c)
+    {
+    }
 };
 
 } // namespace hexa
-

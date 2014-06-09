@@ -19,7 +19,6 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <algorithm>
@@ -35,7 +34,8 @@
 #include "vector2.hpp"
 #include "vector3.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** An axis-aligned bounding box used in collision detection.
  * The main difference with a normal AABB is that this one also keeps
@@ -44,21 +44,22 @@ class collision_aabb : public aabb<vector>
 {
 public:
     /** A bitmask that marks which sides of the box are not solid. */
-    uint8_t     open_sides;
+    uint8_t open_sides;
 
     collision_aabb(aabb<vector> box, uint8_t directions)
-        : aabb       (box)
-        , open_sides (directions)
-    { }
+        : aabb{box}
+        , open_sides{directions}
+    {
+    }
 
     vector minimum_translation_vector(const aabb<vector>& mob) const
     {
-        vector result (0,0,0);
+        vector result{0, 0, 0};
 
         if (!sa_intersects(mob))
             return result;
 
-        float shortest (std::numeric_limits<float>::max());
+        float shortest = std::numeric_limits<float>::max();
 
         if (open_sides & 1) // +x
         {
@@ -102,13 +103,12 @@ public:
  * \param environment  A set of boxes
  * \result A set of boxes that are both inside \a body and \a environment */
 template <class type>
-std::vector<aabb<type>>
-collisions(aabb<type> body, const std::vector<aabb<type>>& environment)
+std::vector<aabb<type>> collisions(aabb<type> body,
+                                   const std::vector<aabb<type>>& environment)
 {
     std::vector<aabb<type>> result;
-    for (auto& elem : environment)
-    {
-        aabb<type> hit (sat_intersection(body, elem));
+    for (auto& elem : environment) {
+        aabb<type> hit{sat_intersection(body, elem)};
         if (sat_intersects(hit))
             result.emplace_back(elem);
     }
@@ -125,21 +125,21 @@ struct collision_result
      ** actual motion after the collisions have been handled. */
     vector impact;
 
-    collision_result() : impact(0, 0, 0) { }
+    collision_result()
+        : impact{0, 0, 0}
+    {
+    }
 
     /** A list of all elements the body collided with. */
     std::list<collision_mesh::const_iterator> elements;
 };
 
 /** Check a moving body against a collision mesh. */
-collision_result
-collide (const aabb<vector>& body, vector motion,
-         const collision_mesh& environment);
+collision_result collide(const aabb<vector>& body, vector motion,
+                         const collision_mesh& environment);
 
 /** Calculate the impact of a moving body with a static aabb. */
-std::pair<int, float>
-calculate_impact(aabb<vector> body, vector motion,
-                 const collision_aabb& block);
+std::pair<int, float> calculate_impact(aabb<vector> body, vector motion,
+                                       const collision_aabb& block);
 
 } // namespace hexa
-

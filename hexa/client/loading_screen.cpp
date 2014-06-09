@@ -26,22 +26,23 @@
 #include "opengl.hpp"
 #include "sfml_resource_manager.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-loading_screen::loading_screen (game& the_game, const bool &waiting,
-                                std::string text, double fadeout_seconds)
+loading_screen::loading_screen(game& the_game, const bool& waiting,
+                               std::string text, double fadeout_seconds)
     : game_state(the_game)
     , waiting_(waiting)
     , time_(0)
     , fade_timer_(0)
     , text_(std::move(text))
     , fadeout_seconds_(fadeout_seconds)
-{  }
-
-void loading_screen::update (double time_delta)
 {
-    if (!waiting_)
-    {
+}
+
+void loading_screen::update(double time_delta)
+{
+    if (!waiting_) {
         fade_timer_ += time_delta;
         if (fade_timer_ >= fadeout_seconds_)
             done();
@@ -51,7 +52,8 @@ void loading_screen::update (double time_delta)
 
 void loading_screen::render()
 {
-    uint8_t alpha (255 - std::min<int>(255, (fade_timer_ / fadeout_seconds_) * 255));
+    uint8_t alpha(
+        255 - std::min<int>(255, (fade_timer_ / fadeout_seconds_) * 255));
 
     window().pushGLStates();
 
@@ -64,13 +66,13 @@ void loading_screen::render()
     glCheck(glLoadIdentity());
     window().resetGLStates();
 
-    sf::RectangleShape rect (sf::Vector2f(width(), height()));
+    sf::RectangleShape rect(sf::Vector2f(width(), height()));
     rect.setPosition(0, 0);
     rect.setFillColor(sf::Color(0, 0, 0, alpha));
     window().draw(rect);
 
-    sf::Text mesg (text_, *fonts("default"), 20);
-    auto size (mesg.getLocalBounds());
+    sf::Text mesg(text_, *fonts("default"), 20);
+    auto size(mesg.getLocalBounds());
     mesg.setPosition({(width() - size.width) * 0.5f, height() * 0.4f});
     mesg.setColor(sf::Color(255, 255, 255, alpha));
     window().draw(mesg);
@@ -80,11 +82,9 @@ void loading_screen::render()
 
 bool loading_screen::process_event(const event& ev)
 {
-    switch (ev.type)
-    {
+    switch (ev.type) {
     case event::key_down:
-        switch (ev.keycode)
-        {
+        switch (ev.keycode) {
         case key::esc:
             done();
             break;
@@ -104,6 +104,4 @@ game_state::transition loading_screen::next_state() const
     return game_state::transition();
 }
 
-
 } // namespace hexa
-

@@ -19,7 +19,6 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <array>
@@ -27,7 +26,8 @@
 #include "vector3.hpp"
 #include "matrix.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** View frustum. */
 class frustum : public std::array<plane3d<float>, 6>
@@ -37,10 +37,10 @@ public:
     frustum(const matrix4<float>& mtx);
 
     /** Check if a sphere is inside the frustum. */
-    inline
-    bool is_inside (const vector3<float>& center, float radius = 0.0f) const
+    inline bool is_inside(const vector3<float>& center,
+                          float radius = 0.0f) const
     {
-        return    distance((*this)[0], center) < radius
+        return distance((*this)[0], center) < radius
                && distance((*this)[1], center) < radius
                && distance((*this)[2], center) < radius
                && distance((*this)[3], center) < radius
@@ -49,4 +49,3 @@ public:
 };
 
 } // namespace hexa
-

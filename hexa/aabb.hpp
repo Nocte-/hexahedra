@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <algorithm>
@@ -29,7 +28,8 @@
 #include <sstream>
 #include <string>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Axis-aligned bounding box.
  * Quick example:
@@ -54,13 +54,13 @@ assert(are_overlapping(my_box, other_box));
 auto clipped_box (intersect(my_box, other_box));
 std::cout << clipped_box << std::endl;
  * @endcode */
-template <typename t>
+template <typename T>
 class aabb
 {
 public:
-    typedef typename t::value_type  coordinate_type;
-    typedef t                       value_type;
-    typedef aabb<t>                 self;
+    typedef typename T::value_type coordinate_type;
+    typedef T value_type;
+    typedef aabb<T> self;
 
 public:
     /** Bottom-left-front corner. */
@@ -73,44 +73,54 @@ public:
     value_type second;
 
 public:
-    aabb () { }
+    aabb() {}
 
-    template <typename s>
-    aabb (const aabb<s>& other)
-        : first (other.first), second (other.second)
-    { }
+    template <typename S>
+    aabb(const aabb<S>& other)
+        : first{other.first}
+        , second{other.second}
+    {
+    }
 
     /** Create an \f$1\times 1\times 1\f$ sized bounding box.
      * \param voxel  Position of the first corner. */
-    aabb (value_type voxel)
-        : first (voxel), second (voxel + value_type(1, 1, 1))
-    { }
+    aabb(value_type voxel)
+        : first{voxel}
+        , second{voxel + value_type{1, 1, 1}}
+    {
+    }
 
     /** Create an \f$n\times n\times n\f$ sized bounding box.
      * \param voxel  Position of the first corner.
      * \param size   Size of the bounding box. */
-    aabb (value_type voxel, coordinate_type size)
-        : first (voxel), second (voxel + value_type(size, size, size))
-    { }
+    aabb(value_type voxel, coordinate_type size)
+        : first{voxel}
+        , second{voxel + value_type{size, size, size}}
+    {
+    }
 
     /** Create a bounding box given two corners.
      * \param first_  Lower corner (closed boundary)
      * \param second_ Upper corner (open boundary) */
-    aabb (value_type first_, value_type second_)
-        : first (first_), second (second_)
-    { }
+    aabb(value_type first_, value_type second_)
+        : first{first_}
+        , second{second_}
+    {
+    }
 
     /** Create a bounding box given two corners. */
-    aabb (coordinate_type ax, coordinate_type ay, coordinate_type az,
-          coordinate_type bx, coordinate_type by, coordinate_type bz)
-        : first (ax, ay, az), second (bx, by, bz)
-    { }
+    aabb(coordinate_type ax, coordinate_type ay, coordinate_type az,
+         coordinate_type bx, coordinate_type by, coordinate_type bz)
+        : first{ax, ay, az}
+        , second{bx, by, bz}
+    {
+    }
 
     /** Create an initial version for determining a bounding box. */
-    static aabb<t> initial()
+    static aabb<T> initial()
     {
-        return aabb<t>(t(std::numeric_limits<coordinate_type>::max()),
-                       t(std::numeric_limits<coordinate_type>::lowest()));
+        return {T(std::numeric_limits<coordinate_type>::max()),
+                T(std::numeric_limits<coordinate_type>::lowest())};
     }
 
     /** Check whether the two corners are set up correctly.
@@ -125,9 +135,12 @@ public:
      * \post is_correct() == true */
     void make_correct()
     {
-        if (first.x > second.x) std::swap(first.x, second.x);
-        if (first.y > second.y) std::swap(first.y, second.y);
-        if (first.z > second.z) std::swap(first.z, second.z);
+        if (first.x > second.x)
+            std::swap(first.x, second.x);
+        if (first.y > second.y)
+            std::swap(first.y, second.y);
+        if (first.z > second.z)
+            std::swap(first.z, second.z);
     }
 
     /** Get the width, depth, and height of the bounding box. */
@@ -137,45 +150,42 @@ public:
         return second - first;
     }
 
-    bool operator== (const self& comp) const
+    bool operator==(const self& comp) const
     {
         return first == comp.first && second == comp.second;
     }
 
-    bool operator!= (const self& comp) const
-    {
-        return !operator==(comp);
-    }
+    bool operator!=(const self& comp) const { return !operator==(comp); }
 
-    self& operator+= (value_type offset)
+    self& operator+=(value_type offset)
     {
         first += offset;
         second += offset;
         return *this;
     }
 
-    self& operator-= (value_type offset)
+    self& operator-=(value_type offset)
     {
         first -= offset;
         second -= offset;
         return *this;
     }
 
-    self& operator*= (coordinate_type mul)
+    self& operator*=(coordinate_type mul)
     {
         first *= mul;
         second *= mul;
         return *this;
     }
 
-    self& operator/= (float div)
+    self& operator/=(float div)
     {
         first /= div;
         second /= div;
         return *this;
     }
 
-    self& operator++ ()
+    self& operator++()
     {
         ++second;
         return *this;
@@ -184,127 +194,125 @@ public:
 
 //---------------------------------------------------------------------------
 
-template <typename t>
-aabb<t> operator+ (aabb<t> lhs, t rhs)
+template <typename T>
+aabb<T> operator+(aabb<T> lhs, T rhs)
 {
     return lhs += rhs;
 }
 
-template <typename t>
-aabb<t> operator+ (aabb<t> lhs, aabb<t> rhs)
+template <typename T>
+aabb<T> operator+(aabb<T> lhs, aabb<T> rhs)
 {
-    return aabb<t>(t(std::min(lhs.first.x,  rhs.first.x),
-                     std::min(lhs.first.y,  rhs.first.y),
-                     std::min(lhs.first.z,  rhs.first.z)),
-                   t(std::max(lhs.second.x, rhs.second.x),
-                     std::max(lhs.second.y, rhs.second.y),
-                     std::max(lhs.second.z, rhs.second.z)));
+    return {T(std::min(lhs.first.x, rhs.first.x),
+              std::min(lhs.first.y, rhs.first.y),
+              std::min(lhs.first.z, rhs.first.z)),
+            T(std::max(lhs.second.x, rhs.second.x),
+              std::max(lhs.second.y, rhs.second.y),
+              std::max(lhs.second.z, rhs.second.z))};
 }
 
-template <typename t>
-aabb<t> operator- (aabb<t> lhs, t rhs)
+template <typename T>
+aabb<T> operator-(aabb<T> lhs, T rhs)
 {
     return lhs -= rhs;
 }
 
-template <typename t, typename s>
-aabb<t> operator* (aabb<t> lhs, s rhs)
+template <typename T, typename S>
+aabb<T> operator*(aabb<T> lhs, S rhs)
 {
     return lhs *= rhs;
 }
 
-template <typename t, typename s>
-aabb<t> operator/ (aabb<t> lhs, s rhs)
+template <typename T, typename S>
+aabb<T> operator/(aabb<T> lhs, S rhs)
 {
     return lhs /= rhs;
 }
 
-template <typename t>
-aabb<t> operator>> (const aabb<t>& lhs, int sh)
+template <typename T>
+aabb<T> operator>>(const aabb<T>& lhs, int sh)
 {
-    return { lhs.first >> sh, ((lhs.second - t(1)) >> sh) + t(1) };
+    return {lhs.first >> sh, ((lhs.second - T(1)) >> sh) + T(1)};
 }
 
 //---------------------------------------------------------------------------
 
 /** Check whether two AABBs overlap. */
-template <typename t>
-bool are_overlapping(const aabb<t>& lhs, const aabb<t>& rhs)
+template <typename T>
+bool are_overlapping(const aabb<T>& lhs, const aabb<T>& rhs)
 {
     assert(lhs.is_correct());
     assert(rhs.is_correct());
-    return    lhs.first.x < rhs.second.x && lhs.second.x > rhs.first.x
+    return lhs.first.x < rhs.second.x && lhs.second.x > rhs.first.x
            && lhs.first.y < rhs.second.y && lhs.second.y > rhs.first.y
            && lhs.first.z < rhs.second.z && lhs.second.z > rhs.first.z;
 }
 
 /** Check whether a given voxel lies inside the AABB. */
-template <class vtx>
-bool is_inside(const vtx& p, const aabb<vtx>& box)
+template <typename T>
+bool is_inside(const T& p, const aabb<T>& box)
 {
     assert(box.is_correct());
-    return    p.x >= box.first.x && p.x < box.second.x
-           && p.y >= box.first.y && p.y < box.second.y
-           && p.z >= box.first.z && p.z < box.second.z;
+    return p.x >= box.first.x && p.x < box.second.x && p.y >= box.first.y
+           && p.y < box.second.y && p.z >= box.first.z && p.z < box.second.z;
 }
 
 /** Create a new AABB that is the intersection of two others.
  *  If lhs and rhs don't overlap anywhere, this function returns an
  *  invalid aabb.  This can be checked using is_correct(). */
-template <typename t>
-aabb<t> intersection(const aabb<t>& lhs, const aabb<t>& rhs)
+template <typename T>
+aabb<T> intersection(const aabb<T>& lhs, const aabb<T>& rhs)
 {
-    return aabb<t>(std::max(lhs.first.x,  rhs.first.x),
-                   std::max(lhs.first.y,  rhs.first.y),
-                   std::max(lhs.first.z,  rhs.first.z),
-                   std::min(lhs.second.x, rhs.second.x),
-                   std::min(lhs.second.y, rhs.second.y),
-                   std::min(lhs.second.z, rhs.second.z));
+    return {std::max(lhs.first.x, rhs.first.x),
+            std::max(lhs.first.y, rhs.first.y),
+            std::max(lhs.first.z, rhs.first.z),
+            std::min(lhs.second.x, rhs.second.x),
+            std::min(lhs.second.y, rhs.second.y),
+            std::min(lhs.second.z, rhs.second.z)};
 }
 
 /** Create a new AABB that bounds two other AABBs. */
-template <typename t>
-aabb<t> bounding_aabb(const aabb<t>& lhs, const aabb<t>& rhs)
+template <typename T>
+aabb<T> bounding_aabb(const aabb<T>& lhs, const aabb<T>& rhs)
 {
-    return aabb<t>(std::min(lhs.first.x,  rhs.first.x),
-                   std::min(lhs.first.y,  rhs.first.y),
-                   std::min(lhs.first.z,  rhs.first.z),
-                   std::max(lhs.second.x, rhs.second.x),
-                   std::max(lhs.second.y, rhs.second.y),
-                   std::max(lhs.second.z, rhs.second.z));
+    return {std::min(lhs.first.x, rhs.first.x),
+            std::min(lhs.first.y, rhs.first.y),
+            std::min(lhs.first.z, rhs.first.z),
+            std::max(lhs.second.x, rhs.second.x),
+            std::max(lhs.second.y, rhs.second.y),
+            std::max(lhs.second.z, rhs.second.z)};
 }
 
 /** Make a separating axis intersection.
  * @param stat  The static hit box
  * @param mob   The mobile hit box
  * @return The translation distances */
-template <typename t>
-aabb<t> sa_intersection(const aabb<t>& stat, const aabb<t>& mob)
+template <typename T>
+aabb<T> sa_intersection(const aabb<T>& stat, const aabb<T>& mob)
 {
-    //assert(stat.is_correct());
+    // assert(stat.is_correct());
     assert(mob.is_correct());
 
-    return aabb<t>(stat.first - mob.second, stat.second - mob.first);
+    return aabb<T>(stat.first - mob.second, stat.second - mob.first);
 }
 
 /** Check if the result of \a sa_intersection() returned a collision. */
-template <typename t>
-bool sa_intersects(const aabb<t>& sabb)
+template <typename T>
+bool sa_intersects(const aabb<T>& sabb)
 {
-    return    sabb.first.x < 0 && sabb.second.x > 0
-           && sabb.first.y < 0 && sabb.second.y > 0
-           && sabb.first.z < 0 && sabb.second.z > 0;
+    return sabb.first.x < 0 && sabb.second.x > 0 && sabb.first.y < 0
+           && sabb.second.y > 0 && sabb.first.z < 0 && sabb.second.z > 0;
 }
 
-template <typename t>
-typename t::value_type sa_length (const aabb<t>& sabb, uint8_t dir)
+template <typename T>
+typename T::value_type sa_length(const aabb<T>& sabb, uint8_t dir)
 {
     return (((dir & 1) == 0) ? sabb.second : sabb.first)[dir / 2];
 }
 
 /** Calculate the center point of a box. */
-template <typename t>
-typename aabb<t>::value_type center(const aabb<t>& box)
+template <typename T>
+typename aabb<T>::value_type center(const aabb<T>& box)
 {
     return halfway(box.first, box.second);
 }
@@ -315,52 +323,52 @@ aabb<vec3i> int_box (1, 2, 3, 8, 8, 8);
 
 auto float_box (cast_to<vec3f>(int_box));
  * @endcode */
-template <typename t, typename s>
-aabb<t> cast_to (const aabb<s>& box)
+template <typename T, typename U>
+aabb<T> cast_to(const aabb<U>& box)
 {
-    return aabb<t>(floor(box.first), floor(box.second) + t(1,1,1));
+    return {floor(box.first), floor(box.second) + T{1, 1, 1}};
 }
 
 /** Make a box bigger by moving one corner, and moving the opposite
  ** corner by the same amount in the other direction. */
-template <typename t>
-aabb<t> inflate (const aabb<t>& box, const t& amount)
+template <typename T>
+aabb<T> inflate(const aabb<T>& box, const T& amount)
 {
-    return aabb<t>(box.first - amount, box.second + amount);
+    return {box.first - amount, box.second + amount};
 }
 
 /** Make a box bigger by moving one corner, and moving the opposite
  ** corner by the same amount in the other direction. */
-template <typename t>
-aabb<t> inflate (const aabb<t>& box, typename t::value_type amount)
+template <typename T>
+aabb<T> inflate(const aabb<T>& box, typename T::value_type amount)
 {
-    return inflate(box, t(amount, amount, amount));
+    return inflate(box, T{amount, amount, amount});
 }
 
 /** Get the width of a box, or the size along the x axis. */
-template <typename t>
-typename aabb<t>::coordinate_type  width (const aabb<t>& box)
+template <typename T>
+typename aabb<T>::coordinate_type width(const aabb<T>& box)
 {
     return box.second.x - box.first.x;
 }
 
 /** Get the depth of a box, or the size along the y axis. */
-template <typename t>
-typename aabb<t>::coordinate_type  depth (const aabb<t>& box)
+template <typename T>
+typename aabb<T>::coordinate_type depth(const aabb<T>& box)
 {
     return box.second.y - box.first.y;
 }
 
 /** Get the height of a box, or the size along the z axis. */
-template <typename t>
-typename aabb<t>::coordinate_type  height (const aabb<t>& box)
+template <typename T>
+typename aabb<T>::coordinate_type height(const aabb<T>& box)
 {
     return box.second.z - box.first.z;
 }
 
 /** Calculate the volume of a box. */
-template <typename t>
-typename aabb<t>::coordinate_type  volume (const aabb<t>& box)
+template <typename T>
+typename aabb<T>::coordinate_type volume(const aabb<T>& box)
 {
     return prod(box.second - box.first);
 }
@@ -369,16 +377,17 @@ typename aabb<t>::coordinate_type  volume (const aabb<t>& box)
 
 //---------------------------------------------------------------------------
 
-namespace std {
+namespace std
+{
 
-template <typename type>
-ostream& operator<< (ostream& str, const hexa::aabb<type>& box)
+template <typename T>
+ostream& operator<<(ostream& str, const hexa::aabb<T>& box)
 {
     return str << '[' << box.first << ';' << box.second << ']';
 }
 
-template <typename t> inline
-string to_string (const hexa::aabb<t>& box)
+template <typename T>
+inline string to_string(const hexa::aabb<T>& box)
 {
     std::stringstream s;
     s << box;
@@ -386,4 +395,3 @@ string to_string (const hexa::aabb<t>& box)
 }
 
 } // namespace std
-

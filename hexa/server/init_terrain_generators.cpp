@@ -18,6 +18,7 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
+
 #include "init_terrain_generators.hpp"
 
 #include <string>
@@ -56,137 +57,159 @@
 using boost::format;
 using namespace boost::property_tree;
 
-namespace hexa {
-
-void init_terrain_gen (world& w, const ptree& config, noise::generator_context& gen_ctx)
+namespace hexa
 {
-    auto area_def (config.get_child_optional("areas"));
+
+void init_terrain_gen(world& w, const ptree& config,
+                      noise::generator_context& gen_ctx)
+{
+    auto area_def(config.get_child_optional("areas"));
     if (area_def)
-    for (const auto& area : *area_def)
-    {
-        const auto& info (area.second);
-        auto name  (info.get<std::string>("name"));
-        auto def   (info.get<std::string>("def", ""));
-        auto cache (info.get<std::string>("cache", ""));
+        for (const auto& area : *area_def) {
+            const auto& info(area.second);
+            auto name(info.get<std::string>("name"));
+            auto def(info.get<std::string>("def", ""));
+            auto cache(info.get<std::string>("cache", ""));
 
-        trace((format("area name '%1%'") % name).str());
-        try
-        {
-            if (def.empty())
-                w.add_area_generator(std::make_unique<fixed_value_area_generator>(w, info));
+            trace((format("area name '%1%'") % name).str());
+            try {
+                if (def.empty())
+                    w.add_area_generator(
+                        std::make_unique<fixed_value_area_generator>(w, info));
 
-            else
-            {
-                gen_ctx.set_script(name, def);
-                w.add_area_generator(std::make_unique<area_generator>(w, info, gen_ctx));
+                else {
+                    gen_ctx.set_script(name, def);
+                    w.add_area_generator(
+                        std::make_unique<area_generator>(w, info, gen_ctx));
+                }
+            } catch (ptree_bad_path& e) {
+                throw std::runtime_error(
+                    (format("cannot initialize area generator '%1%': required "
+                            "property '%2%' missing") % name
+                     % e.path<std::string>()).str());
+            } catch (std::exception& e) {
+                throw std::runtime_error(
+                    (format("cannot initialize area generator '%1%': %2%")
+                     % name % e.what()).str());
             }
         }
-        catch (ptree_bad_path& e)
-        {
-            throw std::runtime_error((format("cannot initialize area generator '%1%': required property '%2%' missing") % name % e.path<std::string>()).str());
-        }
-        catch (std::exception& e)
-        {
-            throw std::runtime_error((format("cannot initialize area generator '%1%': %2%") % name % e.what()).str());
-        }
-    }
 
-    auto terrain_def (config.get_child_optional("terrain"));
+    auto terrain_def(config.get_child_optional("terrain"));
     if (terrain_def)
-    for (const auto& def : *terrain_def)
-    {
-        const auto& info (def.second);
-        auto module (info.get<std::string>("module"));
+        for (const auto& def : *terrain_def) {
+            const auto& info(def.second);
+            auto module(info.get<std::string>("module"));
 
-        trace((format("terrain generator %1%") % module).str());
-        try
-        {
-            if (module == "caves")
-                w.add_terrain_generator(std::make_unique<cave_generator>(w, info));
+            trace((format("terrain generator %1%") % module).str());
+            try {
+                if (module == "caves")
+                    w.add_terrain_generator(
+                        std::make_unique<cave_generator>(w, info));
 
-            else if (module == "flat")
-                w.add_terrain_generator(std::make_unique<flatworld_generator>(w, info));
+                else if (module == "flat")
+                    w.add_terrain_generator(
+                        std::make_unique<flatworld_generator>(w, info));
 
-            else if (module == "soil")
-                w.add_terrain_generator(std::make_unique<soil_generator>(w, info));
+                else if (module == "soil")
+                    w.add_terrain_generator(
+                        std::make_unique<soil_generator>(w, info));
 
-            else if (module == "heightmap_terrain")
-                w.add_terrain_generator(std::make_unique<heightmap_terrain_generator>(w, info));
+                else if (module == "heightmap_terrain")
+                    w.add_terrain_generator(
+                        std::make_unique<heightmap_terrain_generator>(w,
+                                                                      info));
 
-            else if (module == "testpattern")
-                w.add_terrain_generator(std::make_unique<testpattern_generator>(w, info));
+                else if (module == "testpattern")
+                    w.add_terrain_generator(
+                        std::make_unique<testpattern_generator>(w, info));
 
-/*
-            if (module == "anvil")
-                w.add_terrain_generator(std::make_unique<anvil_generator>(w, info));
+                /*
+                            if (module == "anvil")
+                                w.add_terrain_generator(std::make_unique<anvil_generator>(w,
+                   info));
 
-            else if (module == "binvox")
-                w.add_terrain_generator(std::make_unique<binvox_world_generator>(w, info));
+                            else if (module == "binvox")
+                                w.add_terrain_generator(std::make_unique<binvox_world_generator>(w,
+                   info));
 
-            else if (module == "flat")
-                w.add_terrain_generator(std::make_unique<flatworld_generator>(w, info));
+                            else if (module == "flat")
+                                w.add_terrain_generator(std::make_unique<flatworld_generator>(w,
+                   info));
 
-            else if (module == "grid")
-                w.add_terrain_generator(std::make_unique<gridworld_generator>(w, info));
+                            else if (module == "grid")
+                                w.add_terrain_generator(std::make_unique<gridworld_generator>(w,
+                   info));
 
-            else if (module == "robinton")
-                w.add_terrain_generator(std::make_unique<robinton_generator>(w, info));
+                            else if (module == "robinton")
+                                w.add_terrain_generator(std::make_unique<robinton_generator>(w,
+                   info));
 
-            else if (module == "ocean")
-                w.add_terrain_generator(std::make_unique<ocean_generator>(w, info));
+                            else if (module == "ocean")
+                                w.add_terrain_generator(std::make_unique<ocean_generator>(w,
+                   info));
 
-            else if (module == "topsurface")
-                w.add_terrain_generator(std::make_unique<topsurface_generator>(w, info));
+                            else if (module == "topsurface")
+                                w.add_terrain_generator(std::make_unique<topsurface_generator>(w,
+                   info));
 
-            else if (module == "trees")
-                w.add_terrain_generator(std::make_unique<tree_generator>(w, info));
-*/
-            else
-                std::cout << "Warning: unknown terrain module " << module << std::endl;
+                            else if (module == "trees")
+                                w.add_terrain_generator(std::make_unique<tree_generator>(w,
+                   info));
+                */
+                else
+                    throw std::runtime_error(
+                        (format("unknown terrain module '%1'") % module)
+                            .str());
+            } catch (ptree_bad_path& e) {
+                throw std::runtime_error(
+                    (format("cannot initialize terrain module '%1%': required "
+                            "property '%2%' missing") % module
+                     % e.path<std::string>()).str());
+            }
         }
-        catch (ptree_bad_path& e)
-        {
-            throw std::runtime_error((format("cannot initialize terrain module '%1%': required property '%2%' missing") % module % e.path<std::string>()).str());
-        }
-    }
 
-    auto light_def (config.get_child_optional("light"));
+    auto light_def(config.get_child_optional("light"));
     if (light_def)
-    for (const auto& def : *light_def)
-    {
-        const auto& info (def.second);
-        auto module (info.get<std::string>("module"));
+        for (const auto& def : *light_def) {
+            const auto& info(def.second);
+            auto module(info.get<std::string>("module"));
 
-        trace((format("lightmap %1%") % module).str());
-        try
-        {
-            if (module == "ambient_occlusion")
-                w.add_lightmap_generator(std::make_unique<ambient_occlusion_lightmap>(w, info));
+            trace((format("lightmap %1%") % module).str());
+            try {
+                if (module == "ambient_occlusion")
+                    w.add_lightmap_generator(
+                        std::make_unique<ambient_occlusion_lightmap>(w, info));
 
-            else if (module == "debug")
-                w.add_lightmap_generator(std::make_unique<test_lightmap>(w, info));
+                else if (module == "debug")
+                    w.add_lightmap_generator(
+                        std::make_unique<test_lightmap>(w, info));
 
-            else if (module == "lamp")
-                w.add_lightmap_generator(std::make_unique<lamp_lightmap>(w, info));
+                else if (module == "lamp")
+                    w.add_lightmap_generator(
+                        std::make_unique<lamp_lightmap>(w, info));
 
-            else if (module == "radiosity")
-                w.add_lightmap_generator(std::make_unique<radiosity_lightmap>(w, info));
+                else if (module == "radiosity")
+                    w.add_lightmap_generator(
+                        std::make_unique<radiosity_lightmap>(w, info));
 
-            else if (module == "sun")
-                w.add_lightmap_generator(std::make_unique<sun_lightmap>(w, info));
+                else if (module == "sun")
+                    w.add_lightmap_generator(
+                        std::make_unique<sun_lightmap>(w, info));
 
-            else if (module == "uniform")
-                w.add_lightmap_generator(std::make_unique<uniform_lightmap>(w, info));
+                else if (module == "uniform")
+                    w.add_lightmap_generator(
+                        std::make_unique<uniform_lightmap>(w, info));
 
-            else
-                std::cout << "Warning: unknown light module " << module << std::endl;
+                else
+                    throw std::runtime_error(
+                        (format("unknown light module '%1'") % module).str());
+            } catch (ptree_bad_path& e) {
+                throw std::runtime_error(
+                    (format("cannot initialize light module '%1%': required "
+                            "property '%2%' missing") % module
+                     % e.path<std::string>()).str());
+            }
         }
-        catch (ptree_bad_path& e)
-        {
-            throw std::runtime_error((format("cannot initialize light module '%1%': required property '%2%' missing") % module % e.path<std::string>()).str());
-        }
-    }
 }
 
 } // namespace hexa
-

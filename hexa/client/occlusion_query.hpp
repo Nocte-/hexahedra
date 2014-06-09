@@ -26,30 +26,38 @@
 #include <cstdint>
 #include <hexa/compiler_fix.hpp>
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 /** An OpenGL occlusion query. */
 class occlusion_query
 {
 public:
-    enum state_t : uint8_t
-        { inactive, idle, busy, occluded, visible, cancelled, disposed };
+    enum state_t : uint8_t {
+        inactive,
+        idle,
+        busy,
+        occluded,
+        visible,
+        cancelled,
+        disposed
+    };
 
 public:
     occlusion_query(bool activate = false);
 
     occlusion_query(const occlusion_query&) = delete;
 
-    occlusion_query(occlusion_query&& move) noexcept
-        : id_(move.id_)
-        , state_(move.state_)
+    occlusion_query(occlusion_query&& move) noexcept : id_(move.id_),
+                                                       state_(move.state_)
     {
         move.state_ = inactive;
         move.id_ = 0;
     }
 
-    occlusion_query& operator= (occlusion_query&& move) noexcept;
+    occlusion_query& operator=(occlusion_query&& move) noexcept;
 
     ~occlusion_query();
 
@@ -70,7 +78,7 @@ public:
     /** Get the OpenGL query object name. */
     unsigned int id() const { return id_; }
 
-    operator bool () const { return state_ == idle || id_ != 0; }
+    operator bool() const { return state_ == idle || id_ != 0; }
 
     state_t state() const { return state_; }
 
@@ -82,8 +90,7 @@ public:
 
 private:
     unsigned int id_;
-    state_t      state_;
+    state_t state_;
 };
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

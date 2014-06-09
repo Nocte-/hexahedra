@@ -19,7 +19,6 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <boost/optional.hpp>
@@ -27,7 +26,8 @@
 #include "../basic_types.hpp"
 #include "../chunk.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class area_data;
 class chunk;
@@ -41,36 +41,32 @@ class world_lightmap_access
 {
     world& w_;
 
-    chunk_coordinates                   cached_pos_;
+    chunk_coordinates cached_pos_;
     std::reference_wrapper<const chunk> cached_cnk_;
 
     friend class world;
 
 protected:
-    world_lightmap_access (world& w);
+    world_lightmap_access(world& w);
 
 public:
-    world_lightmap_access (const world_lightmap_access&) = delete;
+    world_lightmap_access(const world_lightmap_access&) = delete;
 
 #ifdef _MSC_VER
 #else
-    world_lightmap_access (world_lightmap_access&&) = default;
+    world_lightmap_access(world_lightmap_access&&) = default;
 #endif
 
     ~world_lightmap_access();
 
-    const chunk&
-            get_chunk (const chunk_coordinates& pos);
+    const chunk& get_chunk(const chunk_coordinates& pos);
 
-    const surface_data&
-            get_surface (const chunk_coordinates& pos);
+    const surface_data& get_surface(const chunk_coordinates& pos);
 
-    const block
-            operator[] (const world_coordinates& pos)
+    const block operator[](const world_coordinates& pos)
     {
         return get_chunk(pos >> cnkshift)[pos % chunk_size];
     }
 };
 
 } // namespace hexa
-

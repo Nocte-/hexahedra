@@ -27,31 +27,31 @@
 
 #include "vbo.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class terrain_mesher_i
 {
 public:
-	terrain_mesher_i(vec3i offset)
-		: offset_{offset}
-	{ }
-	
-    virtual ~terrain_mesher_i() { }
+    terrain_mesher_i(vec3i offset)
+        : offset_{offset}
+    {
+    }
 
-    virtual void    add_face (chunk_index voxel, direction_type side,
-                              uint16_t texture, light intensities) = 0;
+    virtual ~terrain_mesher_i() {}
 
-    virtual void    add_custom_block (chunk_index voxel,
-                                      const custom_block& model,
-                                      const std::vector<light>& intensities) = 0;
+    virtual void add_face(chunk_index voxel, direction_type side,
+                          uint16_t texture, light intensities) = 0;
+
+    virtual void add_custom_block(chunk_index voxel, const custom_block& model,
+                                  const std::vector<light>& intensities) = 0;
 
     virtual gl::vbo make_buffer() const = 0;
 
-    virtual bool    empty() const = 0;
-	
+    virtual bool empty() const = 0;
+
 protected:
-	vec3i offset_;
+    vec3i offset_;
 };
 
 } // namespace hexa
-

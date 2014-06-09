@@ -19,7 +19,7 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <GL/glew.h>
@@ -29,67 +29,67 @@
 #include "resource_manager.hpp"
 #include "texture.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-std::string make_resource (const std::string& type, const std::string& file);
+std::string make_resource(const std::string& type, const std::string& file);
 
 class texture_manager : public resource_manager<hexa::texture>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class sfml_image_manager : public resource_manager<sf::Texture>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class sfml_texture_manager : public resource_manager<sf::Texture>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class sprite_manager : public resource_manager<sf::Sprite>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class font_manager : public resource_manager<sf::Font>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class model_manager : public resource_manager<gl::model>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class shader_manager : public resource_manager<std::string>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 class ui_elem_manager : public resource_manager<sf::Sprite>
 {
 protected:
-    virtual resource load (const std::string& location);
+    virtual resource load(const std::string& location);
 };
 
 // Declared globally; we don't need a singleton in this case
-extern texture_manager      textures;
+extern texture_manager textures;
 extern sfml_texture_manager sfml_textures;
-extern sfml_image_manager   images;
-extern sprite_manager       sprites;
-extern font_manager         fonts;
-extern model_manager        models;
-extern shader_manager       shaders;
-extern ui_elem_manager      ui_elem;
+extern sfml_image_manager images;
+extern sprite_manager sprites;
+extern font_manager fonts;
+extern model_manager models;
+extern shader_manager shaders;
+extern ui_elem_manager ui_elem;
 
 } // namespace hexa
-

@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
@@ -31,19 +30,19 @@
 #include "packet.hpp"
 #include "serialize.hpp"
 
-namespace hexa {
-namespace msg {
-
-typedef enum
+namespace hexa
 {
+namespace msg
+{
+
+typedef enum {
     /** Will arrive in the same order as sent. */
     sequenced,
     /** Sent reliably, but the order is undetermined. */
     reliable,
     /** No guarantees. */
     unreliable
-}
-reliability;
+} reliability;
 
 /** Interface for all network messages.
  * If you want to know the binary format of a message, just look at the
@@ -79,7 +78,10 @@ public:
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(ticks); }
+    void serialize(archive& ar)
+    {
+        ar(ticks);
+    }
 };
 
 /** Greet a client that has just connected. */
@@ -91,15 +93,18 @@ public:
     reliability method() const { return reliable; }
 
     /** The server's name. */
-    std::string             server_name;
+    std::string server_name;
     /** Public key. */
-    std::vector<uint8_t>    public_key;
+    std::vector<uint8_t> public_key;
     /** Allowed login methods */
-    std::vector<std::string>    login_methods;
+    std::vector<std::string> login_methods;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(server_name)(public_key)(login_methods); }
+    void serialize(archive& ar)
+    {
+        ar(server_name)(public_key)(login_methods);
+    }
 };
 
 /** Greet the client after it has identified itself. */
@@ -112,17 +117,20 @@ public:
 
     /** Let the client start with this clock, will be synchronized to a
      ** greater precision later on. */
-    clientclock_t       client_time;
+    clientclock_t client_time;
     /** The player's starting position. */
-    world_coordinates   position;
+    world_coordinates position;
     /** The player's entity ID. */
-    uint32_t            entity_id;
+    uint32_t entity_id;
     /** Message of the day. */
-    std::string         motd;
+    std::string motd;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(client_time)(position)(entity_id)(motd); }
+    void serialize(archive& ar)
+    {
+        ar(client_time)(position)(entity_id)(motd);
+    }
 };
 
 /** Disconnect an unruly client. */
@@ -134,11 +142,14 @@ public:
     reliability method() const { return reliable; }
 
     /** Message explaining why the player was kicked off the server. */
-    std::string         reason;
+    std::string reason;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(reason); }
+    void serialize(archive& ar)
+    {
+        ar(reason);
+    }
 };
 
 /** Respond to a time sync message. */
@@ -149,12 +160,15 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    clientclock_t   request;
-    clientclock_t   response;
+    clientclock_t request;
+    clientclock_t response;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(request)(response); }
+    void serialize(archive& ar)
+    {
+        ar(request)(response);
+    }
 };
 
 /** The list of used resource names. */
@@ -183,13 +197,17 @@ class define_materials : public msg_i
 public:
     struct record
     {
-        record () {}
-        record (uint16_t m, material d) : material_id(m), definition(d) {}
+        record() {}
+        record(uint16_t m, material d)
+            : material_id{m}
+            , definition{d}
+        {
+        }
 
-        uint16_t            material_id;
-        material            definition;
+        uint16_t material_id;
+        material definition;
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             return ar(material_id)(definition);
@@ -201,7 +219,7 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    std::vector<record>     materials;
+    std::vector<record> materials;
 
     /** (De)serialize this message. */
     template <class archive>
@@ -217,15 +235,15 @@ class define_custom_blocks : public msg_i
 public:
     struct part
     {
-        chunk_index             corner1;
-        chunk_index             corner2;
+        chunk_index corner1;
+        chunk_index corner2;
         std::array<uint16_t, 6> textures;
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             ar(corner1)(corner2);
-            for (int i (0); i < 6; ++i)
+            for (int i = 0; i < 6; ++i)
                 ar(textures[i]);
 
             return ar;
@@ -234,23 +252,22 @@ public:
 
     struct record
     {
-        std::string         name;
-        std::vector<part>   parts;
+        std::string name;
+        std::vector<part> parts;
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             return ar(name)(parts);
         }
     };
 
-
 public:
     enum { msg_id = 7 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    std::vector<record>     models;
+    std::vector<record> models;
 
     /** (De)serialize this message. */
     template <class archive>
@@ -270,22 +287,27 @@ public:
 
     struct value
     {
-        uint32_t    entity_id;
-        uint16_t    component_id;
+        uint32_t entity_id;
+        uint16_t component_id;
         binary_data data;
 
-        value() { }
+        value() {}
 
         value(uint32_t e, uint16_t c, binary_data&& d)
-            : entity_id(e), component_id(c), data(std::move(d))
-        { }
+            : entity_id{e}
+            , component_id{c}
+            , data{std::move(d)}
+        {
+        }
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
-            { return ar(entity_id)(component_id)(data); }
+        {
+            return ar(entity_id)(component_id)(data);
+        }
     };
 
-    std::vector<value>  updates;
+    std::vector<value> updates;
 
     /** (De)serialize this message. */
     template <class archive>
@@ -309,23 +331,28 @@ public:
 
     struct value
     {
-        uint32_t    entity_id;
-        wfpos       pos;
-        vector      velocity;
+        uint32_t entity_id;
+        wfpos pos;
+        vector velocity;
 
-        value() { }
+        value() {}
 
         value(uint32_t e, wfpos p, vector v)
-            : entity_id(e), pos(p), velocity(v)
-        { }
+            : entity_id{e}
+            , pos{p}
+            , velocity{v}
+        {
+        }
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
-            { return ar(entity_id)(pos)(velocity); }
+        {
+            return ar(entity_id)(pos)(velocity);
+        }
     };
 
-    clientclock_t       timestamp;
-    std::vector<value>  updates;
+    clientclock_t timestamp;
+    std::vector<value> updates;
 
     /** (De)serialize this message. */
     template <class archive>
@@ -343,7 +370,7 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    uint32_t    entity_id;
+    uint32_t entity_id;
 
     /** (De)serialize this message. */
     template <class archive>
@@ -352,7 +379,6 @@ public:
         ar(entity_id);
     }
 };
-
 
 /** A part of the world's height map. */
 class heightmap_update : public msg_i
@@ -365,25 +391,31 @@ public:
     struct record
     {
         map_coordinates pos;
-        chunk_height    height;
+        chunk_height height;
 
-        record () { }
+        record() {}
 
-        record (map_coordinates p, chunk_height h)
-            : pos(p), height(h) { }
+        record(map_coordinates p, chunk_height h)
+            : pos{p}
+            , height{h}
+        {
+        }
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             return ar(pos)(height);
         }
     };
 
-    std::vector<record> data;    /**< Array with height data. */
+    std::vector<record> data; /**< Array with height data. */
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(data); }
+    void serialize(archive& ar)
+    {
+        ar(data);
+    }
 };
 
 /** The light map of a chunk. */
@@ -394,12 +426,15 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    chunk_coordinates   position; /**< Position of the chunk. */
-    compressed_data     data;     /**< Compressed light data. */
+    chunk_coordinates position; /**< Position of the chunk. */
+    compressed_data data;       /**< Compressed light data. */
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(position)(data); }
+    void serialize(archive& ar)
+    {
+        ar(position)(data);
+    }
 };
 
 /** The surface and light map of a chunk. */
@@ -410,7 +445,7 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    chunk_coordinates   position;   /**< Position of the chunk. */
+    chunk_coordinates position; /**< Position of the chunk. */
 
     compressed_data terrain; /**< Compressed opaque & transparent surfaces. */
     compressed_data light;   /**< Compressed light maps. */
@@ -431,13 +466,15 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    uint8_t     id;
+    uint8_t id;
     std::string name;
     std::string desc;
 
     template <class archive>
     void serialize(archive& ar)
-        { ar(id)(name)(desc); }
+    {
+        ar(id)(name)(desc);
+    }
 };
 
 /** Register player stat info. */
@@ -447,13 +484,15 @@ public:
     enum { msg_id = 33 };
     uint8_t type() const { return msg_id; }
 
-    uint8_t     id;
-    uint32_t    value;
-    uint32_t    max;
+    uint8_t id;
+    uint32_t value;
+    uint32_t max;
 
     template <class archive>
     void serialize(archive& ar)
-        { ar(id)(value)(max); }
+    {
+        ar(id)(value)(max);
+    }
 };
 
 /** Change the layout of the player's hotbar. */
@@ -466,22 +505,33 @@ public:
 
     struct slot : public hotbar_slot
     {
-        slot () { }
-        slot (hotbar_slot init) : hotbar_slot(init) { }
+        slot() {}
+        
+        slot(hotbar_slot init)
+            : hotbar_slot{init}
+        {
+        }
 
-        slot (hotbar_slot::slot_type t, std::string name)
-            : hotbar_slot(t, name) { }
+        slot(hotbar_slot::slot_type t, std::string name)
+            : hotbar_slot(t, name)
+        {
+        }
 
         template <class archive>
         archive& serialize(archive& ar)
-            { return ar(type)(name)(tooltip)(badge)(counter)(progress_bar)
-                       (can_drag)(cooldown); }
+        {
+            return ar(type)(name)(tooltip)(badge)(counter)(progress_bar)(
+                can_drag)(cooldown);
+        }
     };
 
-    std::vector<slot>  slots;
+    std::vector<slot> slots;
 
     template <class archive>
-    void serialize(archive& ar) { ar(slots); }
+    void serialize(archive& ar)
+    {
+        ar(slots);
+    }
 };
 
 /** Global configuration parameters. */
@@ -496,7 +546,10 @@ public:
     std::string value;
 
     template <class archive>
-    void serialize(archive& ar) { ar(name)(value); }
+    void serialize(archive& ar)
+    {
+        ar(name)(value);
+    }
 };
 
 /** Print a message in the console. */
@@ -510,7 +563,10 @@ public:
     std::string json;
 
     template <class archive>
-    void serialize(archive& ar) { ar(json); }
+    void serialize(archive& ar)
+    {
+        ar(json);
+    }
 };
 
 /**@}*/
@@ -531,12 +587,15 @@ public:
     reliability method() const { return reliable; }
 
     /** The client's protocol version. */
-    uint8_t     protocol_version;
+    uint8_t protocol_version;
     /** The login credentials (JSON) */
     std::string credentials;
 
     template <class archive>
-    void serialize(archive& ar) { ar(protocol_version)(credentials); }
+    void serialize(archive& ar)
+    {
+        ar(protocol_version)(credentials);
+    }
 };
 
 /** Logout. */
@@ -556,11 +615,14 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    clientclock_t   request;
+    clientclock_t request;
 
     /** (De)serialize this message. */
     template <class archive>
-    void serialize(archive& ar) { ar(request); }
+    void serialize(archive& ar)
+    {
+        ar(request);
+    }
 };
 
 /** The player typed something in the console. */
@@ -574,7 +636,10 @@ public:
     std::string text;
 
     template <class archive>
-    void serialize(archive& ar) { ar(text); }
+    void serialize(archive& ar)
+    {
+        ar(text);
+    }
 };
 
 /** Request chunk surface data. */
@@ -587,15 +652,18 @@ public:
 
     struct record
     {
-        chunk_coordinates   position;
-        uint32_t            version;
+        chunk_coordinates position;
+        uint32_t version;
 
-        record() { }
+        record() {}
 
         record(chunk_coordinates p, uint32_t v = 0)
-            : position(p), version(v) { }
+            : position(p)
+            , version(v)
+        {
+        }
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             return ar(position)(version);
@@ -605,9 +673,11 @@ public:
     std::vector<record> requests;
 
     template <class archive>
-    void serialize(archive& ar) { ar(requests); }
+    void serialize(archive& ar)
+    {
+        ar(requests);
+    }
 };
-
 
 /** Request coarse height map data. */
 class request_heights : public msg_i
@@ -620,15 +690,17 @@ public:
     struct record
     {
         map_coordinates position;
-        gameclock_t     last_update;
+        gameclock_t last_update;
 
         record() {}
 
-        record (map_coordinates pos, gameclock_t upd = 0)
-            : position (pos), last_update (upd)
-        { }
+        record(map_coordinates pos, gameclock_t upd = 0)
+            : position(pos)
+            , last_update(upd)
+        {
+        }
 
-        template<class archive>
+        template <class archive>
         archive& serialize(archive& ar)
         {
             return ar(position)(last_update);
@@ -638,7 +710,10 @@ public:
     std::vector<record> requests;
 
     template <class archive>
-    void serialize(archive& ar) { ar(requests); }
+    void serialize(archive& ar)
+    {
+        ar(requests);
+    }
 };
 
 /** Player has started an action (e.g. digging) */
@@ -649,17 +724,25 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return sequenced; }
 
-    button_press() { }
+    button_press() {}
     button_press(uint8_t button_, uint8_t slot_, yaw_pitch look_, wfpos pos_)
-        : button (button_), slot (slot_), look (look_), pos(pos_) { }
+        : button{button_}
+        , slot{slot_}
+        , look{look_}
+        , pos{pos_}
+    {
+    }
 
-    uint8_t     button;
-    uint8_t     slot;
-    yaw_pitch   look;
-    wfpos       pos;
+    uint8_t button;
+    uint8_t slot;
+    yaw_pitch look;
+    wfpos pos;
 
     template <class archive>
-    void serialize(archive& ar) { ar(button)(slot)(look)(pos); }
+    void serialize(archive& ar)
+    {
+        ar(button)(slot)(look)(pos);
+    }
 };
 
 /** Player has stopped performing an action. */
@@ -670,12 +753,15 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return sequenced; }
 
-    button_release(uint8_t button_ = 0) { }
+    button_release(uint8_t button_ = 0) {}
 
-    uint8_t     button;
+    uint8_t button;
 
     template <class archive>
-    void serialize(archive& ar) { ar(button); }
+    void serialize(archive& ar)
+    {
+        ar(button);
+    }
 };
 
 /** Player has triggered an action (e.g. casting a spell) */
@@ -687,13 +773,19 @@ public:
     reliability method() const { return sequenced; }
 
     trigger(yaw_pitch look_, uint8_t slot_)
-        : look (look_), slot (slot_) {}
+        : look{look_}
+        , slot{slot_}
+    {
+    }
 
-    yaw_pitch   look;
-    uint8_t     slot;
+    yaw_pitch look;
+    uint8_t slot;
 
     template <class archive>
-    void serialize(archive& ar) { ar(look)(slot); }
+    void serialize(archive& ar)
+    {
+        ar(look)(slot);
+    }
 };
 
 /** Player is looking in a certain direction. */
@@ -704,13 +796,19 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    look_at() { }
-    look_at(yaw_pitch look_) : look(look_) { }
+    look_at() {}
+    look_at(yaw_pitch look_)
+        : look(look_)
+    {
+    }
 
-    yaw_pitch   look;
+    yaw_pitch look;
 
     template <class archive>
-    void serialize(archive& ar) { ar(look); }
+    void serialize(archive& ar)
+    {
+        ar(look);
+    }
 };
 
 /** Player movement. */
@@ -724,15 +822,17 @@ public:
     /** Move direction (0 = straight ahead, 63 = to the right)
      *  This is relative to the direction the player is facing,
      *  so it's important to keep track of msg::look_at as well. */
-    uint8_t     move_dir;
+    uint8_t move_dir;
     /** Movement speed (0 = standstill, 255 = fastest) */
-    uint8_t     move_speed;
+    uint8_t move_speed;
     /** Current position. */
-    wfpos       position;
+    wfpos position;
 
     template <class archive>
     void serialize(archive& ar)
-    { ar(move_dir)(move_speed)(position); }
+    {
+        ar(move_dir)(move_speed)(position);
+    }
 };
 
 /**@}*/
@@ -742,10 +842,9 @@ binary_data serialize_packet(message_t& m)
 {
     binary_data result;
     result.push_back(message_t::msg_id);
-    auto archive (make_serializer(result));
+    auto archive(make_serializer(result));
     m.serialize(archive);
     return result;
 }
-
-}} // namespace hexa::msg
-
+}
+} // namespace hexa::msg

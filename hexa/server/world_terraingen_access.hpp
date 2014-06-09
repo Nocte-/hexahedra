@@ -19,13 +19,13 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <boost/optional.hpp>
 #include "../basic_types.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class area_data;
 class chunk;
@@ -46,27 +46,25 @@ class world_terraingen_access
     friend class world;
 
 protected:
-    world_terraingen_access (world& w);
+    world_terraingen_access(world& w);
 
 public:
-    world_terraingen_access (const world_terraingen_access&) = delete;
+    world_terraingen_access(const world_terraingen_access&) = delete;
     ~world_terraingen_access();
 
-    const area_data&
-            get_area_data (const map_coordinates& pos, uint16_t index);
+    const area_data& get_area_data(const map_coordinates& pos, uint16_t index);
 
-    area_data&
-            get_area_data_writable (const map_coordinates& pos, uint16_t index);
+    area_data& get_area_data_writable(const map_coordinates& pos,
+                                      uint16_t index);
 
     boost::optional<const area_data&>
-            try_get_area_data (const map_coordinates& pos, int index);
+    try_get_area_data(const map_coordinates& pos, int index);
 
     boost::optional<area_data&>
-            try_get_area_data_writable (const map_coordinates& pos, int index);
+    try_get_area_data_writable(const map_coordinates& pos, int index);
 
 private:
-    world&  w_;
+    world& w_;
 };
 
 } // namespace hexa
-

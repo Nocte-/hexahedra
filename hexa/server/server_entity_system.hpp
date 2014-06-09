@@ -19,22 +19,21 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
 #include <hexa/entity_system.hpp>
 #include <hexa/serialize.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class server_entity_system : public entity_system
 {
 public:
-    enum server_components
-    {
-        c_ip_addr = c_last_component,   // ip_addr
-        c_player_uid,                   // uint64_t
+    enum server_components {
+        c_ip_addr = c_last_component, // ip_addr
+        c_player_uid,                 // uint64_t
         c_last_server_component
     };
 
@@ -42,33 +41,51 @@ public:
     server_entity_system();
 };
 
+typedef enum {
+    /** Never send this component to clients. */
+    server_private,
+    /** Only send this component to the client that owns the entity. */
+    player_private,
+    /** Send to nearby players only. */
+    nearby,
+    /** Send to nearby players, update frequency depends on distance. */
+    nearby_falloff,
+    /** Broadcast to all clients. */
+    broadcast
+} network_send_t;
+
+network_send_t network_send_behavior(es::storage::component_id component);
+
 } // namespace hexa
 
-namespace es {
+//---------------------------------------------------------------------------
 
-template<> inline
-void serialize<std::string>(const std::string& obj, std::vector<char>& buf)
+namespace es
+{
+
+template <>
+inline void serialize<std::string>(const std::string& obj,
+                                   std::vector<char>& buf)
 {
     buf.push_back(uint8_t(obj.size() & 0xff));
     buf.push_back(uint8_t((obj.size() >> 8) & 0xff));
     buf.insert(buf.end(), obj.begin(), obj.end());
 }
 
-template<> inline
-std::vector<char>::const_iterator
+template <>
+inline std::vector<char>::const_iterator
 deserialize<std::string>(std::string& obj,
                          std::vector<char>::const_iterator first,
                          std::vector<char>::const_iterator last)
 {
-    if (std::distance(first,last) < 2)
+    if (std::distance(first, last) < 2)
         throw std::runtime_error("can't serialize");
 
-    uint16_t len (uint8_t(*first) + (uint16_t(uint8_t(*(first+1))) << 8));
+    uint16_t len(uint8_t(*first) + (uint16_t(uint8_t(*(first + 1))) << 8));
     first += 2;
 
-    auto end (first + len);
-    if (end > last)
-    {
+    auto end(first + len);
+    if (end > last) {
         throw std::runtime_error("not enough data");
     }
 
@@ -77,4 +94,4 @@ deserialize<std::string>(std::string& obj,
     return end;
 }
 
-}
+} // namespace es

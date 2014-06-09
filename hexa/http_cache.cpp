@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright (C) 2013, nocte@hippie.nu
+// Copyright (C) 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "http_cache.hpp"
 
 #include <array>
@@ -34,19 +34,19 @@
 using namespace boost::network;
 namespace fs = boost::filesystem;
 
-namespace hexa {
+namespace hexa
+{
 
-http_cache::http_cache (const fs::path& directory)
-    : dir_(directory)
+http_cache::http_cache(const fs::path& directory)
+    : dir_{directory}
 {
 }
 
-fs::path http_cache::cache_file (const std::string& url) const
+fs::path http_cache::cache_file(const std::string& url) const
 {
     std::array<uint8_t, 32> digest;
-    CryptoPP::SHA().CalculateDigest(digest.data(),
-                                    reinterpret_cast<const uint8_t*>(&url[0]),
-                                    url.size());
+    CryptoPP::SHA().CalculateDigest(
+        digest.data(), reinterpret_cast<const uint8_t*>(&url[0]), url.size());
     CryptoPP::HexEncoder hex;
     hex.Put(digest.data(), digest.size());
     std::string hexstr;
@@ -55,28 +55,27 @@ fs::path http_cache::cache_file (const std::string& url) const
     return dir_ / hexstr;
 }
 
-bool http_cache::is_in_cache (const std::string& url) const
+bool http_cache::is_in_cache(const std::string& url) const
 {
     return fs::exists(cache_file(url));
 }
 
-void http_cache::get (const std::string& url, int timeout_msec,
-                      std::function<void(std::string)> callback) const
+void http_cache::get(const std::string& url, int timeout_msec,
+                     std::function<void(std::string)> callback) const
 {
-    auto file (cache_file(url));
-    if (fs::exists(file))
-    {
+    auto file = cache_file(url);
+    if (fs::exists(file)) {
         callback(file_contents(url));
         return;
     }
 
-    boost::thread bg ([=]{
-        http::client::request rq (url);
+    boost::thread bg([=] {
+        http::client::request rq(url);
         rq << header("Connection", "close");
         http::client temp_client;
-        std::string data (http::body(temp_client.get(rq)));
+        std::string data(http::body(temp_client.get(rq)));
 
-        std::ofstream out (file.string(), std::ios::binary);
+        std::ofstream out(file.string(), std::ios::binary);
         out.write(&data[0], data.size());
         out.close();
 
@@ -85,12 +84,9 @@ void http_cache::get (const std::string& url, int timeout_msec,
     bg.detach();
 }
 
-void http_cache::refresh (const std::string& url, int timeout_msec,
-                          std::function<void(std::string)> callback) const
+void http_cache::refresh(const std::string& url, int timeout_msec,
+                         std::function<void(std::string)> callback) const
 {
-
 }
 
-
 } // namespace hexa
-

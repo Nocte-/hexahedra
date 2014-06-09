@@ -20,23 +20,20 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <boost/property_tree/ptree.hpp>
 #include <hexanoise/generator_context.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class world;
 
 /** Terrain generator factory.
  *  This function chains terrain generators together, as specified by the
  *  configuration file. */
-void
-init_terrain_gen (world& w,
-                  const boost::property_tree::ptree& config,
-                  noise::generator_context& gen_context);
+void init_terrain_gen(world& w, const boost::property_tree::ptree& config,
+                      noise::generator_context& gen_context);
 
 } // namespace hexa
-

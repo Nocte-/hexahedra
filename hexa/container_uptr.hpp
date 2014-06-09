@@ -19,20 +19,21 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <list>
 #include <memory>
 #include <vector>
 
-namespace hexa {
+namespace hexa
+{
 
 /** Shorthand for a list of unique_ptr. */
-template<typename t> using list_uptr = std::list<std::unique_ptr<t>>;
+template <typename T>
+using list_uptr = std::list<std::unique_ptr<T>>;
 
 /** Shorthand for a vector of unique_ptr. */
-template<typename t> using vector_uptr = std::vector<std::unique_ptr<t>>;
+template <typename T>
+using vector_uptr = std::vector<std::unique_ptr<T>>;
 
 } // namespace hexa
-

@@ -28,51 +28,51 @@
 #include <hexa/packet.hpp>
 #include <hexa/protocol.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class network_error : public std::runtime_error
 {
 public:
     network_error(const std::string& what)
         : std::runtime_error(what.c_str())
-    {}
+    {
+    }
 };
-
 
 class udp_client
 {
 public:
-    udp_client (std::string host, uint16_t port);
+    udp_client(std::string host, uint16_t port);
     ~udp_client();
     udp_client(const udp_client&) = delete;
 
-    bool connect (unsigned int timeout = 4000);
+    bool connect(unsigned int timeout = 4000);
 
     bool disconnect();
 
-    void poll (unsigned int timeout = 200);
+    void poll(unsigned int timeout = 200);
 
-    void send (const binary_data& p, msg::reliability method);
+    void send(const binary_data& p, msg::reliability method);
 
-    virtual void on_connect() { }
-    virtual void on_disconnect() { }
-    virtual void receive (const packet& p) = 0;
+    virtual void on_connect() {}
+    virtual void on_disconnect() {}
+    virtual void receive(const packet& p) = 0;
 
-    bool    is_connected() const;
+    bool is_connected() const;
 
     /// Last measured round-trip time, in seconds.
-    float   last_rtt() const;
+    float last_rtt() const;
 
     /// Mean round-trip time, in seconds.
-    float   rtt() const;
+    float rtt() const;
 
 protected:
-    boost::mutex  host_mutex_;
-    ENetHost*   host_;
+    boost::mutex host_mutex_;
+    ENetHost* host_;
     ENetAddress address_;
-    ENetPeer*   peer_;
-    bool        connected_;
+    ENetPeer* peer_;
+    bool connected_;
 };
 
 } // namespace hexa
-

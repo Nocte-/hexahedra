@@ -19,14 +19,11 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #if (defined(_MSC_VER))
-
-#  define constexpr const
-#  define noexcept 
-
+#define constexpr const
+#define noexcept
 #endif
 
 //---------------------------------------------------------------------------
@@ -35,17 +32,16 @@
 
 #include <memory>
 
-namespace std {
+namespace std
+{
 
 /** "That C++11 doesn’t include make_unique is partly an oversight, and it
  **  will almost certainly be added in the future." -- Herb Sutter */
-template<typename type, typename... args>
-unique_ptr<type> make_unique(args&&... params)
+template <typename Type, typename... Args>
+unique_ptr<Type> make_unique(Args&&... params)
 {
-    return unique_ptr<type>(new type(forward<args>(params)...));
+    return unique_ptr<Type>(new Type(forward<Args>(params)...));
 }
-
 }
 
 #endif
-

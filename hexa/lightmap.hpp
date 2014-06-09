@@ -19,7 +19,6 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <memory>
@@ -28,7 +27,8 @@
 #include "pos_dir.hpp"
 #include "serialize.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 #pragma pack(push, 1)
 
@@ -43,33 +43,47 @@ namespace hexa {
  *  very dark blue at night. */
 struct light
 {
-    uint8_t     sunlight    : 4; /**< Sunlight intensity. */
-    uint8_t     ambient     : 4; /**< Ambient (or skylight) intensity. */
-    uint8_t     artificial  : 4; /**< Artificial light sources. */
-    uint8_t     padding     : 4; /**< Pad struct to 2 bytes. */
+    uint8_t sunlight : 4;   /**< Sunlight intensity. */
+    uint8_t ambient : 4;    /**< Ambient (or skylight) intensity. */
+    uint8_t artificial : 4; /**< Artificial light sources. */
+    uint8_t padding : 4;    /**< Pad struct to 2 bytes. */
 
-    light() : sunlight(0), ambient(0), artificial(0), padding(0) { }
+    light()
+        : sunlight{0}
+        , ambient{0}
+        , artificial{0}
+        , padding{0}
+    {
+    }
 
     light(uint8_t overall)
-        : sunlight(overall), ambient(overall), artificial(overall), padding(0) { }
+        : sunlight{overall}
+        , ambient{overall}
+        , artificial{overall}
+        , padding{0}
+    {
+    }
 
     light(uint8_t sun, uint8_t amb, uint8_t art)
-        : sunlight(sun), ambient(amb), artificial(art), padding(0) { }
-
-    bool    operator== (const light& comp) const
-        { return   sunlight   == comp.sunlight
-                && ambient    == comp.ambient
-                && artificial == comp.artificial
-                && padding    == comp.padding;
-        }
-
-    bool    operator!= (const light& comp) const
-        { return !operator==(comp); }
-
-    template <class archive>
-    archive& serialize(archive& ar)
+        : sunlight{sun}
+        , ambient{amb}
+        , artificial{art}
+        , padding{0}
     {
-        uint16_t& tmp (*(uint16_t*)this);
+    }
+
+    bool operator==(const light& comp) const
+    {
+        return sunlight == comp.sunlight && ambient == comp.ambient
+               && artificial == comp.artificial && padding == comp.padding;
+    }
+
+    bool operator!=(const light& comp) const { return !operator==(comp); }
+
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
+    {
+        uint16_t& tmp(*(uint16_t*)this);
         return ar(tmp);
     }
 };
@@ -83,46 +97,61 @@ struct light
  *  array. */
 class lightmap
 {
-    typedef std::vector<light>  data_t;
+    typedef std::vector<light> data_t;
 
 public:
-    typedef data_t::value_type      value_type;
-    typedef data_t::iterator        iterator;
-    typedef data_t::const_iterator  const_iterator;
+    typedef data_t::value_type value_type;
+    typedef data_t::iterator iterator;
+    typedef data_t::const_iterator const_iterator;
 
-    data_t  data;
+public:
+    lightmap() {}
+    lightmap(const lightmap&) = delete;
 
-    iterator       begin()        { return data.begin(); }
-    const_iterator begin() const  { return data.begin(); }
-    iterator       end()          { return data.end(); }
-    const_iterator end() const    { return data.end(); }
+    lightmap(lightmap&& m)
+        : data{std::move(m.data)}
+    {
+    }
 
-    size_t  size() const                 { return data.size();   }
-    bool    empty() const                { return data.empty();   }
-    void    emplace_back(value_type&& v) { data.emplace_back(v); }
-    void    push_back(value_type v)      { data.push_back(v);    }
-    void    resize(size_t s)             { data.resize(s);       }
+    lightmap& operator=(lightmap&& m)
+    {
+        if (&m != this)
+            data = std::move(m.data);
 
-    bool    operator== (const lightmap& comp) const
-        { return data == comp.data; }
+        return *this;
+    }
 
-    bool    operator!= (const lightmap& comp) const
-        { return !operator==(comp); }
+    iterator begin() { return data.begin(); }
+    const_iterator begin() const { return data.begin(); }
+    iterator end() { return data.end(); }
+    const_iterator end() const { return data.end(); }
 
-    template <class archive>
-    archive& serialize(archive& ar)
+    size_t size() const { return data.size(); }
+    bool empty() const { return data.empty(); }
+    void emplace_back(value_type&& v) { data.emplace_back(v); }
+    void push_back(value_type v) { data.push_back(v); }
+    void resize(size_t s) { data.resize(s); }
+
+    bool operator==(const lightmap& comp) const { return data == comp.data; }
+
+    bool operator!=(const lightmap& comp) const { return !operator==(comp); }
+
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
     {
         return ar(data);
     }
-};
 
+public:
+    data_t data;
+};
 
 /** The combined light maps of the opaque and transparent surfaces. */
 class light_data
 {
 public:
-    lightmap    opaque;      /**< Opaque surfaces. */
-    lightmap    transparent; /**< Transparent surfaces. */
+    lightmap opaque;      /**< Opaque surfaces. */
+    lightmap transparent; /**< Transparent surfaces. */
 
     /** The quality of the light map.
      *  Calculating a light map is expensive.  To make sure the game keeps
@@ -133,21 +162,49 @@ public:
      *  in the next phases.  There's a chance the player will see the light
      *  map change, but this is usually not a problem (and pretty much
      *  unavoidable). */
-    uint16_t    phase;
+    uint16_t phase;
 
 public:
-    light_data() : phase(0) { }
-    light_data(lightmap o, lightmap t) : opaque(o), transparent(t), phase(0) { }
+    light_data()
+        : phase{0}
+    {
+    }
+
+    light_data(light_data&& m)
+        : opaque{std::move(m.opaque)}
+        , transparent{std::move(m.transparent)}
+        , phase{m.phase}
+    {
+    }
+
+    light_data(lightmap&& o, lightmap&& t)
+        : opaque{std::move(o)}
+        , transparent{std::move(t)}
+        , phase{0}
+    {
+    }
+
+    light_data& operator=(light_data&& m)
+    {
+        if (&m != this) {
+            opaque = std::move(m.opaque);
+            transparent = std::move(m.transparent);
+        }
+        return *this;
+    }
+
+    light_data& operator=(const light_data&) = default;
 
     bool empty() const { return opaque.empty() && transparent.empty(); }
 
-    template <class archive>
-    archive& serialize(archive& ar)
-        { return ar(opaque)(transparent)(phase); }
+    template <typename Archive>
+    Archive& serialize(Archive& ar)
+    {
+        return ar(opaque)(transparent)(phase);
+    }
 };
 
 /** Reference counted pointer for light data. */
 typedef std::shared_ptr<light_data> lightmap_ptr;
 
 } // namespace hexa
-

@@ -23,49 +23,54 @@
 
 #include "world.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-world_terraingen_access::world_terraingen_access (world& w)
+world_terraingen_access::world_terraingen_access(world& w)
     : w_(w)
-{ }
+{
+}
 
 world_terraingen_access::~world_terraingen_access()
-{ }
+{
+}
 
 const area_data&
-world_terraingen_access::get_area_data (const map_coordinates& pos, uint16_t index)
+world_terraingen_access::get_area_data(const map_coordinates& pos,
+                                       uint16_t index)
 {
     return w_.get_area_data(pos, index);
 }
 
 area_data&
-world_terraingen_access::get_area_data_writable (const map_coordinates& pos, uint16_t index)
+world_terraingen_access::get_area_data_writable(const map_coordinates& pos,
+                                                uint16_t index)
 {
     return w_.get_area_data_writable(pos, index);
 }
 
 boost::optional<const area_data&>
-world_terraingen_access::try_get_area_data (const map_coordinates& pos, int index)
+world_terraingen_access::try_get_area_data(const map_coordinates& pos,
+                                           int index)
 {
-    if (   index < 0
-        || static_cast<size_t>(index) > w_.nr_of_registered_area_generators())
-    {
+    if (index < 0
+        || static_cast<size_t>(index)
+           > w_.nr_of_registered_area_generators()) {
         return boost::optional<const area_data&>();
     }
     return w_.get_area_data(pos, index);
 }
 
 boost::optional<area_data&>
-world_terraingen_access::try_get_area_data_writable (const map_coordinates& pos, int index)
+world_terraingen_access::try_get_area_data_writable(const map_coordinates& pos,
+                                                    int index)
 {
-    if (   index < 0
-        || static_cast<size_t>(index) > w_.nr_of_registered_area_generators())
-    {
+    if (index < 0
+        || static_cast<size_t>(index)
+           > w_.nr_of_registered_area_generators()) {
         return boost::optional<area_data&>();
     }
     return w_.get_area_data_writable(pos, index);
 }
 
-
 } // namespace hexa
-

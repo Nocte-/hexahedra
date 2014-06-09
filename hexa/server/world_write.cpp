@@ -23,27 +23,30 @@
 
 #include "world.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-world_write::world_write (world& w)
+world_write::world_write(world& w)
     : w_(w)
     , lock_(w_.single_lock)
-{ }
+{
+}
 
 world_write::~world_write()
 {
-    for (auto& cnk : cnks_)
-    {
-        trace("Write commit chunk %1%, fingerprint %2%", cnk.first, fnv_hash((const uint8_t*)&*cnk.second.begin(), chunk_volume * 2));
+    for (auto& cnk : cnks_) {
+        trace(
+            "Write commit chunk %1%, fingerprint %2%", cnk.first,
+            fnv_hash((const uint8_t*)&*cnk.second.begin(), chunk_volume * 2));
         w_.commit_write(cnk.first);
     }
 }
 
-void
-world_write::add (const chunk_coordinates& pos, chunk& cnk)
+void world_write::add(const chunk_coordinates& pos, chunk& cnk)
 {
     cnks_.emplace(pos, cnk);
-    trace("Write access to chunk fingerprint %1%", fnv_hash((const uint8_t*)&*cnk.begin(), chunk_volume * 2));
+    trace("Write access to chunk fingerprint %1%",
+          fnv_hash((const uint8_t*)&*cnk.begin(), chunk_volume * 2));
 }
 
 } // namespace hexa

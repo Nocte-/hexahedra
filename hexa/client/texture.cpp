@@ -31,10 +31,11 @@
 using namespace boost::range;
 using namespace boost::filesystem;
 
-namespace hexa {
+namespace hexa
+{
 
-static const GLint GT2D  (GL_TEXTURE_2D);
-static const GLint GT2DA (GL_TEXTURE_2D_ARRAY);
+static const GLint GT2D(GL_TEXTURE_2D);
+static const GLint GT2DA(GL_TEXTURE_2D_ARRAY);
 float texture::max_anisotropy_level_ = -1.0f;
 
 void texture::init()
@@ -74,11 +75,12 @@ texture::~texture()
 
 float texture::anisotropy_level() const
 {
-    if (max_anisotropy_level_ == -1.0f)
-    {
-        std::string ext (reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS)));
+    if (max_anisotropy_level_ == -1.0f) {
+        std::string ext{
+            reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS))};
         if (boost::find_first(ext, "GL_EXT_texture_filter_anisotropic"))
-            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT, &max_anisotropy_level_);
+            glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,
+                        &max_anisotropy_level_);
         else
             max_anisotropy_level_ = 0.0f;
     }
@@ -94,10 +96,10 @@ void texture::load(const sf::Image& image, transparency_t alpha)
     assert(image.getSize().x > 0 && image.getSize().y > 0);
     set_parameters(GT2D);
 
-    GLint internal_format (alpha == transparent? GL_RGBA : GL_RGB);
-    glCheck(glTexImage2D(GT2D, 0, internal_format,
-                 image.getSize().x, image.getSize().y,
-                 0, GL_RGBA, GL_UNSIGNED_BYTE, image.getPixelsPtr()));
+    GLint internal_format(alpha == transparent ? GL_RGBA : GL_RGB);
+    glCheck(glTexImage2D(GT2D, 0, internal_format, image.getSize().x,
+                         image.getSize().y, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+                         image.getPixelsPtr()));
 
     if (glGenerateMipmap)
         glCheck(glGenerateMipmap(GT2D));
@@ -106,26 +108,21 @@ void texture::load(const sf::Image& image, transparency_t alpha)
 void texture::set_parameters(GLint type)
 {
     glCheck(glBindTexture(type, id()));
-
     glCheck(glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_REPEAT));
-
     glCheck(glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_NEAREST));
-    if (glGenerateMipmap)
-    {
-        glCheck(glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
-        float al (anisotropy_level());
-        if (al > 0.f)
-        {
+
+    if (glGenerateMipmap) {
+        glCheck(glTexParameteri(type, GL_TEXTURE_MIN_FILTER,
+                                GL_LINEAR_MIPMAP_LINEAR));
+        float al = anisotropy_level();
+        if (al > 0.f) {
             glCheck(glTexParameterf(type, GL_TEXTURE_MAX_ANISOTROPY_EXT, al));
             glCheck(glTexParameteri(type, GL_TEXTURE_MAX_LEVEL, 4));
         }
-    }
-    else
-    {
+    } else {
         glCheck(glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_NEAREST));
     }
 }
-
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -139,9 +136,8 @@ texture_array::texture_array(const std::list<sf::Image>& imagelist,
     load(imagelist, width, height, alpha);
 }
 
-void texture_array::load(const std::list<sf::Image>& imagelist,
-                         uint16_t width, uint16_t height,
-                         transparency_t alpha)
+void texture_array::load(const std::list<sf::Image>& imagelist, uint16_t width,
+                         uint16_t height, transparency_t alpha)
 {
     width_ = width;
     height_ = height;
@@ -154,16 +150,15 @@ void texture_array::load(const std::list<sf::Image>& imagelist,
 
     set_parameters(GT2DA);
 
-    GLint internal_format (alpha == transparent? GL_RGBA : GL_RGB);
-    glCheck(glTexImage3D(GT2DA, 0, internal_format,
-                 width_, height_,
-                 imagelist.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
+    GLint internal_format = (alpha == transparent ? GL_RGBA : GL_RGB);
+    glCheck(glTexImage3D(GT2DA, 0, internal_format, width_, height_,
+                         imagelist.size(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0));
 
-    unsigned int slice (0);
-    for(const auto& img : imagelist)
-    {
-        glCheck(glTexSubImage3D(GT2DA, 0, 0, 0, slice, width_, height_,
-                                1, GL_RGBA, GL_UNSIGNED_BYTE, img.getPixelsPtr()));
+    unsigned int slice = 0;
+    for (const auto& img : imagelist) {
+        glCheck(glTexSubImage3D(GT2DA, 0, 0, 0, slice, width_, height_, 1,
+                                GL_RGBA, GL_UNSIGNED_BYTE,
+                                img.getPixelsPtr()));
         ++slice;
     }
 
@@ -174,25 +169,20 @@ void texture_array::load(const std::list<sf::Image>& imagelist,
 void texture_array::load(const gl::vbo& tx, unsigned int index,
                          unsigned int y_offset)
 {
-    if (id_ == nullptr)
-    {
+    if (id_ == nullptr) {
         init();
         set_parameters(GT2DA);
-    }
-    else
-    {
+    } else {
         glCheck(glBindTexture(GT2DA, id()));
     }
 
     tx.bind_pixel_buffer();
-    glTexSubImage3D(GT2DA, 0, 0, 0, index, width_, height_,
-                    1, GL_RGBA, GL_UNSIGNED_BYTE,
-                    (const GLvoid*)(y_offset * width_ * 4L));
+    glTexSubImage3D(GT2DA, 0, 0, 0, index, width_, height_, 1, GL_RGBA,
+                    GL_UNSIGNED_BYTE, (const GLvoid*)(y_offset * width_ * 4L));
     tx.unbind_pixel_buffer();
 
-    //if (glGenerateMipmap)
+    // if (glGenerateMipmap)
     //    glCheck(glGenerateMipmap(GT2DA));
 }
 
 } // namespace hexa
-

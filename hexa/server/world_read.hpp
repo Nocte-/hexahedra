@@ -19,7 +19,6 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <mutex>
@@ -29,7 +28,8 @@
 #include <hexa/surface.hpp>
 #include <hexa/read_write_lockable.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class area_data;
 class chunk;
@@ -43,45 +43,44 @@ class world_read
     friend class world;
 
 protected:
-    world_read (world& w);
+    world_read(world& w);
 
 public:
-    world_read (const world_read&) = delete;
+    world_read(const world_read&) = delete;
 
 #ifdef _MSC_VER
 #else
-    world_read (world_read&&) = default;
+    world_read(world_read&&) = default;
 #endif
 
 public:
-    uint16_t            get_block (world_coordinates pos);
+    uint16_t get_block(world_coordinates pos);
 
-    const area_data&    get_area_data (map_coordinates pos, uint16_t index);
+    const area_data& get_area_data(map_coordinates pos, uint16_t index);
 
-    boost::optional<const area_data&>
-                        try_get_area_data (map_coordinates pos, uint16_t index);
+    boost::optional<const area_data&> try_get_area_data(map_coordinates pos,
+                                                        uint16_t index);
 
-    const chunk&        get_chunk (chunk_coordinates pos);
+    const chunk& get_chunk(chunk_coordinates pos);
 
     const surface_data& get_surface(chunk_coordinates pos);
 
-    chunk_height        get_coarse_height (map_coordinates pos);
+    chunk_height get_coarse_height(map_coordinates pos);
 
-    compressed_data     get_compressed_surface(chunk_coordinates pos);
+    compressed_data get_compressed_surface(chunk_coordinates pos);
 
-    compressed_data     get_compressed_lightmap (chunk_coordinates pos);
+    compressed_data get_compressed_lightmap(chunk_coordinates pos);
 
-    bool    is_area_available (map_coordinates pos, uint16_t index) const;
-    bool    is_chunk_available (chunk_coordinates pos) const;
-    bool    is_surface_available (chunk_coordinates pos) const;
-    bool    is_lightmap_available (chunk_coordinates pos) const;
+    bool is_area_available(map_coordinates pos, uint16_t index) const;
+    bool is_chunk_available(chunk_coordinates pos) const;
+    bool is_surface_available(chunk_coordinates pos) const;
+    bool is_lightmap_available(chunk_coordinates pos) const;
 
-    bool    is_air_chunk (chunk_coordinates pos) const;
+    bool is_air_chunk(chunk_coordinates pos) const;
 
 private:
     world& w_;
-    std::unique_lock<std::mutex>  lock_;
+    std::unique_lock<std::mutex> lock_;
 };
 
 } // namespace hexa
-

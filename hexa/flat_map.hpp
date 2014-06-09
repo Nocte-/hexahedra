@@ -3,20 +3,20 @@
 /// \brief  Replacement for boost::flat_map (VS2013 workaround)
 //
 //---------------------------------------------------------------------------
-
+#pragma once
 // Because VS2013 can't compile boost::flat_map, we use this one as a
 // temporary fix.
-
-#pragma once
 
 #include <algorithm>
 #include <functional>
 #include <vector>
 #include <utility>
 
-namespace hexa {
+namespace hexa
+{
 
-namespace detail {
+namespace detail
+{
 
 template <class value_type, class C>
 class flat_map_compare : public C
@@ -27,38 +27,41 @@ class flat_map_compare : public C
 public:
     flat_map_compare() {}
 
-    flat_map_compare(const C& src) : C(src) {}
+    flat_map_compare(const C& src)
+        : C(src)
+    {
+    }
 
     bool operator()(const first_argument_type& lhs,
-        const first_argument_type& rhs) const
-    { return C::operator()(lhs, rhs); }
+                    const first_argument_type& rhs) const
+    {
+        return C::operator()(lhs, rhs);
+    }
 
     bool operator()(const Data& lhs, const Data& rhs) const
-    { return operator()(lhs.first, rhs.first); }
+    {
+        return operator()(lhs.first, rhs.first);
+    }
 
-    bool operator()(const Data& lhs,
-        const first_argument_type& rhs) const
-    { return operator()(lhs.first, rhs); }
+    bool operator()(const Data& lhs, const first_argument_type& rhs) const
+    {
+        return operator()(lhs.first, rhs);
+    }
 
-    bool operator()(const first_argument_type& lhs,
-        const Data& rhs) const
-    { return operator()(lhs, rhs.first); }
+    bool operator()(const first_argument_type& lhs, const Data& rhs) const
+    {
+        return operator()(lhs, rhs.first);
+    }
 };
 }
 
-template
-<
-    class K,
-    class V,
-    class C = std::less<K>,
-    class A = std::allocator<std::pair<K, V>>
->
-class flat_map
-    : private std::vector<std::pair<K, V>, A>
-    , private detail::flat_map_compare<V, C>
+template <class K, class V, class C = std::less<K>,
+          class A = std::allocator<std::pair<K, V>>>
+class flat_map : private std::vector<std::pair<K, V>, A>,
+                 private detail::flat_map_compare<V, C>
 {
     typedef std::vector<std::pair<K, V>, A> base_type;
-    typedef detail::flat_map_compare<V, C>  compare_type;
+    typedef detail::flat_map_compare<V, C> compare_type;
 
 public:
     typedef K key_type;
@@ -78,36 +81,37 @@ public:
     typedef typename base_type::reverse_iterator reverse_iterator;
     typedef typename base_type::const_reverse_iterator const_reverse_iterator;
 
-    typedef flat_map<K,V,C,A> self;
-
+    typedef flat_map<K, V, C, A> self;
 
     class value_compare
-        : public std::binary_function<value_type, value_type, bool>
-        , private key_compare
+        : public std::binary_function<value_type, value_type, bool>,
+          private key_compare
     {
         friend class flat_map;
 
     protected:
-        value_compare(key_compare pred) : key_compare(pred)
-        {}
+        value_compare(key_compare pred)
+            : key_compare(pred)
+        {
+        }
 
     public:
         bool operator()(const value_type& lhs, const value_type& rhs) const
-        { return key_compare::operator()(lhs.first, rhs.first); }
+        {
+            return key_compare::operator()(lhs.first, rhs.first);
+        }
     };
-
-
-
 
     explicit flat_map(const key_compare& comp = key_compare(),
                       const A& alloc = A())
-        : base_type(alloc), compare_type(comp)
-    { }
+        : base_type(alloc)
+        , compare_type(comp)
+    {
+    }
 
     template <class InputIterator>
     flat_map(InputIterator first, InputIterator last,
-             const key_compare& comp = key_compare(),
-             const A& alloc = A())
+             const key_compare& comp = key_compare(), const A& alloc = A())
         : base_type(first, last, alloc)
         , compare_type(comp)
     {
@@ -115,17 +119,16 @@ public:
         std::sort(begin(), end(), me);
     }
 
-    flat_map (self&& m)
-        : base_type (std::move(m))
-    { }
+    flat_map(self&& m)
+        : base_type(std::move(m))
+    {
+    }
 
     flat_map& operator=(const flat_map& rhs)
     {
         flat_map(rhs).swap(*this);
         return *this;
     }
-
-
 
     iterator begin() { return base_type::begin(); }
     const_iterator begin() const { return base_type::begin(); }
@@ -141,15 +144,16 @@ public:
     size_type max_size() { return base_type::max_size(); }
 
     mapped_type& operator[](const key_type& key)
-    { return insert(value_type(key, mapped_type())).first->second; }
+    {
+        return insert(value_type(key, mapped_type())).first->second;
+    }
 
     std::pair<iterator, bool> insert(const value_type& val)
     {
-        bool found(true);
-        iterator i(lower_bound(val.first));
+        bool found = true;
+        iterator i = lower_bound(val.first);
 
-        if (i == end() || this->operator()(val.first, i->first))
-        {
+        if (i == end() || this->operator()(val.first, i->first)) {
             i = base_type::insert(i, val);
             found = false;
         }
@@ -158,9 +162,8 @@ public:
 
     iterator insert(iterator pos, const value_type& val)
     {
-        if( (pos == begin() || this->operator()(*(pos-1),val)) &&
-            (pos == end()    || this->operator()(val, *pos)) )
-        {
+        if ((pos == begin() || this->operator()(*(pos - 1), val))
+            && (pos == end() || this->operator()(val, *pos))) {
             return base_type::insert(pos, val);
         }
         return insert(val).first;
@@ -168,21 +171,27 @@ public:
 
     template <class InputIterator>
     void insert(InputIterator first, InputIterator last)
-    { for (; first != last; ++first) insert(*first); }
+    {
+        for (; first != last; ++first)
+            insert(*first);
+    }
 
-    void erase(iterator pos)
-    { base_type::erase(pos); }
+    void erase(iterator pos) { base_type::erase(pos); }
 
     size_type erase(const key_type& k)
     {
-        iterator i(find(k));
-        if (i == end()) return 0;
+        iterator i = find(k);
+        if (i == end())
+            return 0;
+
         erase(i);
         return 1;
     }
 
     void erase(iterator first, iterator last)
-    { base_type::erase(first, last); }
+    {
+        base_type::erase(first, last);
+    }
 
     void swap(flat_map& other)
     {
@@ -192,11 +201,9 @@ public:
         std::swap(me, rhs);
     }
 
-    void clear()
-    { base_type::clear(); }
+    void clear() { base_type::clear(); }
 
-    key_compare key_comp() const
-    { return *this; }
+    key_compare key_comp() const { return *this; }
 
     value_compare value_comp() const
     {
@@ -207,8 +214,7 @@ public:
     iterator find(const key_type& k)
     {
         iterator i(lower_bound(k));
-        if (i != end() && this->operator()(k, i->first))
-        {
+        if (i != end() && this->operator()(k, i->first)) {
             i = end();
         }
         return i;
@@ -217,15 +223,13 @@ public:
     const_iterator find(const key_type& k) const
     {
         const_iterator i(lower_bound(k));
-        if (i != end() && this->operator()(k, i->first))
-        {
+        if (i != end() && this->operator()(k, i->first)) {
             i = end();
         }
         return i;
     }
 
-    size_type count(const key_type& k) const
-    { return find(k) != end(); }
+    size_type count(const key_type& k) const { return find(k) != end(); }
 
     iterator lower_bound(const key_type& k)
     {
@@ -257,21 +261,21 @@ public:
         return std::equal_range(begin(), end(), k, me);
     }
 
-    std::pair<const_iterator, const_iterator> equal_range(
-        const key_type& k) const
+    std::pair<const_iterator, const_iterator>
+    equal_range(const key_type& k) const
     {
-        const compare_type& me (*this);
+        const compare_type& me(*this);
         return std::equal_range(begin(), end(), k, me);
     }
 
     template <class K1, class V1, class C1, class A1>
     friend bool operator==(const flat_map<K1, V1, C1, A1>& lhs,
-                    const flat_map<K1, V1, C1, A1>& rhs);
+                           const flat_map<K1, V1, C1, A1>& rhs);
 
     bool operator<(const flat_map& rhs) const
     {
-        const base_type& me (*this);
-        const base_type& yo (rhs);
+        const base_type& me(*this);
+        const base_type& yo(rhs);
         return me < yo;
     }
 
@@ -292,39 +296,46 @@ public:
                            const flat_map<K1, V1, C1, A1>& rhs);
 };
 
-
 template <class K, class V, class C, class A>
 inline bool operator==(const flat_map<K, V, C, A>& lhs,
                        const flat_map<K, V, C, A>& rhs)
 {
-  const std::vector<std::pair<K, V>, A>& me (lhs);
-  return me == rhs;
+    const std::vector<std::pair<K, V>, A>& me(lhs);
+    return me == rhs;
 }
 
 template <class K, class V, class C, class A>
 inline bool operator!=(const flat_map<K, V, C, A>& lhs,
                        const flat_map<K, V, C, A>& rhs)
-{ return !(lhs == rhs); }
+{
+    return !(lhs == rhs);
+}
 
 template <class K, class V, class C, class A>
 inline bool operator>(const flat_map<K, V, C, A>& lhs,
                       const flat_map<K, V, C, A>& rhs)
-{ return rhs < lhs; }
+{
+    return rhs < lhs;
+}
 
 template <class K, class V, class C, class A>
 inline bool operator>=(const flat_map<K, V, C, A>& lhs,
                        const flat_map<K, V, C, A>& rhs)
-{ return !(lhs < rhs); }
+{
+    return !(lhs < rhs);
+}
 
 template <class K, class V, class C, class A>
 inline bool operator<=(const flat_map<K, V, C, A>& lhs,
                        const flat_map<K, V, C, A>& rhs)
-{ return !(rhs < lhs); }
-
+{
+    return !(rhs < lhs);
+}
 
 template <class K, class V, class C, class A>
 void swap(flat_map<K, V, C, A>& lhs, flat_map<K, V, C, A>& rhs)
-{ lhs.swap(rhs); }
+{
+    lhs.swap(rhs);
+}
 
 } // namespace hexa
-

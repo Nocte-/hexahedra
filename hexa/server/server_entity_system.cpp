@@ -23,12 +23,13 @@
 
 #include <hexa/ip_address.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 server_entity_system::server_entity_system()
 {
-    auto check1 (register_component<ip_address>("ipaddr"));
-    auto check2 (register_component<uint64_t>("player_uid"));
+    auto check1(register_component<ip_address>("ipaddr"));
+    auto check2(register_component<uint64_t>("player_uid"));
 
     if (!es::is_flat<ip_address>::value)
         throw std::runtime_error("ip_address object is not flat");
@@ -38,6 +39,39 @@ server_entity_system::server_entity_system()
 
     if (check2 != c_player_uid)
         throw std::runtime_error("cannot register component player_uid");
+}
+
+network_send_t network_send_behavior(es::storage::component_id component_id)
+{
+    switch (component_id) {
+    case entity_system::c_position:
+        return nearby_falloff;
+    case entity_system::c_velocity:
+        return nearby_falloff;
+    case entity_system::c_force:
+        return nearby_falloff;
+    case entity_system::c_walk:
+        return nearby_falloff;
+    case entity_system::c_orientation:
+        return nearby_falloff;
+    case entity_system::c_boundingbox:
+        return nearby;
+    case entity_system::c_impact:
+        return player_private;
+    case entity_system::c_model:
+        return nearby;
+    case entity_system::c_name:
+        return nearby;
+    case entity_system::c_lookat:
+        return nearby_falloff;
+    case entity_system::c_lag_comp:
+        return nearby_falloff;
+    case entity_system::c_hotbar:
+        return player_private;
+
+    default:
+        return server_private;
+    }
 }
 
 } // namespace hexa

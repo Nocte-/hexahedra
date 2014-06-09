@@ -23,23 +23,24 @@
 
 #include <string>
 
-namespace hexa {
+namespace hexa
+{
 
 struct player_info
 {
-    std::string     name;
-    std::string     uid;
-    std::string     public_key;
-    std::string     private_key;
-    std::string     password;
+    std::string name;
+    std::string uid;
+    std::string public_key;
+    std::string private_key;
+    std::string password;
 };
 
 player_info get_player_info();
 
-void        write_player_info (const player_info& info);
+void write_player_info(const player_info& info);
 
-void        generate_new_key (player_info& info);
+void generate_new_key(player_info& info);
 
-void        generate_new_uid (player_info& info);
+void generate_new_uid(player_info& info);
 
 } // namespace hexa

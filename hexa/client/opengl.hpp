@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <vector>
@@ -34,71 +34,71 @@
 #include "../vector2.hpp"
 #include "../vector3.hpp"
 
-
 // glCheck() only checks for errors in debug.
 //#ifndef NDEBUG
-#  define glCheck(x) ((x), hexa::gl::check_error(__FILE__, __LINE__))
+#define glCheck(x) ((x), hexa::gl::check_error(__FILE__, __LINE__))
 //#else
 //#  define glCheck(x) (x)
 //#endif
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 void check_error(const char* file, unsigned int line);
 
-inline void color (const hexa::color& c)
+inline void color(const hexa::color& c)
 {
     glColor3f(c.r(), c.g(), c.b());
 }
 
-inline void color (const hexa::color_alpha& c)
+inline void color(const hexa::color_alpha& c)
 {
     glColor4f(c.r(), c.g(), c.b(), c.a());
 }
 
-inline void vertex (const hexa::vector3<int>& p)
+inline void vertex(const hexa::vector3<int>& p)
 {
     glVertex3i(p.x, p.y, p.z);
 }
 
-inline void vertex (const hexa::vector3<float>& p)
+inline void vertex(const hexa::vector3<float>& p)
 {
     glVertex3f(p.x, p.y, p.z);
 }
 
-inline void tex_coord (const hexa::vector2<float>& p)
+inline void tex_coord(const hexa::vector2<float>& p)
 {
     glTexCoord2f(p.x, p.y);
 }
 
-inline void translate (const hexa::vector3<float>& p)
+inline void translate(const hexa::vector3<float>& p)
 {
     glTranslatef(p.x, p.y, p.z);
 }
 
-inline void enable (int op)
+inline void enable(int op)
 {
     glCheck(glEnable(op));
 }
 
-inline void enable (std::initializer_list<int> ops)
+inline void enable(std::initializer_list<int> ops)
 {
     for (auto o : ops)
         glCheck(glEnable(o));
 }
 
-inline void disable (int op)
+inline void disable(int op)
 {
     glCheck(glDisable(op));
 }
 
-inline void disable (std::initializer_list<int> ops)
+inline void disable(std::initializer_list<int> ops)
 {
     for (auto o : ops)
         glCheck(glDisable(o));
 }
-
 
 class client_states
 {
@@ -133,10 +133,8 @@ public:
     ~guard_matrix() { glPopMatrix(); }
 };
 
+void cube_face(float size, direction_type d, float grow = 0.01);
 
-void cube_face (float size, direction_type d, float grow = 0.01);
-
-void box (const aabb<vector>& box);
-
-}} // namespace hexa::opengl
-
+void box(const aabb<vector>& box);
+}
+} // namespace hexa::opengl

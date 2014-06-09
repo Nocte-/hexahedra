@@ -25,7 +25,8 @@
 #include <memory>
 #include "terrain_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Generates random, sprawling caverns */
 class cave_generator : public terrain_generator_i
@@ -38,15 +39,12 @@ public:
      *  @param w The game world
      *  @param conf  The following properties are used:
      */
-    cave_generator (world& w, const boost::property_tree::ptree& conf);
+    cave_generator(world& w, const boost::property_tree::ptree& conf);
 
     virtual ~cave_generator();
 
-    void
-    generate (world_terraingen_access& data,
-              const chunk_coordinates& pos,
-              chunk& cnk) override;
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override;
 };
 
 } // namespace hexa
-

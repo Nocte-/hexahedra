@@ -38,7 +38,8 @@
 #include "types.hpp"
 #include "occlusion_manager.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class game;
 class scene;
@@ -53,12 +54,13 @@ public:
     typedef std::unique_ptr<terrain_mesher_i> terrain_mesher_ptr;
 
 public:
-    renderer_i (scene& s)
+    renderer_i(scene& s)
         : scene_{s}
         , chunk_offset_{world_chunk_center}
-    { }
+    {
+    }
 
-    virtual ~renderer_i() { }
+    virtual ~renderer_i() {}
 
     virtual void load_textures(const std::vector<std::string>& textures) = 0;
     virtual void prepare(const player& plr) = 0;
@@ -73,30 +75,36 @@ public:
     virtual void ambient_color(const color&) = 0;
     virtual void sun_color(const color&) = 0;
 
-    virtual terrain_mesher_ptr make_terrain_mesher(vec3i offset) 
-		{ return nullptr; }
+    virtual terrain_mesher_ptr make_terrain_mesher(vec3i offset)
+    {
+        return nullptr;
+    }
 
     virtual void draw(const gl::vbo& v, const matrix4<float>& mtx) = 0;
     virtual void draw_model(const wfpos& p, uint16_t m) = 0;
 
-    virtual void offset (chunk_coordinates pos)
-        { chunk_offset_ = pos; }
+    virtual void offset(chunk_coordinates pos) { chunk_offset_ = pos; }
 
-    chunk_coordinates offset() const
-        { return chunk_offset_; }
+    chunk_coordinates offset() const { return chunk_offset_; }
 
-    virtual void process (const event& ev) { }
-    virtual void process (const sf::Event& ev) { }
+    virtual void process(const event& ev) {}
+    virtual void process(const sf::Event& ev) {}
 
     virtual void highlight_face(const pos_dir<world_coordinates>& face,
-                                const color_alpha& hl_color) { }
+                                const color_alpha& hl_color)
+    {
+    }
 
     virtual void highlight_block(world_coordinates block,
-                                 const color_alpha& hl_color) { }
+                                 const color_alpha& hl_color)
+    {
+    }
 
     virtual void highlight_custom_block(world_coordinates block,
                                         const custom_block& model,
-                                        const color_alpha& hl_color) { }
+                                        const color_alpha& hl_color)
+    {
+    }
 
 protected:
     scene& scene_;
@@ -104,4 +112,3 @@ protected:
 };
 
 } // namespace hexa
-

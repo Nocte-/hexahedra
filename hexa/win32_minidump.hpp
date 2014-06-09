@@ -19,10 +19,8 @@
 //
 // Copyright 2012, 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <string>
 
 void setup_minidump(const std::string& appname);
-

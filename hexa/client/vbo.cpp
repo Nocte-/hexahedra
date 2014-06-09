@@ -30,33 +30,32 @@
 
 using boost::format;
 
-namespace hexa {
-namespace gl {
+namespace hexa
+{
+namespace gl
+{
 
 vbo::vbo()
-    : id_ (0)
-    , count_ (0)
+    : id_(0)
+    , count_(0)
 {
 }
 
 vbo::vbo(const void* buffer, size_t count, size_t vertex_size)
-    : count_ (count)
+    : count_(count)
 {
-    if (count == 0)
-    {
+    if (count == 0) {
         id_ = 0;
-    }
-    else
-    {
+    } else {
         glCheck(glGenBuffers(1, &id_));
         glCheck(glBindBuffer(GL_ARRAY_BUFFER, id_));
-        glCheck(glBufferData(GL_ARRAY_BUFFER, count * vertex_size,
-                             buffer, GL_STATIC_DRAW));
+        glCheck(glBufferData(GL_ARRAY_BUFFER, count * vertex_size, buffer,
+                             GL_STATIC_DRAW));
         glCheck(glBindBuffer(GL_ARRAY_BUFFER, 0));
     }
 }
 
-vbo& vbo::operator= (vbo&& move) noexcept
+vbo& vbo::operator=(vbo&& move) noexcept
 {
     if (id_)
         glCheck(glDeleteBuffers(1, &id_));
@@ -106,6 +105,5 @@ void vbo::unbind()
 {
     glCheck(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }
-
-}} // namespace hexa::gl
-
+}
+} // namespace hexa::gl

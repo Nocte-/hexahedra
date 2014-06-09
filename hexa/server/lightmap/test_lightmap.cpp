@@ -39,23 +39,21 @@ test_lightmap::~test_lightmap ()
 { }
 
 lightmap&
-test_lightmap::generate (world_lightmap_access& data,
-                         const chunk_coordinates& pos,
+test_lightmap::generate (world_lightmap_access&,
+                         const chunk_coordinates&,
                          const surface& s,
                          lightmap& lc, unsigned int) const
 {
-    chunk_index c1 (0, 0, 0), c2 (block_chunk_size);
-
     auto lmi (std::begin(lc));
 
-    for (faces f : s)
+    for (auto& face : s)
     {
-        for (int d (0); d < 6; ++d)
+        for (int d = 0; d < 6; ++d)
         {
-            if (f[d])
+            if (face[d])
             {
-                lmi->sunlight = f.pos.x;
-                lmi->ambient  = f.pos.y;
+                lmi->sunlight = face.pos.x;
+                lmi->ambient  = face.pos.y;
                 ++lmi;
             }
         }

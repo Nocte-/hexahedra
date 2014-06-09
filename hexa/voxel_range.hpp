@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <cassert>
@@ -29,7 +28,8 @@
 #include "aabb.hpp"
 #include "basic_types.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Provides iteration over an axis-aligned box between two points. */
 template <class t>
@@ -39,38 +39,37 @@ public:
     /** Iterator inside a range */
     class iterator
     {
-        const range&    range_;
-        t               cursor_;
+        const range& range_;
+        t cursor_;
 
     public:
-        typedef t       value_type;
-        typedef t       reference;
-        typedef t*      pointer;
-        typedef size_t  difference_type;
+        typedef t value_type;
+        typedef t reference;
+        typedef t* pointer;
+        typedef size_t difference_type;
 
-        typedef std::forward_iterator_tag   iterator_category;
+        typedef std::forward_iterator_tag iterator_category;
 
     public:
         /** Construct a range iterator.
          * @param range     The range to iterate over
          * @param position  The iterator's position in the range */
-        iterator (const range<t>& range, const t& position)
-            : range_ (range), cursor_ (position)
-        {}
+        iterator(const range<t>& range, const t& position)
+            : range_(range)
+            , cursor_(position)
+        {
+        }
 
         /** Move to the next element.
          ** The traversal order is x, y, z. */
         iterator& operator++()
         {
             assert(cursor_ != range_.last_);
-            if (++cursor_[0] >= range_.last_[0])
-            {
+            if (++cursor_[0] >= range_.last_[0]) {
                 cursor_[0] = range_.first_[0];
-                if (++cursor_[1] >= range_.last_[1])
-                {
+                if (++cursor_[1] >= range_.last_[1]) {
                     cursor_[1] = range_.first_[1];
-                    if (++cursor_[2] == range_.last_[2])
-                    {
+                    if (++cursor_[2] == range_.last_[2]) {
                         cursor_[1] = range_.last_[1];
                         cursor_[0] = range_.last_[0];
                     }
@@ -86,33 +85,40 @@ public:
             return tmp;
         }
 
-        bool operator== (const iterator& compare) const
-            { return cursor_ == compare.cursor_; }
+        bool operator==(const iterator& compare) const
+        {
+            return cursor_ == compare.cursor_;
+        }
 
-        bool operator!= (const iterator& compare) const
-            { return cursor_ != compare.cursor_; }
+        bool operator!=(const iterator& compare) const
+        {
+            return cursor_ != compare.cursor_;
+        }
 
-        t  operator*() const { return cursor_; }
+        t operator*() const { return cursor_; }
     };
 
 public:
     friend class iterator;
 
-    typedef t           value_type;
-    typedef iterator    const_iterator;
+    typedef t value_type;
+    typedef iterator const_iterator;
 
 public:
     /** Define a range from the origin to a given point.
      * @param r The end point for the range  */
-    range (const t& r)
-        : first_ (0,0,0), last_ (r)
-    { }
+    range(const t& r)
+        : first_(0, 0, 0)
+        , last_(r)
+    {
+    }
 
     /** Define a range between two values.
      * @param f     First value in the range
      * @param l     Last value in the range  */
-    range (typename t::value_type f, typename t::value_type l)
-        : first_ (f,f,f), last_ (l,l,l)
+    range(typename t::value_type f, typename t::value_type l)
+        : first_(f, f, f)
+        , last_(l, l, l)
     {
         assert(last_[0] >= first_[0]);
         assert(last_[1] >= first_[1]);
@@ -122,44 +128,42 @@ public:
     /** Define a range between two points.
      * @param f     First point in the range
      * @param l     Last point in the range */
-    range (const t& f, const t& l)
-        : first_ (f), last_ (l)
+    range(const t& f, const t& l)
+        : first_(f)
+        , last_(l)
     {
         assert(last_[0] >= first_[0]);
         assert(last_[1] >= first_[1]);
         assert(last_[2] >= first_[2]);
     }
 
-    range (aabb<t> bbox)
-        : first_ (bbox.first), last_ (bbox.second)
-    { }
+    range(aabb<t> bbox)
+        : first_(bbox.first)
+        , last_(bbox.second)
+    {
+    }
 
-    iterator begin()    { return iterator(*this, first_); }
-    iterator end()      { return iterator(*this, last_); }
+    iterator begin() { return iterator(*this, first_); }
+    iterator end() { return iterator(*this, last_); }
 
-    const_iterator begin() const    { return iterator(*this, first_); }
-    const_iterator end() const      { return iterator(*this, last_); }
+    const_iterator begin() const { return iterator(*this, first_); }
+    const_iterator end() const { return iterator(*this, last_); }
 
     /** Get the height, width, and depth of the range. */
-    t dimensions()  const
-    {
-        return last_ - first_;
-    }
+    t dimensions() const { return last_ - first_; }
 
     /** Get the number of voxels in this range. */
-    size_t  size() const
-    {
-        return prod(dimensions());
-    }
+    size_t size() const { return prod(dimensions()); }
 
     /** Check if the range is empty. */
     bool empty() const
     {
-        return first_[0] == last_[0] || first_[1] == last_[1] || first_[2] == last_[2];
+        return first_[0] == last_[0] || first_[1] == last_[1]
+               || first_[2] == last_[2];
     }
 
     /** Move the range by a given amount */
-    range& operator+= (t shift)
+    range& operator+=(t shift)
     {
         first_ += shift;
         last_ += shift;
@@ -167,21 +171,21 @@ public:
     }
 
     /** Move the range by a given amount */
-    range& operator-= (t shift)
+    range& operator-=(t shift)
     {
         first_ -= shift;
         last_ -= shift;
         return *this;
     }
 
-    range& operator/= (typename t::value_type div)
+    range& operator/=(typename t::value_type div)
     {
         first_ /= div;
         last_ /= div;
         return *this;
     }
 
-    range& operator*= (typename t::value_type mul)
+    range& operator*=(typename t::value_type mul)
     {
         first_ *= mul;
         last_ *= mul;
@@ -189,49 +193,49 @@ public:
     }
 
     /** Expand the size of the range by 1 block */
-    range& operator++ ()
+    range& operator++()
     {
-        last_ += t(1,1,1);
+        last_ += t(1, 1, 1);
         return *this;
     }
 
     /** Contract the size of the range by 1 block */
-    range& operator-- ()
+    range& operator--()
     {
-        last_ -= t(1,1,1);
+        last_ -= t(1, 1, 1);
         return *this;
     }
 
-    const t&    first() const { return first_; }
-    const t&    last() const { return last_; }
+    const t& first() const { return first_; }
+    const t& last() const { return last_; }
 
 protected:
-    t  first_; /**< Start of the range, inclusive */
-    t  last_;  /**< End of the range, exclusive */
+    t first_; /**< Start of the range, inclusive */
+    t last_;  /**< End of the range, exclusive */
 };
 
 ////////////////////////////////////////////////////////////////////////////
 
 template <class type>
-const range<type> operator+ (range<type> lhs, range<type> rhs)
+const range<type> operator+(range<type> lhs, range<type> rhs)
 {
     return lhs += rhs;
 }
 
 template <class type>
-const range<type> operator- (range<type> lhs, range<type> rhs)
+const range<type> operator-(range<type> lhs, range<type> rhs)
 {
     return lhs -= rhs;
 }
 
 template <class type>
-const range<type> operator* (range<type> lhs, typename type::value_type rhs)
+const range<type> operator*(range<type> lhs, typename type::value_type rhs)
 {
     return lhs *= rhs;
 }
 
 template <class type>
-const range<type> operator/ (range<type> lhs, typename type::value_type rhs)
+const range<type> operator/(range<type> lhs, typename type::value_type rhs)
 {
     return lhs /= rhs;
 }
@@ -263,11 +267,12 @@ range<type> cube_range(typename type::value_type size)
  * @param distance  The distance from the start and end points of the range to
  *                  the origin. */
 template <class type>
-range<type>
-surroundings(const type& origin, const vector3<typename type::value_type>& distance)
+range<type> surroundings(const type& origin,
+                         const vector3<typename type::value_type>& distance)
 {
     return range<type>(origin - distance,
-                       origin + distance + vector3<typename type::value_type>(1,1,1));
+                       origin + distance
+                       + vector3<typename type::value_type>(1, 1, 1));
 }
 
 /** Make a range that is symmetrical around a given point.
@@ -275,35 +280,34 @@ surroundings(const type& origin, const vector3<typename type::value_type>& dista
  * @param distance  The distance from the start and end points of the range to
  *                  the origin. */
 template <class type>
-range<type> surroundings(const type& origin, typename type::value_type distance)
+range<type> surroundings(const type& origin,
+                         typename type::value_type distance)
 {
-    return surroundings(origin, vector3<typename type::value_type>(distance, distance, distance));
+    return surroundings(origin, vector3<typename type::value_type>(
+                                    distance, distance, distance));
 }
 
 /** Change a block range to a range in chunk coordinates. */
-inline
-range<chunk_coordinates> to_chunk_range (range<world_coordinates> in)
+inline range<chunk_coordinates> to_chunk_range(range<world_coordinates> in)
 {
-    auto temp (--in / chunk_size);
+    auto temp(--in / chunk_size);
     return ++temp;
 }
 
-
 /** Change a block range to a range in chunk coordinates. */
-inline
-range<world_vector> to_chunk_range (range<world_vector> in)
+inline range<world_vector> to_chunk_range(range<world_vector> in)
 {
-    auto last (in.last());
+    auto last(in.last());
     --last;
-    range<world_vector> tmp (in.first() >> cnkshift, last >> cnkshift);
+    range<world_vector> tmp(in.first() >> cnkshift, last >> cnkshift);
     return ++tmp;
 }
 
 /** Predefined range for iterating over every block in a \a chunk. */
-static const range<chunk_index> every_block_in_chunk (0, chunk_size);
+static const range<chunk_index> every_block_in_chunk(0, chunk_size);
 
 /** Predefined range for iterating over every block in a \a neighborhood. */
-static const range<chunk_index> every_block_in_neighborhood (-block_chunk_size, block_chunk_size * 2);
+static const range<chunk_index>
+every_block_in_neighborhood(-block_chunk_size, block_chunk_size * 2);
 
 } // namespace hexa
-
