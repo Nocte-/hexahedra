@@ -30,6 +30,10 @@ Files: libs/lz4/*
 Copyright: 2011, Yann Collet
 License: BSD-2-clause
 
+Files: libs/utf8/*
+Copyright: 2006 Nemanja Trifunovic
+License: Expat
+
 License: AGPL-3.0
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU Affero General Public License as published by
@@ -57,6 +61,10 @@ License: GPL-3.0
  .
  You should have received a copy of the GNU General Public License
  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ .
+ On Debian systems, the full text of the GNU General Public License
+ version 3 can be found in the file
+ '/usr/share/common-licenses/GPL-3'.
 
 License: Expat
  Permission is hereby granted, free of charge, to any person obtaining a copy

@@ -1,14 +1,51 @@
 Source: hexahedra
 Maintainer: Nocte <hexahedra.maintainer@gmail.com>
 Section: games
-Priority: optional
-Build-Depends: debhelper (>= 9), cmake (>= 2.8), cdbs, zlib1g-dev, libboost-dev (>= 1.50), libboost-chrono-dev (>= 1.50), libboost-filesystem-dev (>= 1.50), libboost-iostreams-dev (>= 1.50), libboost-program-options-dev (>= 1.50), libboost-signals-dev (>= 1.50), libboost-system-dev (>= 1.50), libboost-thread-dev (>= 1.50), libcrypto++-dev, libsfml-dev (>= 2.0.0), libenet-dev, libjpeg-dev, libglm-dev, libglew-dev, libglu1-mesa-dev | libglu1-dev, libluajit-5.1-dev, libleveldb-dev, librhea1-dev, libes1-dev, libhexanoise1-dev
+Priority: extra
+Build-Depends: 
+ debhelper (>= 9), 
+ cmake (>= 2.8), 
+ cdbs, 
+ zlib1g-dev, 
+ libboost-dev (>= 1.50), 
+ libboost-chrono-dev (>= 1.50), 
+ libboost-filesystem-dev (>= 1.50), 
+ libboost-iostreams-dev (>= 1.50), 
+ libboost-program-options-dev (>= 1.50), 
+ libboost-signals-dev (>= 1.50), 
+ libboost-system-dev (>= 1.50), 
+ libboost-thread-dev (>= 1.50), 
+ libcrypto++-dev, 
+ libsfml-dev (>= 2.0.0), 
+ libenet-dev, 
+ libjpeg-dev, 
+ libglm-dev, 
+ libglew-dev, 
+ libglu1-mesa-dev | libglu1-dev, 
+ libluajit-5.1-dev [i386 amd64 kfreebsd-i386 armel armhf powerpc powerpcspe mips] | liblua5.1-dev,
+ libleveldb-dev, 
+ librhea1-dev, 
+ libes1-dev, 
+ libhexanoise1-dev
 Standards-Version: 3.9.4
 Homepage: http://hexahedra.net/
 
 Package: hexahedra
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: 
+ ${shlibs:Depends}, 
+ ${misc:Depends},
+ hexahedra-server (=${binary:Version})
 Description: Collection of blocky sandbox games
  A collection of single- and multiplayer blocky sandbox games.
+
+Package: hexahedra-server
+Architecture: any
+Depends: 
+ ${shlibs:Depends}, 
+ ${misc:Depends}
+Suggests:
+ hexahedra
+Description: Hexahedra server
+ Headless server for single- and multiplayer Hexahedra games. 
 
