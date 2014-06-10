@@ -75,6 +75,12 @@ private:
     sf::Image temp_img_;
     texture texture_atlas_;
     bool textures_ready_;
+    
+    uniform_variable terrain_matrix_;
+    uniform_variable terrain_camera_;
+    uniform_variable terrain_tex_;
+    uniform_variable fog_color_;
+    uniform_variable fog_distance_;
 };
 
 } // namespace hexa
