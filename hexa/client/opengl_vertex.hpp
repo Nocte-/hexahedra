@@ -29,9 +29,10 @@ typedef vertex_1<vtx_xyz<float> > simple_vtx;
 
 // Vertex type with a 16-bit position, texture coordinates, and
 // an RGB color.
-typedef vertex_3<vtx_xyz<int16_t>,
+typedef vertex_4<vtx_xyz<int16_t>,
                  vtx_uv<float>,
-                 vtx_rgb<uint8_t>>  vtx;
+                 vtx_rgb<uint8_t>,
+                 vtx_padding<1>>     vtx;
 
 // Build a model...
 std::vector<vtx> vertices;
@@ -40,11 +41,11 @@ std::vector<vtx> vertices;
 vertices.emplace_back({ {1, 2, 3}, { 0.4f, 0.3f }, { 255, 255, 255 } });
 
 // Done, make a VBO.
-auto buffer (gl::make_vbo(vertices));
+auto buffer = gl::make_vbo(vertices);
 
 // Draw the model.
 buffer.bind();
-bind_attributes<vtx>({0, 1, 2});
+bind_attributes<vtx>();
 buffer.draw_triangles();
 
  * @endcode
@@ -52,9 +53,7 @@ buffer.draw_triangles();
 
 #include <array>
 #include <initializer_list>
-#include <boost/fusion/algorithm.hpp>
-#include <GL/glew.h>
-#include <GL/gl.h>
+#include "opengl.hpp"
 
 namespace hexa
 {
@@ -135,9 +134,11 @@ struct vtx_uv : public vector2<t>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o);
+        glCheck(glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }
 };
 
 /** Vertex 3D coordinates */
@@ -160,9 +161,11 @@ struct vtx_xyz : public vector3<t>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o);
+        glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }    
 };
 
 /** Vertex normal */
@@ -185,9 +188,11 @@ struct vtx_normal : public vector3<t>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o);
+        glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
+                              (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }
 };
 
 /** Vertex color */
@@ -206,9 +211,11 @@ struct vtx_rgb : public vector3<t>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride,
-                              (GLvoid*)o);
+        glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride,
+                              (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }
 };
 
 /** Scalar value */
@@ -223,8 +230,10 @@ struct vtx_scalar
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribIPointer(i, 1, gl_type<t>()(), stride, (GLvoid*)o);
+        glCheck(glVertexAttribIPointer(i, 1, gl_type<t>()(), stride, (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }
 
     t value;
 };
@@ -252,8 +261,10 @@ struct vtx_array : public std::array<t, count>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribIPointer(i, count, gl_type<t>()(), stride, (GLvoid*)o);
+        glCheck(glVertexAttribIPointer(i, count, gl_type<t>()(), stride, (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }    
 };
 
 /** Array of normalized scalars.
@@ -281,9 +292,11 @@ struct vtx_normalized_array : public std::array<t, count>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glVertexAttribPointer(i, count, gl_type<t>()(), true, stride,
-                              (GLvoid*)o);
+        glCheck(glVertexAttribPointer(i, count, gl_type<t>()(), true, stride,
+                                     (GLvoid*)o));
     }
+    
+    static bool is_padding() { return false; }
 };
 
 /** Vertex data padding.
@@ -293,102 +306,11 @@ template <size_t count>
 struct vtx_padding : public std::array<char, count>
 {
     static void bind(size_t i, size_t o, size_t stride) {}
+    
+    static bool is_padding() { return true; }    
 };
 
 //---------------------------------------------------------------------------
-
-namespace ogl
-{
-
-/*
-
-template <typename Head>
-class vertex : public Head
-{
-public:
-vertex (const Head& init)
-    : Head(init)
-{ }
-
-static void bind_ogl2()
-{
-    _bind_ogl2(0, sizeof(Head));
-}
-
-static void bind_ogl3()
-{
-    _bind_ogl3(0, 0, sizeof(Head));
-}
-
-static void enable_client_states()
-{
-    Head::enable_client_state();
-}
-
-static void disable_client_states()
-{
-    Head::disable_client_state();
-}
-
-protected:
-static void _bind_ogl2(size_t offset, size_t size)
-{
-    Head::bind_ogl2(offset, size);
-}
-
-static void _bind_ogl3(size_t count, size_t offset, size_t size)
-{
-    Head::bind_ogl3(count, offset, size);
-}
-};
-
-template <typename Head, typename... Tail>
-class vertex : public Head, public vertex<Tail...>
-{
-public:
-vertex (const Head& init, const Tail&... rest)
-    : Head(init)
-    , vertex<Tail...>(rest)
-{ }
-
-static void bind_ogl2()
-{
-    _bind_ogl2(0, sizeof(vertex<Head, Tail...>));
-}
-
-static void bind_ogl3()
-{
-    _bind_ogl3(0, 0, sizeof(vertex<Head, Tail...>));
-}
-
-static void enable_client_states()
-{
-    Head::enable_client_state();
-    vertex<Tail...>::enable_client_states();
-}
-
-static void disable_client_states()
-{
-    Head::disable_client_state();
-    vertex<Tail...>::disable_client_states();
-}
-
-protected:
-static void _bind_ogl2(size_t offset, size_t size)
-{
-    Head::bind_ogl2(offset, size);
-    vertex<Tail...>::_bind_ogl2(offset + sizeof(Head), size);
-}
-
-static void _bind_ogl3(size_t count, size_t offset, size_t size)
-{
-    Head::bind_ogl3(count, offset, size);
-    vertex<Tail...>::_bind_ogl2(count + 1, offset + sizeof(Head), size);
-}
-};
-
-*/
-}
 
 /** OpenGL vertex type.
  *  A vertex can hold a position, color, texture coordinate, or general
@@ -537,72 +459,84 @@ public:
 
 //---------------------------------------------------------------------------
 
-template <class vertex_t>
+template <typename Vertex>
 void bind_attributes()
 {
-    size_t offset(0), size(sizeof(vertex_t));
-    vertex_t::value_type_1::bind(0, offset, size);
+    size_t offset(0), size(sizeof(Vertex));
+    Vertex::value_type_1::bind(0, offset, size);
 
-    if (vertex_t::element_count > 1) {
-        offset += sizeof(typename vertex_t::value_type_1);
-        vertex_t::value_type_2::bind(1, offset, size);
+    if (Vertex::element_count > 1) {
+        offset += sizeof(typename Vertex::value_type_1);
+        Vertex::value_type_2::bind(1, offset, size);
     }
 
-    if (vertex_t::element_count > 2) {
-        offset += sizeof(typename vertex_t::value_type_2);
-        vertex_t::value_type_3::bind(2, offset, size);
+    if (Vertex::element_count > 2) {
+        offset += sizeof(typename Vertex::value_type_2);
+        Vertex::value_type_3::bind(2, offset, size);
     }
 
-    if (vertex_t::element_count > 3) {
-        offset += sizeof(typename vertex_t::value_type_3);
-        vertex_t::value_type_4::bind(3, offset, size);
+    if (Vertex::element_count > 3) {
+        offset += sizeof(typename Vertex::value_type_3);
+        Vertex::value_type_4::bind(3, offset, size);
     }
 
-    if (vertex_t::element_count > 4) {
-        offset += sizeof(typename vertex_t::value_type_4);
-        vertex_t::value_type_5::bind(4, offset, size);
+    if (Vertex::element_count > 4) {
+        offset += sizeof(typename Vertex::value_type_4);
+        Vertex::value_type_5::bind(4, offset, size);
     }
 }
 
-template <class vertex_t>
+template <typename Vertex>
 void bind_attributes(const std::vector<int>& attrs)
 {
-    size_t offset(0), size(sizeof(vertex_t));
-    vertex_t::value_type_1::bind(attrs[0], offset, size);
+    size_t offset(0), size(sizeof(Vertex));
+    Vertex::value_type_1::bind(attrs[0], offset, size);
 
-    if (vertex_t::element_count > 1) {
-        offset += sizeof(typename vertex_t::value_type_1);
-        vertex_t::value_type_2::bind(attrs[1], offset, size);
+    if (Vertex::element_count > 1) {
+        offset += sizeof(typename Vertex::value_type_1);
+        Vertex::value_type_2::bind(attrs[1], offset, size);
     }
 
-    if (vertex_t::element_count > 2) {
-        offset += sizeof(typename vertex_t::value_type_2);
-        vertex_t::value_type_3::bind(attrs[2], offset, size);
+    if (Vertex::element_count > 2) {
+        offset += sizeof(typename Vertex::value_type_2);
+        Vertex::value_type_3::bind(attrs[2], offset, size);
     }
 
-    if (vertex_t::element_count > 3) {
-        offset += sizeof(typename vertex_t::value_type_3);
-        vertex_t::value_type_4::bind(attrs[3], offset, size);
+    if (Vertex::element_count > 3) {
+        offset += sizeof(typename Vertex::value_type_3);
+        Vertex::value_type_4::bind(attrs[3], offset, size);
     }
 
-    if (vertex_t::element_count > 4) {
-        offset += sizeof(typename vertex_t::value_type_4);
-        vertex_t::value_type_5::bind(attrs[4], offset, size);
+    if (Vertex::element_count > 4) {
+        offset += sizeof(typename Vertex::value_type_4);
+        Vertex::value_type_5::bind(attrs[4], offset, size);
     }
 }
 
-template <class Vertex>
+template <typename Vertex>
 void enable_attrib_array()
 {
-    for (int i = 0; i < Vertex::element_count; ++i)
-        glEnableVertexAttribArray(i);
+    if (!Vertex::value_type_1::is_padding())
+        glCheck(glEnableVertexAttribArray(0));
+
+    if (Vertex::element_count > 1 && !Vertex::value_type_2::is_padding())
+        glCheck(glEnableVertexAttribArray(1));
+
+    if (Vertex::element_count > 2 && !Vertex::value_type_3::is_padding())
+        glCheck(glEnableVertexAttribArray(2));
+
+    if (Vertex::element_count > 3 && !Vertex::value_type_4::is_padding())
+        glCheck(glEnableVertexAttribArray(3));
+    
+    if (Vertex::element_count > 4 && !Vertex::value_type_5::is_padding())
+        glCheck(glEnableVertexAttribArray(4));
 }
 
-template <class Vertex>
+template <typename Vertex>
 void disable_attrib_array()
 {
     for (int i = 0; i < Vertex::element_count; ++i)
-        glDisableVertexAttribArray(i);
+        glCheck(glDisableVertexAttribArray(i));
 }
 
 } // namespace hexa

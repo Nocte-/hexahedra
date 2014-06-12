@@ -147,8 +147,8 @@ public:
                           const std::vector<light>& l)
     {
         empty_ = false;
-        vec3i offset{offset_ + i};
-        offset *= 16;
+        vec3f offset{offset_ + i};
+
         std::array<uint8_t, 2> light;
         for (auto& part : model) {
             const auto& a(part.box.first);
@@ -159,19 +159,19 @@ public:
             light[0] = l[0].artificial;
             light[1] = (l[0].ambient << 4) + l[0].sunlight;
 
-            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.y, b.z), part.textures[0],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.y, b.z), part.textures[0],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.y, a.z), part.textures[0],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.y, a.z), part.textures[0],
                                  light);
 
@@ -179,19 +179,19 @@ public:
             light[0] = l[1].artificial;
             light[1] = (l[1].ambient << 4) + l[1].sunlight;
 
-            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.y, b.z), part.textures[1],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.y, b.z), part.textures[1],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.y, a.z), part.textures[1],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.y, a.z), part.textures[1],
                                  light);
 
@@ -199,19 +199,19 @@ public:
             light[0] = l[2].artificial;
             light[1] = (l[2].ambient << 4) + l[2].sunlight;
 
-            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, a.z), part.textures[2],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, b.z), part.textures[2],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, b.z), part.textures[2],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, a.z), part.textures[2],
                                  light);
 
@@ -219,19 +219,19 @@ public:
             light[0] = l[3].artificial;
             light[1] = (l[3].ambient << 4) + l[3].sunlight;
 
-            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, b.z), part.textures[3],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, b.z), part.textures[3],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, a.z), part.textures[3],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, a.z), part.textures[3],
                                  light);
 
@@ -239,19 +239,19 @@ public:
             light[0] = l[4].artificial;
             light[1] = (l[4].ambient << 4) + l[4].sunlight;
 
-            custom_.emplace_back(vec3i(a.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, a.y), part.textures[4],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, a.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, a.y), part.textures[4],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, b.y), part.textures[4],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, b.y, b.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, b.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, b.y), part.textures[4],
                                  light);
 
@@ -259,19 +259,19 @@ public:
             light[0] = l[5].artificial;
             light[1] = (l[5].ambient << 4) + l[5].sunlight;
 
-            custom_.emplace_back(vec3i(a.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, b.y), part.textures[5],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, b.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, b.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, b.y), part.textures[5],
                                  light);
 
-            custom_.emplace_back(vec3i(b.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(b.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(b.x, a.y), part.textures[5],
                                  light);
 
-            custom_.emplace_back(vec3i(a.x, a.y, a.z) + offset,
+            custom_.emplace_back(vec3f(a.x, a.y, a.z) / 16.f + offset,
                                  vector2<uint8_t>(a.x, a.y), part.textures[5],
                                  light);
         }
@@ -329,19 +329,19 @@ public:
                     light[0] = elem.light_art;
                     light[1] = (elem.light_amb << 4) + elem.light_sun;
 
-                    vec3i p = offset_ + transform(chunk_index(
+                    vec3f p = offset_ + transform(chunk_index(
                                             j->first.x,
                                             j->first.y + elem.size.y - 1, z));
 
-                    data_.emplace_back(vec3i(p.x + o[0][0], p.y + o[0][1],
-                                             p.z + o[0][2]) * 16,
+                    data_.emplace_back(vec3f(p.x + o[0][0], p.y + o[0][1],
+                                             p.z + o[0][2]),
                                        vector2<uint8_t>(0, 0), tx, light);
 
                     p = offset_
                         + transform(chunk_index(j->first.x, j->first.y, z));
 
-                    data_.emplace_back(vec3i(p.x + o[1][0], p.y + o[1][1],
-                                             p.z + o[1][2]) * 16,
+                    data_.emplace_back(vec3f(p.x + o[1][0], p.y + o[1][1],
+                                             p.z + o[1][2]),
                                        vector2<uint8_t>(0, 16 * elem.size.y),
                                        tx, light);
 
@@ -349,9 +349,8 @@ public:
                         + transform(chunk_index(j->first.x + elem.size.x - 1,
                                                 j->first.y, z));
 
-                    data_.emplace_back(
-                        vec3i(p.x + o[2][0], p.y + o[2][1], p.z + o[2][2])
-                        * 16,
+                    data_.emplace_back(vec3f(p.x + o[2][0], p.y + o[2][1],
+                                             p.z + o[2][2]),
                         vector2<uint8_t>(16 * elem.size.x, 16 * elem.size.y),
                         tx, light);
 
@@ -359,8 +358,8 @@ public:
                                       j->first.x + elem.size.x - 1,
                                       j->first.y + elem.size.y - 1, z));
 
-                    data_.emplace_back(vec3i(p.x + o[3][0], p.y + o[3][1],
-                                             p.z + o[3][2]) * 16,
+                    data_.emplace_back(vec3f(p.x + o[3][0], p.y + o[3][1],
+                                             p.z + o[3][2]),
                                        vector2<uint8_t>(16 * elem.size.x, 0),
                                        tx, light);
                 }
@@ -418,7 +417,7 @@ sfml_ogl3::sfml_ogl3(sf::RenderWindow& win, scene& s)
     model_shader_.stop_using();
 
     mrfixit_ = models("mrfixit");
-
+    
     resize(width_, height_);
     sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);
 }
@@ -431,11 +430,11 @@ void sfml_ogl3::load_textures(const std::vector<std::string>& name_list)
 {
     textures_ready_ = false;
 
-    for (const std::string& name : name_list) {
+    for (std::string name : name_list) {
         std::string orig_name{name};
         fs::path file{resource_file(res_block_texture, name)};
 
-        textures_.push_back(sf::Image());
+        textures_.push_back(sf::Image{});
 
         while (!name.empty() && !fs::is_regular_file(file)) {
             auto dot = find_last(name, "_");
@@ -484,14 +483,16 @@ renderer_i::terrain_mesher_ptr sfml_ogl3::make_terrain_mesher(vec3i offset)
 
 void sfml_ogl3::prepare(const player& plr)
 {
+    sfml::prepare(plr);
+    
     if (textures_ready_) {
         texarr_.load(textures_, 16, 16, texture::transparent);
 
         int slice = 0;
         for (sf::Image& img : textures_) {
-            auto dim{img.getSize()};
+            auto dim = img.getSize();
             if (dim.x == 16 && dim.y > 16) {
-                gl::vbo buffer(img.getPixelsPtr(), dim.x * dim.y, 4);
+                gl::vbo buffer{img.getPixelsPtr(), dim.x * dim.y, 4};
                 animations_.emplace_back(
                     animated_texture(slice, dim.y / 16, std::move(buffer)));
             }
@@ -523,12 +524,10 @@ void sfml_ogl3::prepare(const player& plr)
 
     terrain_shader_.use();
     artificial_light_ = color(.65f, .6f, .3f); // art_grad(count);
-    fog_distance_ = scene_.view_distance() * chunk_size * 16.f;
+    fog_distance_ = static_cast<float>(scene_.view_distance() * chunk_size);
     terrain_camera_ = camera_.position();
     terrain_matrix_ = camera_.mvp_matrix();
     terrain_shader_.stop_using();
-
-    sfml::prepare(plr);
 }
 
 void sfml_ogl3::opaque_pass()
@@ -542,15 +541,14 @@ void sfml_ogl3::opaque_pass()
     enable_attrib_array<ogl3_terrain_vertex>();
 
     frustum clip(camera_.mvp_matrix());
-    // Temporarily turned off:
-    //const float sphere_diam(16.f * 13.86f);
+    const float sphere_diam(13.86f);
 
     scene_.for_each_opaque_vbo([&](const chunk_coordinates& pos,
                                    const gl::vbo& vbo) {
-        vec3f offset(vec3i(pos - chunk_offset_));
-        offset *= chunk_size * 16.f;
+        vec3f offset{vec3i{pos - chunk_offset_}};
+        offset *= chunk_size;
 
-        // if (clip.is_inside(offset + vec3f{128,128,128}, sphere_diam))
+        if (clip.is_inside(offset + vec3f{8,8,8}, sphere_diam))
         {
             vbo.bind();
             bind_attributes<ogl3_terrain_vertex>();
@@ -567,7 +565,6 @@ void sfml_ogl3::opaque_pass()
 void sfml_ogl3::draw_model(const wfpos& p, uint16_t m)
 {
     vector offset{p.relative_to(chunk_offset_ * chunk_size)};
-    offset *= 16.f;
 
     glCheck(glActiveTexture(GL_TEXTURE1));
 
@@ -599,6 +596,7 @@ void sfml_ogl3::transparent_pass()
         return;
 
     frustum clip{camera_.mvp_matrix()};
+    const float sphere_diam = 13.86f;
 
     glCheck(glDepthMask(GL_FALSE));
     glCheck(glActiveTexture(GL_TEXTURE0));
@@ -606,14 +604,12 @@ void sfml_ogl3::transparent_pass()
     terrain_shader_.use();
     enable_attrib_array<ogl3_terrain_vertex>();
 
-    const float sphere_diam = 16.f * 13.86f;
-
     scene_.for_each_transparent_vbo([&](const chunk_coordinates& pos,
                                         const gl::vbo& vbo) {
         vec3f offset{vec3i{pos - chunk_offset_}};
-        offset *= chunk_size * 16.f;
+        offset *= chunk_size;
 
-        if (clip.is_inside(offset + vec3f{128, 128, 128}, sphere_diam)) {
+        if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
             vbo.bind();
             bind_attributes<ogl3_terrain_vertex>();
             vbo.draw();
@@ -626,12 +622,10 @@ void sfml_ogl3::transparent_pass()
     glCheck(glDepthMask(GL_TRUE));
 }
 
-bool debug_mode = true;
-
 void sfml_ogl3::handle_occlusion_queries()
 {
     frustum clip{camera_.mvp_matrix()};
-    const float sphere_diam = 18.f * 13.86f;
+    const float sphere_diam = 14.f;
 
     gl::enable(GL_BLEND);
     glCheck(glBlendFunc(GL_ZERO, GL_ONE));
@@ -643,9 +637,9 @@ void sfml_ogl3::handle_occlusion_queries()
     scene_.for_each_occlusion_query([&](const chunk_coordinates& pos,
                                         gl::occlusion_query& qry) {
         vec3f offset{vec3i(pos - chunk_offset_)};
-        offset *= 256.f;
+        offset *= chunk_size;
 
-        if (clip.is_inside(offset + vec3f{128, 128, 128}, sphere_diam)) {
+        if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
             auto mtx(camera_.projection_matrix()
                      * translate(camera_.model_view_matrix(), offset));
             occlusion_matrix_ = mtx;
@@ -674,8 +668,6 @@ void sfml_ogl3::handle_occlusion_queries()
     glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     disable_attrib_array<occ_cube_vtx>();
     gl::vbo::unbind();
-
-    terrain_matrix_ = camera_.mvp_matrix();
     occlusion_shader_.stop_using();
 
     glCheck(glEnable(GL_CULL_FACE));

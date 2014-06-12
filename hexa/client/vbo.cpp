@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012, 2013, nocte@hippie.nu
+// Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "vbo.hpp"
@@ -91,12 +91,14 @@ void vbo::unbind_pixel_buffer() const
 
 void vbo::draw() const
 {
+    assert(id_ != 0);
     assert(count_ % 4 == 0);
     glCheck(glDrawArrays(GL_QUADS, 0, count_));
 }
 
 void vbo::draw_triangles() const
 {
+    assert(id_ != 0);
     assert(count_ % 3 == 0);
     glCheck(glDrawArrays(GL_TRIANGLES, 0, count_));
 }
@@ -105,5 +107,6 @@ void vbo::unbind()
 {
     glCheck(glBindBuffer(GL_ARRAY_BUFFER, 0));
 }
-}
-} // namespace hexa::gl
+
+} // namespace gl
+} // namespace hexa

@@ -19,7 +19,6 @@
 //
 // Copyright 2013-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <atomic>
@@ -47,7 +46,7 @@ namespace hexa
 
 class player;
 
-typedef vertex_4<vtx_xyz<int32_t>,      // Position
+typedef vertex_4<vtx_xyz<float>,        // Position
                  vtx_uv<uint8_t>,       // Texture coordinates
                  vtx_scalar<uint16_t>,  // Texture index
                  vtx_array<uint8_t, 2>> // Light values, 4 nibbles

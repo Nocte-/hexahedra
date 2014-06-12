@@ -36,7 +36,7 @@ optimized_render_surface::layer optimize_greedy(render_surface::layer in)
     // Max-size is set to 15, since the current OpenGL3 renderer only
     // supports quad sizes up to 15.  Not quite elegant, but it'll have
     // to do for now.
-    const unsigned int max_size(chunk_size - 1);
+    const unsigned int max_size = chunk_size - 1;
 
     optimized_render_surface::layer result;
     size_t search(0);

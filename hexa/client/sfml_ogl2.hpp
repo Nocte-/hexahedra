@@ -41,7 +41,7 @@ namespace hexa
 typedef vertex_4<vtx_xyz<float>,   // Position
                  vtx_uv<float>,    // Texture coordinates
                  vtx_rgb<uint8_t>, // RGB light
-                 vtx_padding<1>>   // Round to 8 bytes
+                 vtx_padding<1>>   // Round to 4 bytes
 
     ogl2_terrain_vertex;
 

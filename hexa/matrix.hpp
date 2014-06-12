@@ -398,7 +398,17 @@ public:
             i /= div;
         return *this;
     }
+    
+    bool operator== (const self& compare) const
+    {
+        return m_ == compare.m_;
+    }
 
+    bool operator!= (const self& compare) const
+    {
+        return m_ != compare.m_;
+    }
+    
     const value_type* as_ptr() const { return &m_[0]; }
     value_type* as_ptr() { return &m_[0]; }
 

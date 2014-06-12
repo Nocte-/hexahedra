@@ -31,18 +31,18 @@ namespace iqm
 
 model load_meshes(const std::vector<char>& buf)
 {
-    const header& hdr(*(header*)&buf[0]);
+    const header& hdr = *(header*)&buf[0];
 
-    const float* position(nullptr);
-    const float* normal(nullptr);
-    const float* tex_coord(nullptr);
-    const uint8_t* blend_indices(nullptr);
-    const uint8_t* blend_weights(nullptr);
-    const uint8_t* colors(nullptr);
+    const float* position = nullptr;
+    const float* normal = nullptr;
+    const float* tex_coord = nullptr;
+    const uint8_t* blend_indices = nullptr;
+    const uint8_t* blend_weights = nullptr;
+    const uint8_t* colors = nullptr;
 
-    const vertexarray* vas((vertexarray*)&buf[hdr.ofs_vertexarrays]);
-    for (size_t i{0}; i < hdr.num_vertexarrays; ++i) {
-        const vertexarray& va(vas[i]);
+    const vertexarray* vas = (vertexarray*)&buf[hdr.ofs_vertexarrays];
+    for (size_t i = 0; i < hdr.num_vertexarrays; ++i) {
+        const vertexarray& va = vas[i];
 
         switch (va.type) {
         case field_type::position:
@@ -96,7 +96,7 @@ model load_meshes(const std::vector<char>& buf)
 
     model result;
 
-    const mesh* meshes{(mesh*)&buf[hdr.ofs_meshes]};
+    const mesh* meshes = (mesh*)&buf[hdr.ofs_meshes];
 
     static const float defaultnormal[3] = {0.0f, 0.0f, 0.0f};
     static const uint8_t defaultblend[4] = {0, 0, 0, 0};
@@ -104,7 +104,7 @@ model load_meshes(const std::vector<char>& buf)
 
     if (tex_coord != nullptr) {
         result.vertex_buffer.resize(hdr.num_vertices);
-        for (size_t i{0}; i < hdr.num_vertices; ++i) {
+        for (size_t i = 0; i < hdr.num_vertices; ++i) {
             result.vertex_buffer[i] = model::vertex(
                 position + i * 3, tex_coord + i * 2,
                 normal ? normal + i * 3 : defaultnormal,
@@ -113,7 +113,7 @@ model load_meshes(const std::vector<char>& buf)
         }
     } else {
         result.vertex_buffer_col.resize(hdr.num_vertices);
-        for (size_t i{0}; i < hdr.num_vertices; ++i) {
+        for (size_t i = 0; i < hdr.num_vertices; ++i) {
             result.vertex_buffer_col[i] = model::vertex_col(
                 position + i * 3, colors ? colors + i * 3 : defaultcolor,
                 normal ? normal + i * 3 : defaultnormal,
@@ -124,20 +124,20 @@ model load_meshes(const std::vector<char>& buf)
 
     const triangle* tris{(triangle*)&buf[hdr.ofs_triangles]};
     result.edge_buffer.resize(hdr.num_triangles);
-    for (size_t i{0}; i < hdr.num_triangles; ++i) {
+    for (size_t i = 0; i < hdr.num_triangles; ++i) {
         for (uint16_t j{0}; j < 3; ++j)
             result.edge_buffer[i][j] = static_cast<uint16_t>(tris[i][2 - j]);
     }
 
     const char* str{(char*)&buf[hdr.ofs_text]};
-    for (size_t i{0}; i < hdr.num_meshes; ++i) {
+    for (size_t i = 0; i < hdr.num_meshes; ++i) {
         auto& m(meshes[i]);
         result.meshes.emplace_back(m.first_triangle, m.num_triangles,
                                    &str[m.material]);
     }
 
     const joint* joints{(joint*)&buf[hdr.ofs_joints]};
-    for (size_t i{0}; i < hdr.num_joints; ++i) {
+    for (size_t i = 0; i < hdr.num_joints; ++i) {
         const joint& j(joints[i]);
 
         result.bones.emplace_back(

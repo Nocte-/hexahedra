@@ -100,6 +100,13 @@ model_manager::resource model_manager::load(const std::string& location)
 {
     auto temp(iqm::load(resource_file(res_model, location)));
     // return std::make_shared<gl::model>(temp.first);
+    
+    for (auto& v : temp.first.vertex_buffer)
+        v.e1 *= 0.1;
+    
+    for (auto& v : temp.first.vertex_buffer_col)
+        v.e1 *= 0.1;
+    
     gl::model* p(new gl::model(temp.first));
     return std::shared_ptr<gl::model>(p);
 }

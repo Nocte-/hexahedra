@@ -282,7 +282,7 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
                                30 + rand() % 300);
     }
 
-    const int16_t l{-10}, h{266};
+    const int16_t l{0}, h{16};
 
     static const int16_t cube[24 * 3]
         = {l, l, l, h, l, l, h, h, l, l, h, l, h, l, l, h, l, h,
@@ -300,13 +300,13 @@ sfml::~sfml()
 void sfml::draw_chunk_face(const chunk_coordinates& p, direction_type d)
 {
     vec3i offset{p - chunk_offset_};
-    opengl_cube_face(256.0f, offset, d);
+    opengl_cube_face(16.0f, offset, d);
 }
 
 void sfml::draw_chunk_cube(const chunk_coordinates& p)
 {
     vec3i offset{p - chunk_offset_};
-    opengl_cube(256.0f, offset);
+    opengl_cube(16.0f, offset);
 }
 
 void sfml::prepare(const player& plr)
@@ -325,7 +325,8 @@ void sfml::prepare(const player& plr)
     }
 
     camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock, 1.22173048f,
-                     (float)width_ / (float)height_, 0.2f, 800.f);
+                     (float)width_ / (float)height_, 0.01f, 
+                     scene_.view_distance() * chunk_size * 1.2f);
 
     glCheck(glDisable(GL_CULL_FACE));
     glCheck(glDisable(GL_LIGHTING));
@@ -462,9 +463,10 @@ void sfml::prepare(const player& plr)
     texture::unbind();
 
     camera_ = camera(vec3f{0, 0, 0}, plr.head_angle(), rock, 1.22173048f,
-                     (float)width_ / (float)height_, 2.0f, 16000.f);
+                     (float)width_ / (float)height_, 0.01f, 
+                     scene_.view_distance() * chunk_size * 1.2f);
 
-    camera_.move_to((c + vector(0, 0, bob)) * 16.f);
+    camera_.move_to(c + vec3f{0, 0, bob});
 
     glCheck(glEnable(GL_CULL_FACE));
     glCheck(glEnable(GL_DEPTH_TEST));
@@ -476,12 +478,11 @@ void sfml::highlight_face(const pos_dir<world_coordinates>& face,
 {
     glCheck(glDepthMask(GL_FALSE));
     vec3f offset(vec3i(face.pos - chunk_offset_ * chunk_size));
-    offset *= 16.f;
     auto mtx(translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
 
     gl::color(hl_color);
-    gl::cube_face(16.0f, face.dir);
+    gl::cube_face(1.0f, face.dir);
     glCheck(glDepthMask(GL_TRUE));
 }
 
@@ -491,21 +492,20 @@ void sfml::highlight_custom_block(world_coordinates block,
 {
     glCheck(glDepthMask(GL_FALSE));
     vec3f offset(vec3i(block - chunk_offset_ * chunk_size));
-    offset *= 16.f;
     auto mtx(translate(camera_.model_view_matrix(), offset));
     glLoadMatrixf(mtx.as_ptr());
 
     gl::color(hl_color);
     for (auto& part : model)
-        gl::box(inflate(part.bounding_box(), 0.01f));
+        gl::box(inflate(part.bounding_box() / 16.f, 0.001f));
 
     glCheck(glDepthMask(GL_TRUE));
 }
 
 void sfml::draw_bar(float x, float y, int index, int width, double ratio)
 {
-    for (int i(0); i < width; ++i) {
-        int idx(index);
+    for (int i = 0; i < width; ++i) {
+        int idx = index;
 
         ui_elem_[idx].setPosition(x, y);
         app_.draw(ui_elem_[idx]);
@@ -531,8 +531,9 @@ void sfml::draw_ui(double elapsed, const hud& h)
     glCheck(gluOrtho2D(0, width_, height_, 0));
     glCheck(glMatrixMode(GL_MODELVIEW));
     glCheck(glLoadIdentity());
-
     app_.resetGLStates();
+    glCheck(glDisable(GL_CULL_FACE));
+    glCheck(glDisable(GL_DEPTH_TEST));    
     app_.draw(ui_elem_[0]);
 
     std::vector<std::string> msgs;
@@ -585,9 +586,10 @@ void sfml::draw_ui(double elapsed, const hud& h)
             std::u32string wide;
             sf::Utf8::toUtf32(msg.begin(), msg.end(),
                               std::back_inserter(wide));
-            sf::String l((const unsigned int*)&wide[0]);
-
-            sf::Text txt(l, *ui_font_, 16);
+            
+            sf::String l{(const unsigned int*)&wide[0]};
+            sf::Text txt{l, *ui_font_, 16};
+            
             txt.setColor(msg_color);
             txt.setPosition(10, y);
             app_.draw(txt);
@@ -596,7 +598,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     }
 
     if (h.show_input()) {
-        sf::RectangleShape bg({width_ - 10.f, 20.f});
+        sf::RectangleShape bg{{width_ - 10.f, 20.f}};
         bg.setPosition(5, height_ - 70);
         bg.setFillColor(sf::Color(0, 0, 0, 150));
         app_.draw(bg);
@@ -624,6 +626,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     hb.setPosition((width_ - hb.getGlobalBounds().width) * 0.5,
                    height_ - hb.getGlobalBounds().height - 1);
     app_.draw(hb);
+    app_.draw(ui_elem_[0]);
 
     if (acc_elapsed > 0.2) {
         info.setFont(*ui_font_);
@@ -777,13 +780,13 @@ void sfml::draw_hotbar(const hud& h)
             uint16_t mat_idx = find_material(curr_slot.name);
             const material& m = material_prop[mat_idx];
             chunk_index c{0, 0, 0};
-            float scale = 1.2f;
+            float scale = 20.0f;
             if (m.model.empty()) {
                 for (int i = 0; i < 6; ++i)
                     (*temp).add_face(c, direction_type(i), m.textures[i],
                                      prefab[i]);
             } else {
-                scale = 1.6f;
+                scale = 24.0f;
                 (*temp).add_custom_block(
                     c, m.model, std::vector<light>(prefab, prefab + 6));
             }
@@ -803,8 +806,9 @@ void sfml::draw_hotbar(const hud& h)
                                pen_y + slot_height * 0.5f, 0.f)
                        * rotate_x<float>(-0.5) * rotate_y<float>(0.5)
                        * matrix4<float>::scale3(scale) * matrix4<float>::flip()
-                       * matrix4<float>::translation(-8.0f, -8.0f, -8.0f);
+                       * matrix4<float>::translation(-0.5f, -0.5f, -0.5f);
             draw(mesh, mtx);
+            gl::disable(GL_CULL_FACE);
 
         } break;
 
