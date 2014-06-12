@@ -1,0 +1,7 @@
+?package(hexahedra):\
+    needs="x11" \
+    section="Games/Adventure" \
+    command="/usr/games/hexahedra" \
+    title="Hexahedra" \
+    icon="/usr/share/pixmaps/hexahedra.xpm" \
+    longtitle="Play a variety of blocky sandbox games"

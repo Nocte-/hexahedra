@@ -1,0 +1,15 @@
+usr/games/hexahedra 
+usr/share/applications/hexahedra.desktop 
+usr/share/pixmaps/hexahedra.png
+usr/share/pixmaps/hexahedra.xpm
+
+usr/share/games/hexahedra/blocks/
+usr/share/games/hexahedra/fonts/
+usr/share/games/hexahedra/icons/
+usr/share/games/hexahedra/img/
+usr/share/games/hexahedra/models/
+usr/share/games/hexahedra/shaders/
+usr/share/games/hexahedra/textures/
+usr/share/games/hexahedra/ui/
+usr/share/games/hexahedra/bsc5
+
