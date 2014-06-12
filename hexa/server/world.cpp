@@ -65,7 +65,7 @@ type unpack_as(const compressed_data& data)
 //---------------------------------------------------------------------------
 
 world::world(persistent_storage_i& storage)
-    : storage_{storage}
+    : storage_(storage)
     , seed_{0}
 {
     empty.clear();
