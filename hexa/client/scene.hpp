@@ -180,8 +180,8 @@ private:
     };
 
     finished_mesh build_mesh(chunk_coordinates pos,
-                             const surface_data& surface,
-                             const light_data& light) const;
+                             surface_data surface,
+                             light_data light) const;
 
     void place_finished_mesh(const finished_mesh& m);
 

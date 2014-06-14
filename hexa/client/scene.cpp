@@ -150,7 +150,10 @@ void scene::set(chunk_coordinates pos, const surface_data& surface,
         return;
 
     std::unique_lock<std::mutex> locked(pending_lock_);
-    pending_.emplace_back(threads_.enqueue([&, pos] {
+    // Pass by reference doesn't work with Visual Studio,
+    // so for now we'll have to make a copy of surface and
+    // light:
+    pending_.emplace_back(threads_.enqueue([=] {
         return build_mesh(pos, surface, light);
     }));
 }
@@ -238,8 +241,8 @@ void scene::request_chunk_from_server(chunk_coordinates pos) const
 }
 
 scene::finished_mesh scene::build_mesh(chunk_coordinates pos,
-                                       const surface_data& surfaces,
-                                       const light_data& lm) const
+                                       surface_data surfaces,
+                                       light_data lm) const
 {
     // Request two mesher objects from the renderer.
     vec3i offset{vec3i{pos - chunk_offset_} * chunk_size};

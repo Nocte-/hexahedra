@@ -106,7 +106,7 @@ public:
 
 public:
     lightmap() {}
-    lightmap(const lightmap&) = delete;
+    lightmap(const lightmap&) = default;
 
     lightmap(lightmap&& m)
         : data{std::move(m.data)}
