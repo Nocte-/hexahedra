@@ -291,6 +291,9 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
            h, l, h, l, l, h, l, h, h, h, h, h, h, h, l, l, h, l};
 
     occlusion_block_ = gl::vbo{cube, 24, sizeof(occ_cube_vtx)};
+    
+    resize(width_, height_);
+    sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);    
 }
 
 sfml::~sfml()
@@ -475,7 +478,7 @@ void sfml::prepare(const player& plr)
 
 void sfml::highlight_face(const pos_dir<world_coordinates>& face,
                           const color_alpha& hl_color)
-{
+{  
     glCheck(glDepthMask(GL_FALSE));
     vec3f offset(vec3i(face.pos - chunk_offset_ * chunk_size));
     auto mtx(translate(camera_.model_view_matrix(), offset));

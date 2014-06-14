@@ -300,6 +300,7 @@ sfml_ogl2::sfml_ogl2(sf::RenderWindow& app, scene& s)
     terrain_shader_.stop_using();
     
     load_shader(model_shader_, "model_" + gl_id());
+   
 }
 
 sfml_ogl2::~sfml_ogl2()

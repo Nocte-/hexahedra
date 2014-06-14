@@ -382,7 +382,7 @@ private:
 sfml_ogl3::sfml_ogl3(sf::RenderWindow& win, scene& s)
     : sfml{win, s}
     , textures_ready_{false}
-{
+{   
     load_shader(terrain_shader_, "terrain_gl3");
     terrain_shader_.bind_attribute(0, "position");
     terrain_shader_.bind_attribute(1, "uv");
@@ -403,7 +403,7 @@ sfml_ogl3::sfml_ogl3(sf::RenderWindow& win, scene& s)
     artificial_light_.bind(terrain_shader_, "art_color");
     tex_ = 0;
     terrain_shader_.stop_using();
-
+    
     load_shader(model_shader_, "model_gl2");
     model_shader_.bind_attribute(0, "position");
     model_shader_.bind_attribute(1, "uv");
@@ -623,7 +623,7 @@ void sfml_ogl3::transparent_pass()
 }
 
 void sfml_ogl3::handle_occlusion_queries()
-{
+{   
     frustum clip{camera_.mvp_matrix()};
     const float sphere_diam = 14.f;
 
@@ -675,6 +675,9 @@ void sfml_ogl3::handle_occlusion_queries()
 
 void sfml_ogl3::draw(const gl::vbo& v, const matrix4<float>& mtx)
 {
+    if (!texarr_)
+        return;
+    
     glCheck(glEnable(GL_TEXTURE_2D));
     glCheck(glActiveTexture(GL_TEXTURE0));
     texarr_.bind();
