@@ -79,7 +79,7 @@ public:
     typedef Key key_type;
     typedef Value mapped_type;
     typedef pair_t value_type;
-    
+
     typedef typename list_t::const_iterator const_iterator;
 
 public:

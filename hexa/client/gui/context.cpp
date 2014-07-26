@@ -18,18 +18,22 @@
 //
 // Copyright (C) 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "context.hpp"
 
 #include "canvas.hpp"
 #include "theme.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 context::context(canvas& cnv, theme& thm)
-    : cnv_(cnv), thm_(thm)
-{ }
+    : cnv_(cnv)
+    , thm_(thm)
+{
+}
 
 void context::draw()
 {
@@ -42,6 +46,5 @@ void context::process_event(const event& ev)
     for (auto& w : widgets_)
         w->process_event(ev);
 }
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

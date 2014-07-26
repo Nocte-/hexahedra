@@ -19,22 +19,24 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class viewport : public widget
 {
 public:
     viewport(std::unique_ptr<widget> child);
 
-    virtual void draw (canvas& cnv);
+    virtual void draw(canvas& cnv);
 
-    virtual void process_event (const event& ev);
+    virtual void process_event(const event& ev);
 
     virtual void on_mouse_enter();
     virtual void on_mouse_leave();
@@ -42,6 +44,5 @@ public:
 protected:
     std::unique_ptr<widget> child_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

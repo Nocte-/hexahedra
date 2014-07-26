@@ -170,6 +170,8 @@ public:
     {
     }
 
+    light_data(const light_data&) = default;
+
     light_data(light_data&& m)
         : opaque{std::move(m.opaque)}
         , transparent{std::move(m.transparent)}

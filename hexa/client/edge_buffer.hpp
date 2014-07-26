@@ -145,4 +145,3 @@ edge_buffer<typename t::value_type> make_edge_buffer(const std::vector<t>& buf)
 
 } // namespace gl
 } // namespace hexa
-

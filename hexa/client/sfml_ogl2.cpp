@@ -108,7 +108,7 @@ public:
         float v1(v0 + 1.f / 32.f);
 
         vector3<uint8_t> rgb(light_to_rgb(l));
-        vec3f p {offset_ + cip};
+        vec3f p{offset_ + cip};
 
         data_.emplace_back(ogl2_terrain_vertex(
             vector3<float>(p.x + o[0][0], p.y + o[0][1], p.z + o[0][2]),
@@ -298,9 +298,8 @@ sfml_ogl2::sfml_ogl2(sf::RenderWindow& app, scene& s)
     fog_distance_.bind(terrain_shader_, "fog_distance");
     terrain_tex_ = 0;
     terrain_shader_.stop_using();
-    
+
     load_shader(model_shader_, "model_" + gl_id());
-   
 }
 
 sfml_ogl2::~sfml_ogl2()
@@ -386,7 +385,7 @@ void sfml_ogl2::prepare(const player& plr)
     }
 
     sky_color(color(0.56f, 0.67f, 1.0f));
-    
+
     terrain_shader_.use();
     terrain_matrix_ = camera_.mvp_matrix();
     terrain_camera_ = camera_.position();
@@ -396,7 +395,7 @@ void sfml_ogl2::prepare(const player& plr)
 }
 
 void sfml_ogl2::opaque_pass()
-{     
+{
     if (!texture_atlas_)
         return;
 
@@ -407,19 +406,19 @@ void sfml_ogl2::opaque_pass()
     terrain_shader_.use();
     enable_attrib_array<ogl2_terrain_vertex>();
 
-    scene_.for_each_opaque_vbo([&](const chunk_coordinates& pos,
-                                   const gl::vbo& vbo) {
-        vec3f offset{vec3i{pos - chunk_offset_}};
-        offset *= chunk_size;
+    scene_.for_each_opaque_vbo(
+        [&](const chunk_coordinates& pos, const gl::vbo& vbo) {
+            vec3f offset{vec3i{pos - chunk_offset_}};
+            offset *= chunk_size;
 
-        if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
-            vbo.bind();
-            bind_attributes<ogl2_terrain_vertex>();
-            vbo.draw();
-        }
-    });
+            if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
+                vbo.bind();
+                bind_attributes<ogl2_terrain_vertex>();
+                vbo.draw();
+            }
+        });
 
-    disable_attrib_array<ogl2_terrain_vertex>();    
+    disable_attrib_array<ogl2_terrain_vertex>();
     terrain_shader_.stop_using();
     gl::vbo::unbind();
 }
@@ -433,26 +432,26 @@ void sfml_ogl2::transparent_pass()
     const float sphere_diam = 13.86f;
     glCheck(glDepthMask(GL_FALSE));
     glCheck(glActiveTexture(GL_TEXTURE0));
-    texture_atlas_.bind();    
+    texture_atlas_.bind();
     terrain_shader_.use();
     enable_attrib_array<ogl2_terrain_vertex>();
 
-    scene_.for_each_transparent_vbo([&](const chunk_coordinates& pos,
-                                        const gl::vbo& vbo) {
-        vec3f offset(vec3i(pos - chunk_offset_));
-        offset *= chunk_size;
+    scene_.for_each_transparent_vbo(
+        [&](const chunk_coordinates& pos, const gl::vbo& vbo) {
+            vec3f offset(vec3i(pos - chunk_offset_));
+            offset *= chunk_size;
 
-        if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
-            vbo.bind();
-            bind_attributes<ogl2_terrain_vertex>();
-            vbo.draw();
-        }
-    });
+            if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
+                vbo.bind();
+                bind_attributes<ogl2_terrain_vertex>();
+                vbo.draw();
+            }
+        });
 
-    terrain_shader_.stop_using();    
-    disable_attrib_array<ogl2_terrain_vertex>();        
+    terrain_shader_.stop_using();
+    disable_attrib_array<ogl2_terrain_vertex>();
     gl::vbo::unbind();
-    glCheck(glDepthMask(GL_TRUE));    
+    glCheck(glDepthMask(GL_TRUE));
 }
 
 void sfml_ogl2::handle_occlusion_queries()
@@ -464,43 +463,44 @@ void sfml_ogl2::handle_occlusion_queries()
     const float sphere_diam = 13.86f;
 
     gl::enable(GL_BLEND);
-    //glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));    
+    // glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     glCheck(glBlendFunc(GL_ZERO, GL_ONE));
     glCheck(glDisable(GL_CULL_FACE));
 
     occlusion_shader_.use();
     enable_attrib_array<occ_cube_vtx>();
-    
-    scene_.for_each_occlusion_query([&](const chunk_coordinates& pos,
-                                        gl::occlusion_query& qry) {
-        vec3f offset{vec3i{pos - chunk_offset_}};
-        offset *= chunk_size;
 
-        if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
-            matrix4<float> mtx {camera_.projection_matrix()
-                                * translate(camera_.model_view_matrix(), offset)};
-            occlusion_matrix_ = mtx;
+    scene_.for_each_occlusion_query(
+        [&](const chunk_coordinates& pos, gl::occlusion_query& qry) {
+            vec3f offset{vec3i{pos - chunk_offset_}};
+            offset *= chunk_size;
 
-            switch (qry.state()) {
-            case gl::occlusion_query::inactive:
-                break;
+            if (clip.is_inside(offset + vec3f{8, 8, 8}, sphere_diam)) {
+                matrix4<float> mtx{
+                    camera_.projection_matrix()
+                    * translate(camera_.model_view_matrix(), offset)};
+                occlusion_matrix_ = mtx;
 
-            case gl::occlusion_query::busy:
-            case gl::occlusion_query::visible:
-                occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
-                occlusion_block_.draw();
-                break;
+                switch (qry.state()) {
+                case gl::occlusion_query::inactive:
+                    break;
 
-            default:
-                qry.begin_query();
-                occlusion_block_.bind();
-                bind_attributes<occ_cube_vtx>();
-                occlusion_block_.draw();
-                qry.end_query();
+                case gl::occlusion_query::busy:
+                case gl::occlusion_query::visible:
+                    occlusion_block_.bind();
+                    bind_attributes<occ_cube_vtx>();
+                    occlusion_block_.draw();
+                    break;
+
+                default:
+                    qry.begin_query();
+                    occlusion_block_.bind();
+                    bind_attributes<occ_cube_vtx>();
+                    occlusion_block_.draw();
+                    qry.end_query();
+                }
             }
-        }
-    });
+        });
 
     glCheck(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
     disable_attrib_array<occ_cube_vtx>();

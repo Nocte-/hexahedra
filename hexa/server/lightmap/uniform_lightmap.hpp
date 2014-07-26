@@ -25,7 +25,8 @@
 #include <hexa/basic_types.hpp>
 #include "lightmap_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** Light up every face with a fixed intensity. */
 class uniform_lightmap : public lightmap_generator_i
@@ -36,10 +37,8 @@ public:
     virtual ~uniform_lightmap();
 
     virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos,
-                               const surface& s,
-                               lightmap& chunk,
-                               unsigned int phase = 0) const;
+                               const chunk_coordinates& pos, const surface& s,
+                               lightmap& chunk, unsigned int phase = 0) const;
 
 private:
     uint8_t sun_;
@@ -48,4 +47,3 @@ private:
 };
 
 } // namespace hexa
-

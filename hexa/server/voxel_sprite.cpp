@@ -27,6 +27,7 @@
 #include <hexa/serialize.hpp>
 #include <hexa/voxel_range.hpp>
 #include "world.hpp"
+#include "world_terraingen_access.hpp"
 
 using namespace boost::range;
 
@@ -35,15 +36,15 @@ namespace hexa
 
 void paste(world_write& w, const voxel_sprite& sprite, world_coordinates pos)
 {
-    world_coordinates corner(pos - sprite.offset());
-    auto s(sprite.shape());
+    world_coordinates corner = pos - sprite.offset();
+    auto s = sprite.shape();
     world_coordinates size(s[0], s[1], s[2]);
 
     // The bounding box of the sprite as it will appear in the game world.
-    aabb<world_coordinates> sprite_box(corner, corner + size);
-
+    aabb<world_coordinates> sprite_box{corner, corner + size};
+    
     for_each(to_chunk_range(sprite_box), [&](chunk_coordinates c) {
-        auto& terrain(w.get_chunk(c));
+        auto& terrain = w.get_chunk(c);
         paste(terrain, c, sprite, pos);
     });
 }
@@ -51,28 +52,28 @@ void paste(world_write& w, const voxel_sprite& sprite, world_coordinates pos)
 void paste(chunk& cnk, chunk_coordinates cnk_pos, const voxel_sprite& sprite,
            world_coordinates pos)
 {
-    world_coordinates corner(pos - sprite.offset());
-    auto s(sprite.shape());
+    world_coordinates corner = pos - sprite.offset();
+    auto s = sprite.shape();
     world_coordinates size(s[0], s[1], s[2]);
 
     // The bounding box of the sprite as it will appear in the game world.
-    aabb<world_coordinates> sprite_box(corner, corner + size);
+    aabb<world_coordinates> sprite_box{corner, corner + size};
 
     // The bounding box of the chunk we're drawing the sprite in.
-    aabb<world_coordinates> cnk_box(cnk_pos);
+    aabb<world_coordinates> cnk_box{cnk_pos};
     cnk_box *= chunk_size;
-
+    
     // The intersection between both bounding boxes is the
     // range of voxels we need to iterate over.
-    auto inter(intersection(sprite_box, cnk_box));
+    auto inter = intersection(sprite_box, cnk_box);
 
     // Abort if the intersection is empty.
     if (!inter.is_correct())
         return;
 
     for_each(range<world_coordinates>(inter), [&](world_coordinates w) {
-        auto sprite_voxel(sprite[w - corner]);
-        auto& terrain_voxel(cnk[w % chunk_size]);
+        auto sprite_voxel = sprite[w - corner];
+        auto& terrain_voxel = cnk[w % chunk_size];
 
         // Solid blocks only get overwritten by the sprite if
         // the mask flag is set.
@@ -84,7 +85,7 @@ void paste(chunk& cnk, chunk_coordinates cnk_pos, const voxel_sprite& sprite,
 
 const voxel_sprite deserialize(const std::string& buf)
 {
-    auto ds(make_deserializer(buf));
+    auto ds = make_deserializer(buf);
 
     std::vector<std::string> block_types;
     vector3<uint32_t> dimensions;
@@ -92,17 +93,15 @@ const voxel_sprite deserialize(const std::string& buf)
 
     ds(block_types)(dimensions)(offset);
 
-    std::vector<uint16_t> tx(block_types.size());
-
-    int i(0);
+    std::vector<uint16_t> tx{0};
     for (auto name : block_types)
-        tx[i++] = find_material(name);
+        tx.push_back(find_material(name));
 
-    voxel_sprite result(dimensions, offset);
-    voxel_sprite::value_type* ptr(result.data());
-    uint8_t type;
+    voxel_sprite result{dimensions, offset};
+    voxel_sprite::value_type* ptr{result.data()};
 
-    for (size_t i(0); i < prod(dimensions); ++i, ++ptr) {
+    for (size_t i = 0; i < prod(dimensions); ++i, ++ptr) {
+        uint8_t type;
         ds(type)(ptr->mask);
         if (type < tx.size())
             ptr->type = tx[type];
@@ -115,15 +114,17 @@ const voxel_sprite deserialize(const std::string& buf)
 
 const voxel_sprite deserialize_text(const std::string& buf)
 {
-    std::stringstream str(buf);
+    std::stringstream str{buf};
 
     unsigned int num_mat;
     str >> num_mat;
 
-    std::vector<std::string> block_types(num_mat);
-
-    for (unsigned int i(0); i < num_mat; ++i)
-        str >> block_types[i];
+    std::vector<std::string> block_types;
+    for (unsigned int i = 0; i < num_mat; ++i) {
+        std::string name;
+        str >> name;
+        block_types.push_back(name);
+    }
 
     vector3<uint32_t> dimensions;
     vector3<int32_t> offset;
@@ -131,15 +132,14 @@ const voxel_sprite deserialize_text(const std::string& buf)
     str >> dimensions.x >> dimensions.y >> dimensions.z;
     str >> offset.x >> offset.y >> offset.z;
 
-    std::vector<uint16_t> tx(num_mat);
-    int i(0);
+    std::vector<uint16_t> tx{0}; // Material zero is always air
     for (auto name : block_types)
-        tx[i++] = find_material(name);
+        tx.emplace_back(find_material(name));
 
-    voxel_sprite result(dimensions, offset);
-    for (size_t z(0); z < dimensions[2]; ++z)
-        for (size_t y(0); y < dimensions[1]; ++y)
-            for (size_t x(0); x < dimensions[0]; ++x) {
+    voxel_sprite result{dimensions, offset};
+    for (size_t z = 0; z < dimensions[2]; ++z) {
+        for (size_t y = 0; y < dimensions[1]; ++y) {
+            for (size_t x = 0; x < dimensions[0]; ++x) {
                 uint16_t type;
                 str >> type;
 
@@ -148,6 +148,8 @@ const voxel_sprite deserialize_text(const std::string& buf)
                 else
                     result[x][y][z].type = type;
             }
+        }
+    }
 
     return result;
 }

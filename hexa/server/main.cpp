@@ -32,7 +32,6 @@
 #include <pthread.h>
 #endif
 
-#include <boost/asio.hpp>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
@@ -74,6 +73,7 @@ using namespace hexa;
 namespace hexa
 {
 po::variables_map global_settings;
+fs::path gamedir;
 }
 
 static std::string default_db_path()
@@ -219,7 +219,8 @@ int main(int argc, char* argv[])
         fs::path datadir(vm["datadir"].as<std::string>());
         fs::path db_root(vm["dbdir"].as<std::string>());
         fs::path dbdir(db_root / game_name);
-        fs::path gamedir(datadir / std::string("games") / game_name);
+        
+        gamedir = fs::path(datadir / std::string("games") / game_name);
 
         if (!fs::is_directory(datadir)) {
             log_msg("Datadir '%1%' is not a directory", datadir.string());
@@ -230,14 +231,14 @@ int main(int argc, char* argv[])
             log_msg("Gamedir '%1%' is not a directory", datadir.string());
             return -1;
         }
-
+        
         if (!fs::is_directory(dbdir)) {
             if (!fs::create_directories(dbdir)) {
                 log_msg("Cannot create dir %1%", dbdir.string());
                 return -2;
             }
         }
-
+        
 #ifndef _WIN32
         // Block all signals for background thread.
         sigset_t new_mask;
@@ -250,9 +251,6 @@ int main(int argc, char* argv[])
 
         init_surface_extraction();
 
-        boost::asio::io_service io_srv;
-        boost::asio::io_service::work io_srv_keepalive(io_srv);
-
         // Set up the game world
         // hexa::network::connections_t players;
         fs::path db_file(dbdir / "world.leveldb");
@@ -260,20 +258,13 @@ int main(int argc, char* argv[])
         trace("Game DB %1%", db_file.string());
         log_msg("Server game DB: %1%", db_file.string());
 
-        // persistence_sqlite          db_per (io_srv, db_file, datadir /
-        // "dbsetup.sql");
         persistence_leveldb db_per(db_file);
-        // memory_cache                storage (db_per);
         hexa::server_entity_system entities;
         hexa::world world(db_per);
         hexa::lua scripting(entities, world);
         hexa::network server(vm["port"].as<unsigned int>(), world, entities,
                              scripting);
-        std::thread asio_thread([&] {
-            io_srv.run();
-            log_msg("io_service::run() done");
-        });
-
+        
         scripting.uglyhack(&server);
 
         // std::cout << "Drop privileges" << std::endl;
@@ -298,13 +289,10 @@ int main(int argc, char* argv[])
             throw std::runtime_error(std::string("cannot open ")
                                      + conf_file.string());
 
-        log_msg("Set up game world from %1%", conf_file.string());
-
-        noise::simple_global_variables glob_vars;
-        noise::generator_context gen_ctx(glob_vars);
-
+        log_msg("Parsing %1%", conf_file.string());
         boost::property_tree::read_json(conf_str, config);
-        hexa::init_terrain_gen(world, config, gen_ctx);
+        log_msg("Set up game world from %1%", conf_file.string());        
+        hexa::init_terrain_gen(world, config);
 
         log_msg("Read entity database");
         db_per.retrieve(entities);
@@ -345,8 +333,6 @@ int main(int argc, char* argv[])
         lolquit.store(true);
         physics_thread.join();
         gameloop.join();
-        io_srv.stop();
-        asio_thread.join();
 
         log_msg("Saving state...");
         db_per.store(entities);

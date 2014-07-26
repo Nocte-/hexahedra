@@ -43,4 +43,3 @@ load(const boost::filesystem::path& file);
 
 } // namespace iqm
 } // namespace hexa
-

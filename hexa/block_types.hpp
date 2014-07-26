@@ -135,9 +135,14 @@ material& register_new_material(uint16_t type_id);
 
 /** Search for a material ID by name.
  * @param name  The name of the material to look for
+ * @throw std::runtime_error If the material was not registered. */
+uint16_t find_material(const std::string& name);
+
+/** Search for a material ID by name.
+ * @param name  The name of the material to look for
  * @param default_material  This value will be returned if \a name is not
  *                          a registered material */
-uint16_t find_material(const std::string& name, uint16_t default_material = 0);
+uint16_t find_material(const std::string& name, uint16_t default_material);
 
 //---------------------------------------------------------------------------
 

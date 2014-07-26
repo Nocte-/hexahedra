@@ -29,14 +29,16 @@
 #include <hexa/ray_bundle.hpp>
 #include "lightmap_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-template <class> class neighborhood;
+template <class>
+class neighborhood;
 
 /** Directional sunlight and soft shadows. */
 class sun_lightmap : public lightmap_generator_i
 {
-    typedef std::array<ray_bundle, 6>  rays;
+    typedef std::array<ray_bundle, 6> rays;
     std::vector<rays> detail_levels_;
 
 public:
@@ -45,27 +47,22 @@ public:
     virtual ~sun_lightmap();
 
     virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos,
-                               const surface& s,
-                               lightmap& chunk,
-                               unsigned int phase = 0) const;
-
+                               const chunk_coordinates& pos, const surface& s,
+                               lightmap& chunk, unsigned int phase = 0) const;
 
     unsigned int phases() const { return 3; }
 
 private:
-    void  add (rays& r, float length, yaw_pitch dir) const;
-    rays  generate (float len, size_t count) const;
+    void add(rays& r, float length, yaw_pitch dir) const;
+    rays generate(float len, size_t count) const;
 
     float recurse(const ray_bundle& r, float ray_power,
-                  const world_coordinates& blk,
-                  world_lightmap_access& data,
+                  const world_coordinates& blk, world_lightmap_access& data,
                   bool first = true) const;
 
 private:
-    yaw_pitch   direction_;
-    float       radius_;
+    yaw_pitch direction_;
+    float radius_;
 };
 
 } // namespace hexa
-

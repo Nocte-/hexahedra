@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <memory>
@@ -31,8 +31,10 @@
 #include "../event.hpp"
 #include "canvas.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class context;
 
@@ -59,17 +61,17 @@ public:
 
     virtual void process_event(const event& ev);
 
-    virtual void on_mouse_enter() { }
-    virtual void on_mouse_leave() { }
+    virtual void on_mouse_enter() {}
+    virtual void on_mouse_leave() {}
 
 public:
-    const rhea::variable&   left() const   { return left_; }
-    const rhea::variable&   top() const    { return top_; }
-    const rhea::variable&   width() const  { return width_; }
-    const rhea::variable&   height() const { return height_; }
+    const rhea::variable& left() const { return left_; }
+    const rhea::variable& top() const { return top_; }
+    const rhea::variable& width() const { return width_; }
+    const rhea::variable& height() const { return height_; }
 
-    rhea::linear_expression right() const    { return left_ + width_; }
-    rhea::linear_expression bottom() const   { return top_ + height_; }
+    rhea::linear_expression right() const { return left_ + width_; }
+    rhea::linear_expression bottom() const { return top_ + height_; }
     rhea::linear_expression h_center() const { return left_ + width_ / 2; }
     rhea::linear_expression v_center() const { return top_ + height_ / 2; }
 
@@ -83,11 +85,9 @@ protected:
     widget(context& owner);
 
 protected:
-    context&        context_;
-    bool            mouse_inside_flag_;
-    rhea::variable  left_, top_, width_, height_;
-
+    context& context_;
+    bool mouse_inside_flag_;
+    rhea::variable left_, top_, width_, height_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

@@ -99,7 +99,7 @@ std::string base58_encode(const binary_data& in)
     }
     // Allocate enough space in big-endian base58 representation.
     // ( = log(256) / log(58), rounded up.)
-    binary_data b58((pend - pbegin) * 138 / 100 + 1); 
+    binary_data b58((pend - pbegin) * 138 / 100 + 1);
     // Process the bytes.
     while (pbegin != pend) {
         int carry = *pbegin;

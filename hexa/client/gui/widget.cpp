@@ -18,49 +18,50 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "widget.hpp"
 
 #include <hexa/rectangle_algorithms.hpp>
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 widget::widget(context& owner)
     : context_(owner)
     , mouse_inside_flag_(false)
-    , left_(0.0f), top_(0.0f), width_(0.0f), height_(0.0f)
-{ }
+    , left_(0.0f)
+    , top_(0.0f)
+    , width_(0.0f)
+    , height_(0.0f)
+{
+}
 
 void widget::process_event(const event& ev)
 {
-    switch (ev.type)
-    {
-        case event::mouse_move_abs:
-            {
-            bool inside (point_in_rectangle(ev.xy, bounding_rect()));
-            if (inside != mouse_inside_flag_)
-            {
-                if (inside)
-                    on_mouse_enter();
-                else
-                    on_mouse_leave();
+    switch (ev.type) {
+    case event::mouse_move_abs: {
+        bool inside(point_in_rectangle(ev.xy, bounding_rect()));
+        if (inside != mouse_inside_flag_) {
+            if (inside)
+                on_mouse_enter();
+            else
+                on_mouse_leave();
 
-                mouse_inside_flag_ = inside;
-            }
-            }
-            break;
+            mouse_inside_flag_ = inside;
+        }
+    } break;
 
-        default:
-            ;
+    default:
+        ;
     }
 }
 
 rectangle<float> widget::bounding_rect() const
 {
-    float l (left().value()), t (top().value());
+    float l(left().value()), t(top().value());
     return rectangle<float>(l, t, l + width().value(), t + height().value());
 }
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

@@ -40,9 +40,18 @@ material& register_new_material(uint16_t type_id)
     return material_prop[type_id];
 }
 
+uint16_t find_material(const std::string& name)
+{
+    auto found = find(material_prop, name);
+    if (found == material_prop.end())
+        throw std::runtime_error(name + " is not a registered material");
+
+    return std::distance(material_prop.begin(), found);
+}
+
 uint16_t find_material(const std::string& name, uint16_t default_material)
 {
-    auto found(find(material_prop, name));
+    auto found = find(material_prop, name);
     return found == material_prop.end()
                ? default_material
                : std::distance(material_prop.begin(), found);

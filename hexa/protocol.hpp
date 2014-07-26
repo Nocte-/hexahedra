@@ -77,8 +77,8 @@ public:
     gameclock_t ticks;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(ticks);
     }
@@ -100,8 +100,8 @@ public:
     std::vector<std::string> login_methods;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(server_name)(public_key)(login_methods);
     }
@@ -126,8 +126,8 @@ public:
     std::string motd;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(client_time)(position)(entity_id)(motd);
     }
@@ -145,8 +145,8 @@ public:
     std::string reason;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(reason);
     }
@@ -164,8 +164,8 @@ public:
     clientclock_t response;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(request)(response);
     }
@@ -184,8 +184,8 @@ public:
     std::vector<std::string> sounds;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(textures)(models)(sounds);
     }
@@ -207,8 +207,8 @@ public:
         uint16_t material_id;
         material definition;
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(material_id)(definition);
         }
@@ -222,8 +222,8 @@ public:
     std::vector<record> materials;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(materials);
     }
@@ -239,8 +239,8 @@ public:
         chunk_index corner2;
         std::array<uint16_t, 6> textures;
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             ar(corner1)(corner2);
             for (int i = 0; i < 6; ++i)
@@ -255,8 +255,8 @@ public:
         std::string name;
         std::vector<part> parts;
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(name)(parts);
         }
@@ -270,8 +270,8 @@ public:
     std::vector<record> models;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(models);
     }
@@ -300,8 +300,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(entity_id)(component_id)(data);
         }
@@ -310,8 +310,8 @@ public:
     std::vector<value> updates;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(updates);
     }
@@ -344,8 +344,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(entity_id)(pos)(velocity);
         }
@@ -355,8 +355,8 @@ public:
     std::vector<value> updates;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(timestamp)(updates);
     }
@@ -373,8 +373,8 @@ public:
     uint32_t entity_id;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(entity_id);
     }
@@ -401,8 +401,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(pos)(height);
         }
@@ -411,8 +411,8 @@ public:
     std::vector<record> data; /**< Array with height data. */
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(data);
     }
@@ -430,8 +430,8 @@ public:
     compressed_data data;       /**< Compressed light data. */
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(position)(data);
     }
@@ -451,8 +451,8 @@ public:
     compressed_data light;   /**< Compressed light maps. */
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(position)(terrain)(light);
     }
@@ -470,8 +470,8 @@ public:
     std::string name;
     std::string desc;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(id)(name)(desc);
     }
@@ -488,8 +488,8 @@ public:
     uint32_t value;
     uint32_t max;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(id)(value)(max);
     }
@@ -506,7 +506,7 @@ public:
     struct slot : public hotbar_slot
     {
         slot() {}
-        
+
         slot(hotbar_slot init)
             : hotbar_slot{init}
         {
@@ -517,8 +517,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(type)(name)(tooltip)(badge)(counter)(progress_bar)(
                 can_drag)(cooldown);
@@ -527,8 +527,8 @@ public:
 
     std::vector<slot> slots;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(slots);
     }
@@ -545,8 +545,8 @@ public:
     std::string name;
     std::string value;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(name)(value);
     }
@@ -562,8 +562,8 @@ public:
 
     std::string json;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(json);
     }
@@ -591,8 +591,8 @@ public:
     /** The login credentials (JSON) */
     std::string credentials;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(protocol_version)(credentials);
     }
@@ -618,8 +618,8 @@ public:
     clientclock_t request;
 
     /** (De)serialize this message. */
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(request);
     }
@@ -635,8 +635,8 @@ public:
 
     std::string text;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(text);
     }
@@ -663,8 +663,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(position)(version);
         }
@@ -672,8 +672,8 @@ public:
 
     std::vector<record> requests;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(requests);
     }
@@ -700,8 +700,8 @@ public:
         {
         }
 
-        template <class archive>
-        archive& serialize(archive& ar)
+        template <typename Archive>
+        Archive& serialize(Archive& ar)
         {
             return ar(position)(last_update);
         }
@@ -709,8 +709,8 @@ public:
 
     std::vector<record> requests;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(requests);
     }
@@ -738,8 +738,8 @@ public:
     yaw_pitch look;
     wfpos pos;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(button)(slot)(look)(pos);
     }
@@ -757,8 +757,8 @@ public:
 
     uint8_t button;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(button);
     }
@@ -781,8 +781,8 @@ public:
     yaw_pitch look;
     uint8_t slot;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(look)(slot);
     }
@@ -804,8 +804,8 @@ public:
 
     yaw_pitch look;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(look);
     }
@@ -828,8 +828,8 @@ public:
     /** Current position. */
     wfpos position;
 
-    template <class archive>
-    void serialize(archive& ar)
+    template <typename Archive>
+    void serialize(Archive& ar)
     {
         ar(move_dir)(move_speed)(position);
     }
@@ -842,9 +842,10 @@ binary_data serialize_packet(message_t& m)
 {
     binary_data result;
     result.push_back(message_t::msg_id);
-    auto archive(make_serializer(result));
-    m.serialize(archive);
+    auto Archive(make_serializer(result));
+    m.serialize(Archive);
     return result;
 }
-}
-} // namespace hexa::msg
+
+} // namespace msg
+} // namespace hexa

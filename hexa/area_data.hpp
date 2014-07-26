@@ -24,6 +24,7 @@
 #include <cassert>
 #include <vector>
 
+#include "array.hpp"
 #include "basic_types.hpp"
 #include "serialize.hpp"
 
@@ -33,7 +34,7 @@ namespace hexa
 /** A flat, 16x16 part of the world's map.
  *  It is used to store things like a detailed height map, or different
  *  kinds of biome info such as temperature or humidity. */
-class area_data
+class area_data //: public array_2d<int16_t, chunk_size, chunk_size>
 {
     typedef std::vector<int16_t> array_t;
     array_t buf_;
@@ -66,6 +67,8 @@ public:
     area_data(area_data&&) = default;
     area_data& operator=(area_data&&) = default;
 #endif
+    
+    area_data(std::vector<int16_t>&& m) : buf_(std::move(m)) { }
 
     /** Fill the area with zeroes (or a given value). */
     void clear(value_type v = 0) { std::fill(begin(), end(), v); }
@@ -111,10 +114,13 @@ public:
     /** Return the number of elements (usually 256). */
     size_t size() const { return chunk_area; }
 
-    template <class archiver>
-    archiver& serialize(archiver& ar)
+    bool empty() const { return false; }
+    
+public:
+    template <typename Archiver>
+    Archiver& serialize(Archiver& ar)
     {
-        return ar.raw_data(buf_, chunk_area);
+        return ar.raw_data(*this, size());
     }
 };
 

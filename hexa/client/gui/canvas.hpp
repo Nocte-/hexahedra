@@ -19,7 +19,7 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <string>
@@ -29,8 +29,10 @@
 #include <hexa/color.hpp>
 #include "../texture.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class font
 {
@@ -49,13 +51,13 @@ public:
 class canvas
 {
 public:
-    typedef vector2<int>        point;
-    typedef rectangle<int>      rect;
+    typedef vector2<int> point;
+    typedef rectangle<int> rect;
 
     typedef enum { tile, stretch } fill_type;
 
 public:
-    virtual ~canvas() { }
+    virtual ~canvas() {}
 
     point size() const { return size_; }
 
@@ -64,18 +66,17 @@ public:
     virtual void clear(const color& background) = 0;
 
     virtual void draw(const rect& box, const texture& fill,
-                    fill_type method = tile) = 0;
+                      fill_type method = tile) = 0;
 
     virtual void draw(const rect& box, const color& fill) = 0;
 
     virtual void draw(const point& pos, std::shared_ptr<label> text) = 0;
 
-    virtual std::shared_ptr<label> create_label
-                    (const std::wstring& text, float point_size) = 0;
+    virtual std::shared_ptr<label> create_label(const std::wstring& text,
+                                                float point_size) = 0;
 
 protected:
     point size_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

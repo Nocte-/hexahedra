@@ -166,4 +166,3 @@ ostream& operator<<(ostream& str, const hexa::pos_dir<t>& pd)
 }
 
 } // namespace std
-

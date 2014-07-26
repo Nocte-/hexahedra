@@ -28,14 +28,16 @@
 #include <hexa/ray_bundle.hpp>
 #include "lightmap_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-template <class> class neighborhood;
+template <class>
+class neighborhood;
 
 /** Ambient occlusion of the sky light. */
 class ambient_occlusion_lightmap : public lightmap_generator_i
 {
-    typedef std::array<ray_bundle, 6>  rays;
+    typedef std::array<ray_bundle, 6> rays;
     std::vector<rays> detail_levels_;
 
 public:
@@ -45,21 +47,17 @@ public:
     virtual ~ambient_occlusion_lightmap();
 
     virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos,
-                               const surface& s,
-                               lightmap& chunk,
-                               unsigned int phase) const;
+                               const chunk_coordinates& pos, const surface& s,
+                               lightmap& chunk, unsigned int phase) const;
 
     unsigned int phases() const { return 3; }
 
 private:
-    rays  precalc (float length, unsigned int count) const;
+    rays precalc(float length, unsigned int count) const;
 
     float recurse(const ray_bundle& r, float ray_power,
-                  const world_coordinates& blk,
-                  world_lightmap_access& data,
+                  const world_coordinates& blk, world_lightmap_access& data,
                   bool first = true) const;
 };
 
 } // namespace hexa
-

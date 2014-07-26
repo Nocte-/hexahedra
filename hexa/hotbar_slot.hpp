@@ -48,7 +48,7 @@ struct hotbar_slot
         /** A stock icon, for actions. */
         icon = 3
     };
-    
+
     hotbar_slot(char type_ = empty, std::string name_ = "")
         : type{type_}
         , name{name_}

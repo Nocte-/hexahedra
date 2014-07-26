@@ -28,21 +28,19 @@
 #include <hexa/ray_bundle.hpp>
 #include "lightmap_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class radiosity_lightmap : public lightmap_generator_i
 {
 public:
-    radiosity_lightmap(world& cache,
-                       const boost::property_tree::ptree& conf);
+    radiosity_lightmap(world& cache, const boost::property_tree::ptree& conf);
 
     virtual ~radiosity_lightmap();
 
     virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos,
-                               const surface& s,
-                               lightmap& chunk,
-                               unsigned int phase) const;
+                               const chunk_coordinates& pos, const surface& s,
+                               lightmap& chunk, unsigned int phase) const;
 
     unsigned int phases() const { return 3; }
 
@@ -50,4 +48,3 @@ private:
 };
 
 } // namespace hexa
-

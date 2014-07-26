@@ -461,8 +461,8 @@ BOOST_AUTO_TEST_CASE (crypto_test)
         auto spriv (crypto::serialize_private_key(key));
         auto spubl (crypto::serialize_public_key(key));
 
-        std::cout << spriv << std::endl;
-        std::cout << spubl << std::endl;
+      //  std::cout << spriv << std::endl;
+        //std::cout << spubl << std::endl;
 
 
     }

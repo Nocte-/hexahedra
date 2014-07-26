@@ -28,32 +28,29 @@
 
 using namespace boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
-test_lightmap::test_lightmap (world& c, const ptree& conf)
-    : lightmap_generator_i (c, conf)
+test_lightmap::test_lightmap(world& c, const ptree& conf)
+    : lightmap_generator_i(c, conf)
 {
 }
 
-test_lightmap::~test_lightmap ()
-{ }
-
-lightmap&
-test_lightmap::generate (world_lightmap_access&,
-                         const chunk_coordinates&,
-                         const surface& s,
-                         lightmap& lc, unsigned int) const
+test_lightmap::~test_lightmap()
 {
-    auto lmi (std::begin(lc));
+}
 
-    for (auto& face : s)
-    {
-        for (int d = 0; d < 6; ++d)
-        {
-            if (face[d])
-            {
+lightmap& test_lightmap::generate(world_lightmap_access&,
+                                  const chunk_coordinates&, const surface& s,
+                                  lightmap& lc, unsigned int) const
+{
+    auto lmi(std::begin(lc));
+
+    for (auto& face : s) {
+        for (int d = 0; d < 6; ++d) {
+            if (face[d]) {
                 lmi->sunlight = face.pos.x;
-                lmi->ambient  = face.pos.y;
+                lmi->ambient = face.pos.y;
                 ++lmi;
             }
         }
@@ -63,4 +60,3 @@ test_lightmap::generate (world_lightmap_access&,
 }
 
 } // namespace hexa
-

@@ -24,22 +24,22 @@
 
 #include "area_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class lua;
 
 class lua_heightmap_generator : public area_generator_i
 {
 public:
-    lua_heightmap_generator(world& w, const boost::property_tree::ptree& conf, lua& scripting);
+    lua_heightmap_generator(world& w, const boost::property_tree::ptree& conf,
+                            lua& scripting);
     virtual ~lua_heightmap_generator();
 
-    virtual area_data
-    generate (map_coordinates xy) override;
+    virtual area_data generate(map_coordinates xy) override;
 
 private:
-    lua&   lua_;
+    lua& lua_;
 };
 
 } // namespace hexa
-

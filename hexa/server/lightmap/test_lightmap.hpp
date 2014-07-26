@@ -28,7 +28,8 @@
 #include <hexa/basic_types.hpp>
 #include "lightmap_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 /** This light map generates a fixed test pattern for debugging purposes. */
 class test_lightmap : public lightmap_generator_i
@@ -39,11 +40,8 @@ public:
     virtual ~test_lightmap();
 
     virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos,
-                               const surface& s,
-                               lightmap& chunk,
-                               unsigned int phase = 0) const;
+                               const chunk_coordinates& pos, const surface& s,
+                               lightmap& chunk, unsigned int phase = 0) const;
 };
 
 } // namespace hexa
-

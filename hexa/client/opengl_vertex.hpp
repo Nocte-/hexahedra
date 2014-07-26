@@ -135,9 +135,9 @@ struct vtx_uv : public vector2<t>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glCheck(glVertexAttribPointer(i, 2, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o));
+                                      (GLvoid*)o));
     }
-    
+
     static bool is_padding() { return false; }
 };
 
@@ -162,10 +162,10 @@ struct vtx_xyz : public vector3<t>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o));
+                                      (GLvoid*)o));
     }
-    
-    static bool is_padding() { return false; }    
+
+    static bool is_padding() { return false; }
 };
 
 /** Vertex normal */
@@ -189,9 +189,9 @@ struct vtx_normal : public vector3<t>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_FALSE, stride,
-                              (GLvoid*)o));
+                                      (GLvoid*)o));
     }
-    
+
     static bool is_padding() { return false; }
 };
 
@@ -212,9 +212,9 @@ struct vtx_rgb : public vector3<t>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glCheck(glVertexAttribPointer(i, 3, gl_type<t>()(), GL_TRUE, stride,
-                              (GLvoid*)o));
+                                      (GLvoid*)o));
     }
-    
+
     static bool is_padding() { return false; }
 };
 
@@ -230,9 +230,10 @@ struct vtx_scalar
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glCheck(glVertexAttribIPointer(i, 1, gl_type<t>()(), stride, (GLvoid*)o));
+        glCheck(
+            glVertexAttribIPointer(i, 1, gl_type<t>()(), stride, (GLvoid*)o));
     }
-    
+
     static bool is_padding() { return false; }
 
     t value;
@@ -261,10 +262,11 @@ struct vtx_array : public std::array<t, count>
 
     static void bind(size_t i, size_t o, size_t stride)
     {
-        glCheck(glVertexAttribIPointer(i, count, gl_type<t>()(), stride, (GLvoid*)o));
+        glCheck(glVertexAttribIPointer(i, count, gl_type<t>()(), stride,
+                                       (GLvoid*)o));
     }
-    
-    static bool is_padding() { return false; }    
+
+    static bool is_padding() { return false; }
 };
 
 /** Array of normalized scalars.
@@ -293,9 +295,9 @@ struct vtx_normalized_array : public std::array<t, count>
     static void bind(size_t i, size_t o, size_t stride)
     {
         glCheck(glVertexAttribPointer(i, count, gl_type<t>()(), true, stride,
-                                     (GLvoid*)o));
+                                      (GLvoid*)o));
     }
-    
+
     static bool is_padding() { return false; }
 };
 
@@ -306,8 +308,8 @@ template <size_t count>
 struct vtx_padding : public std::array<char, count>
 {
     static void bind(size_t i, size_t o, size_t stride) {}
-    
-    static bool is_padding() { return true; }    
+
+    static bool is_padding() { return true; }
 };
 
 //---------------------------------------------------------------------------
@@ -527,7 +529,7 @@ void enable_attrib_array()
 
     if (Vertex::element_count > 3 && !Vertex::value_type_4::is_padding())
         glCheck(glEnableVertexAttribArray(3));
-    
+
     if (Vertex::element_count > 4 && !Vertex::value_type_5::is_padding())
         glCheck(glEnableVertexAttribArray(4));
 }

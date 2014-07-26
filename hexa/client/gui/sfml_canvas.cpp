@@ -18,41 +18,44 @@
 //
 // Copyright 2012, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #include "sfml_canvas.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
-namespace impl {
+namespace impl
+{
 
 class label : public gui::label, public sf::Text
 {
 public:
-    label (const std::wstring& text, float point_size)
+    label(const std::wstring& text, float point_size)
         : sf::Text(text, sf::Font(), (int)point_size)
-    { }
+    {
+    }
 
-    virtual ~label() { }
+    virtual ~label() {}
 
     vector2<float> size() const
     {
-        auto rect (getGlobalBounds());
-        return { rect.width, rect.height };
+        auto rect(getGlobalBounds());
+        return {rect.width, rect.height};
     }
 };
 
 } // namespace impl
 
-
-inline sf::Color convert (const color& c)
+inline sf::Color convert(const color& c)
 {
     return sf::Color(c.r() * 255, c.g() * 255, c.b() * 255);
 }
 
-sfml_canvas::sfml_canvas (point size, const std::wstring& title)
-    : win_ (sf::VideoMode(size.x, size.y, 32), sf::String(title),
-            sf::Style::Close, sf::ContextSettings(24, 8, 4, 3, 0))
+sfml_canvas::sfml_canvas(point size, const std::wstring& title)
+    : win_(sf::VideoMode(size.x, size.y, 32), sf::String(title),
+           sf::Style::Close, sf::ContextSettings(24, 8, 4, 3, 0))
 {
 }
 
@@ -60,21 +63,20 @@ sfml_canvas::~sfml_canvas()
 {
 }
 
-void sfml_canvas::clear (const color& bg)
+void sfml_canvas::clear(const color& bg)
 {
     win_.clear(convert(bg));
 }
 
-void sfml_canvas::draw (const rect& box, const color& bg)
+void sfml_canvas::draw(const rect& box, const color& bg)
 {
-    sf::RectangleShape shp (sf::Vector2f(box.width(), box.height()));
+    sf::RectangleShape shp(sf::Vector2f(box.width(), box.height()));
     shp.setPosition(box.first.x, box.first.y);
     shp.setFillColor(convert(bg));
     win_.draw(shp);
 }
 
-void sfml_canvas::draw (const rect& box, const texture& fill,
-                        fill_type method)
+void sfml_canvas::draw(const rect& box, const texture& fill, fill_type method)
 {
     (void)method;
 
@@ -82,27 +84,30 @@ void sfml_canvas::draw (const rect& box, const texture& fill,
     glColor4f(1, 1, 1, 1);
 
     glBegin(GL_QUADS);
-    glTexCoord2f(0, 0); glVertex2f(box.first.x, box.first.y);
-    glTexCoord2f(1, 0); glVertex2f(box.second.x, box.first.y);
-    glTexCoord2f(1, 1); glVertex2f(box.second.x, box.second.y);
-    glTexCoord2f(0, 1); glVertex2f(box.first.x, box.second.y);
+    glTexCoord2f(0, 0);
+    glVertex2f(box.first.x, box.first.y);
+    glTexCoord2f(1, 0);
+    glVertex2f(box.second.x, box.first.y);
+    glTexCoord2f(1, 1);
+    glVertex2f(box.second.x, box.second.y);
+    glTexCoord2f(0, 1);
+    glVertex2f(box.first.x, box.second.y);
     glEnd();
 
     fill.unbind();
 }
 
-void sfml_canvas::draw (const point& pos, std::shared_ptr<label> text)
+void sfml_canvas::draw(const point& pos, std::shared_ptr<label> text)
 {
-    impl::label& sf_label (*reinterpret_cast<impl::label*>(text.get()));
+    impl::label& sf_label(*reinterpret_cast<impl::label*>(text.get()));
     sf_label.setPosition(pos.x, pos.y);
     win_.draw(sf_label);
 }
 
-std::shared_ptr<label>
-sfml_canvas::create_label (const std::wstring& text, float point_size)
+std::shared_ptr<label> sfml_canvas::create_label(const std::wstring& text,
+                                                 float point_size)
 {
     return std::shared_ptr<label>(new impl::label(text, point_size));
 }
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

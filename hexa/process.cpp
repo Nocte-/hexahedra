@@ -98,7 +98,7 @@ void kill_process(pid_type id)
 {
     if (id.internal_ != 0) {
         ::kill(id.internal_, SIGKILL);
-        
+
         int status = 0;
         ::waitpid(id.internal_, &status, 0);
     }

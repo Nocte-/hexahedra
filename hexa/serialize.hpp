@@ -46,9 +46,6 @@
 #if defined(__clang__)
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated"
-#elif defined(__GNUC__) || defined(__GNUG__)
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated"
 #endif
 
 namespace hexa
@@ -615,6 +612,4 @@ obj deserialize_as(const buf_t& buffer, obj result = obj())
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
-#elif defined(__GNUC__) || defined(__GNUG__)
-#pragma GCC diagnostic pop
 #endif

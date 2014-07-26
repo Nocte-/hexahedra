@@ -179,8 +179,7 @@ private:
 #endif
     };
 
-    finished_mesh build_mesh(chunk_coordinates pos,
-                             surface_data surface,
+    finished_mesh build_mesh(chunk_coordinates pos, surface_data surface,
                              light_data light) const;
 
     void place_finished_mesh(const finished_mesh& m);

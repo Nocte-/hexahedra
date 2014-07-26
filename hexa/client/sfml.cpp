@@ -291,9 +291,9 @@ sfml::sfml(sf::RenderWindow& win, scene& s)
            h, l, h, l, l, h, l, h, h, h, h, h, h, h, l, l, h, l};
 
     occlusion_block_ = gl::vbo{cube, 24, sizeof(occ_cube_vtx)};
-    
+
     resize(width_, height_);
-    sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);    
+    sf::Mouse::setPosition(sf::Vector2i(width_ * 0.5, height_ * 0.5), app_);
 }
 
 sfml::~sfml()
@@ -328,7 +328,7 @@ void sfml::prepare(const player& plr)
     }
 
     camera_ = camera(vector(0, 0, 0), plr.head_angle(), rock, 1.22173048f,
-                     (float)width_ / (float)height_, 0.01f, 
+                     (float)width_ / (float)height_, 0.01f,
                      scene_.view_distance() * chunk_size * 1.2f);
 
     glCheck(glDisable(GL_CULL_FACE));
@@ -466,7 +466,7 @@ void sfml::prepare(const player& plr)
     texture::unbind();
 
     camera_ = camera(vec3f{0, 0, 0}, plr.head_angle(), rock, 1.22173048f,
-                     (float)width_ / (float)height_, 0.01f, 
+                     (float)width_ / (float)height_, 0.01f,
                      scene_.view_distance() * chunk_size * 1.2f);
 
     camera_.move_to(c + vec3f{0, 0, bob});
@@ -478,7 +478,7 @@ void sfml::prepare(const player& plr)
 
 void sfml::highlight_face(const pos_dir<world_coordinates>& face,
                           const color_alpha& hl_color)
-{  
+{
     glCheck(glDepthMask(GL_FALSE));
     vec3f offset(vec3i(face.pos - chunk_offset_ * chunk_size));
     auto mtx(translate(camera_.model_view_matrix(), offset));
@@ -536,7 +536,7 @@ void sfml::draw_ui(double elapsed, const hud& h)
     glCheck(glLoadIdentity());
     app_.resetGLStates();
     glCheck(glDisable(GL_CULL_FACE));
-    glCheck(glDisable(GL_DEPTH_TEST));    
+    glCheck(glDisable(GL_DEPTH_TEST));
     app_.draw(ui_elem_[0]);
 
     std::vector<std::string> msgs;
@@ -589,10 +589,10 @@ void sfml::draw_ui(double elapsed, const hud& h)
             std::u32string wide;
             sf::Utf8::toUtf32(msg.begin(), msg.end(),
                               std::back_inserter(wide));
-            
+
             sf::String l{(const unsigned int*)&wide[0]};
             sf::Text txt{l, *ui_font_, 16};
-            
+
             txt.setColor(msg_color);
             txt.setPosition(10, y);
             app_.draw(txt);

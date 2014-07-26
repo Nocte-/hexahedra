@@ -19,36 +19,37 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "canvas.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class sfml_canvas : public canvas
 {
 public:
-    sfml_canvas (point size, const std::wstring& title);
+    sfml_canvas(point size, const std::wstring& title);
 
     ~sfml_canvas();
 
-    virtual void clear (const color& background);
+    virtual void clear(const color& background);
 
-    virtual void draw (const rect& box, const texture& fill,
-                       fill_type method = tile);
+    virtual void draw(const rect& box, const texture& fill,
+                      fill_type method = tile);
 
-    virtual void draw (const rect& box, const color& fill);
+    virtual void draw(const rect& box, const color& fill);
 
-    virtual void draw (const point& pos, std::shared_ptr<label> text);
+    virtual void draw(const point& pos, std::shared_ptr<label> text);
 
-    virtual std::shared_ptr<label> create_label
-                    (const std::wstring& text, float point_size);
+    virtual std::shared_ptr<label> create_label(const std::wstring& text,
+                                                float point_size);
 
 private:
     sf::RenderWindow win_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

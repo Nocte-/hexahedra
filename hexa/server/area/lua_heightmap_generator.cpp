@@ -28,26 +28,29 @@
 
 #include "../lua.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
-lua_heightmap_generator::lua_heightmap_generator(world& w, const boost::property_tree::ptree& conf, lua& scripting)
-    : area_generator_i (w, conf)
-    , lua_ (scripting)
-{ }
+lua_heightmap_generator::lua_heightmap_generator(
+    world& w, const boost::property_tree::ptree& conf, lua& scripting)
+    : area_generator_i(w, conf)
+    , lua_(scripting)
+{
+}
 
 lua_heightmap_generator::~lua_heightmap_generator()
-{ }
-
-area_data
-lua_heightmap_generator::generate (map_coordinates pos)
 {
-    assert (pos.x < chunk_world_limit.x);
-    assert (pos.y < chunk_world_limit.y);
+}
+
+area_data lua_heightmap_generator::generate(map_coordinates pos)
+{
+    assert(pos.x < chunk_world_limit.x);
+    assert(pos.y < chunk_world_limit.y);
 
     area_data dest;
-    luabind::call_function<void>(lua_.state(), "generate_heightmap", pos.x, pos.y, &dest);
+    luabind::call_function<void>(lua_.state(), "generate_heightmap", pos.x,
+                                 pos.y, &dest);
     return dest;
 }
 
 } // namespace hexa
-

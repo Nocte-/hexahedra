@@ -19,14 +19,16 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <boost/signal.hpp>
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class button : public widget
 {
@@ -36,9 +38,9 @@ public:
 public:
     button(std::unique_ptr<widget> child);
 
-    virtual void draw (canvas& cnv);
+    virtual void draw(canvas& cnv);
 
-    virtual void process_event (const event& ev);
+    virtual void process_event(const event& ev);
 
     virtual void on_mouse_enter();
     virtual void on_mouse_leave();
@@ -46,6 +48,5 @@ public:
 protected:
     std::unique_ptr<widget> child_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

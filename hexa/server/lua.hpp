@@ -82,15 +82,15 @@ public:
 
     static void on_console(const luabind::object& callback);
 
-    static void change_block(const world_coordinates& p, uint16_t type);
+    static void change_block(const world_coordinates& p, uint16_t material);
 
     static void change_block_s(const world_coordinates& p,
-                               const std::string& type);
+                               const std::string& material);
 
-    static void place_block(const world_coordinates& p, uint16_t type);
+    static void place_block(const world_coordinates& p, uint16_t material);
 
     static void place_block_s(const world_coordinates& p,
-                              const std::string& type);
+                              const std::string& material);
 
     static uint16_t get_block(const world_coordinates& p);
 

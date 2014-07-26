@@ -19,14 +19,16 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <rhea/simplex_solver.hpp>
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class canvas;
 class theme;
@@ -37,16 +39,13 @@ public:
     context(canvas& cnv, theme& thm);
 
     canvas& get_canvas() { return cnv_; }
-    theme&  get_theme()  { return thm_; }
+    theme& get_theme() { return thm_; }
 
     void draw();
 
     void process_event(const event& ev);
 
-    void add (widget::ptr&& w)
-    {
-        widgets_.emplace_back(std::move(w));
-    }
+    void add(widget::ptr&& w) { widgets_.emplace_back(std::move(w)); }
 
     template <typename type>
     widget::ptr create()
@@ -64,60 +63,55 @@ public:
 public:
     void align_left(const widget& a, const widget& b)
     {
-        add_constraint( a.left() == b.left() );
+        add_constraint(a.left() == b.left());
     }
 
     void align_right(const widget& a, const widget& b)
     {
-        add_constraint( a.right() == b.right() );
+        add_constraint(a.right() == b.right());
     }
 
     void align_top(const widget& a, const widget& b)
     {
-        add_constraint( a.top() == b.top() );
+        add_constraint(a.top() == b.top());
     }
 
     void align_bottom(const widget& a, const widget& b)
     {
-        add_constraint( a.bottom() == b.bottom() );
+        add_constraint(a.bottom() == b.bottom());
     }
-
-
 
     void keep_inside(const widget& a, const widget& b)
     {
-        add_constraints({
-            a.left() >= b.left(), a.top() >= b.top(),
-            a.right() <= b.right(), a.bottom() <= b.bottom() });
+        add_constraints({a.left() >= b.left(), a.top() >= b.top(),
+                         a.right() <= b.right(), a.bottom() <= b.bottom()});
     }
 
     void overlap(const widget& a, const widget& b)
     {
-        add_constraints({
-            a.left() == b.left(), a.top() == b.top(),
-            a.width() == b.width(), a.height() == b.height() });
+        add_constraints({a.left() == b.left(), a.top() == b.top(),
+                         a.width() == b.width(), a.height() == b.height()});
     }
-
-
 
     void place_left_of(const widget& a, const widget& b, double padding = 0.0f)
     {
-        add_constraint( a.right() + padding <= b.left() );
+        add_constraint(a.right() + padding <= b.left());
     }
 
-    void place_right_of(const widget& a, const widget& b, double padding = 0.0f)
+    void place_right_of(const widget& a, const widget& b,
+                        double padding = 0.0f)
     {
-        add_constraint( a.left() >= b.right() + padding );
+        add_constraint(a.left() >= b.right() + padding);
     }
 
     void same_width(const widget& a, const widget& b)
     {
-        add_constraint( a.width() == b.width() );
+        add_constraint(a.width() == b.width());
     }
 
     void same_height(const widget& a, const widget& b)
     {
-        add_constraint( a.height() == b.height() );
+        add_constraint(a.height() == b.height());
     }
 
     void same_size(const widget& a, const widget& b)
@@ -126,16 +120,14 @@ public:
         same_height(a, b);
     }
 
-
-
     void center_h(const widget& a, const widget& b)
     {
-        add_constraint( a.h_center() == b.h_center() );
+        add_constraint(a.h_center() == b.h_center());
     }
 
     void center_v(const widget& a, const widget& b)
     {
-        add_constraint( a.v_center() == b.v_center() );
+        add_constraint(a.v_center() == b.v_center());
     }
 
     void center(const widget& a, const widget& b)
@@ -145,10 +137,9 @@ public:
     }
 
 private:
-    canvas&                  cnv_;
-    theme&                   thm_;
+    canvas& cnv_;
+    theme& thm_;
     std::vector<widget::ptr> widgets_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

@@ -26,7 +26,8 @@
 #include <hexa/basic_types.hpp>
 #include <hexa/surface.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class lightmap;
 class world;
@@ -36,13 +37,13 @@ class world_lightmap_access;
 class lightmap_generator_i
 {
 public:
-    lightmap_generator_i (world& cache,
-                          const boost::property_tree::ptree& conf)
-        : cache_ (cache)
+    lightmap_generator_i(world& cache, const boost::property_tree::ptree& conf)
+        : cache_(cache)
         , config_(conf)
-    { }
+    {
+    }
 
-    virtual ~lightmap_generator_i () {}
+    virtual ~lightmap_generator_i() {}
 
     /** Generate a lightmap for a chunk.
      * @param data  Access to the world data
@@ -51,11 +52,10 @@ public:
      * @param map   The results will be placed in this chunk
      * @param phase Level of detail \sa phases
      * @return Reference to \a map */
-    virtual lightmap& generate (world_lightmap_access& data,
-                                const chunk_coordinates& pos,
-                                const surface& srf,
-                                lightmap& map,
-                                unsigned int phase = 0) const = 0;
+    virtual lightmap& generate(world_lightmap_access& data,
+                               const chunk_coordinates& pos,
+                               const surface& srf, lightmap& map,
+                               unsigned int phase = 0) const = 0;
 
     /** The number of phases this generator needs.
      *  Light maps can be expensive to generate, but new terrain should
@@ -69,10 +69,9 @@ public:
 
 protected:
     /** The game world. */
-    world&  cache_;
+    world& cache_;
     /** This module's configuration data. */
     boost::property_tree::ptree config_;
 };
 
 } // namespace hexa
-

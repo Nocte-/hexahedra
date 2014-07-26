@@ -25,37 +25,35 @@
 
 using namespace boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
-uniform_lightmap::uniform_lightmap (world& c, const ptree& conf)
-    : lightmap_generator_i (c, conf)
-    , sun_ (conf.get<int>("sun", 15))
-    , amb_ (conf.get<int>("skydome", 15))
-    , art_ (conf.get<int>("artificial", 15))
+uniform_lightmap::uniform_lightmap(world& c, const ptree& conf)
+    : lightmap_generator_i(c, conf)
+    , sun_(conf.get<int>("sun", 15))
+    , amb_(conf.get<int>("skydome", 15))
+    , art_(conf.get<int>("artificial", 15))
 {
 }
 
-uniform_lightmap::~uniform_lightmap ()
-{ }
-
-lightmap&
-uniform_lightmap::generate (world_lightmap_access&,
-                            const chunk_coordinates&,
-                            const surface& s,
-                            lightmap& lc, unsigned int) const
+uniform_lightmap::~uniform_lightmap()
 {
-    chunk_index c1 (0, 0, 0), c2 (block_chunk_size);
+}
 
-    auto lmi (std::begin(lc));
+lightmap& uniform_lightmap::generate(world_lightmap_access&,
+                                     const chunk_coordinates&,
+                                     const surface& s, lightmap& lc,
+                                     unsigned int) const
+{
+    chunk_index c1(0, 0, 0), c2(block_chunk_size);
 
-    for (faces f : s)
-    {
-        for (int d (0); d < 6; ++d)
-        {
-            if (f[d])
-            {
-                lmi->sunlight   = sun_;
-                lmi->ambient    = amb_;
+    auto lmi(std::begin(lc));
+
+    for (faces f : s) {
+        for (int d(0); d < 6; ++d) {
+            if (f[d]) {
+                lmi->sunlight = sun_;
+                lmi->ambient = amb_;
                 lmi->artificial = art_;
                 ++lmi;
             }
@@ -66,4 +64,3 @@ uniform_lightmap::generate (world_lightmap_access&,
 }
 
 } // namespace hexa
-

@@ -28,6 +28,7 @@
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/asn.h>
 #include <cryptopp/base64.h>
+#include <cryptopp/sha.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
@@ -43,7 +44,7 @@ static AutoSeededRandomPool rng;
 
 DL_PrivateKey_EC<ECP> make_new_key()
 {
-    ECIES<ECP>::Decryptor decr(rng, ASN1::secp256k1());
+    ECIES<ECP>::Decryptor decr{rng, ASN1::secp256k1()};
     return decr.GetKey();
 }
 
@@ -66,9 +67,9 @@ Integer make_random_128()
 
 std::string serialize_private_key(const DL_PrivateKey_EC<ECP>& key)
 {
-    auto num(key.GetPrivateExponent());
+    auto num = key.GetPrivateExponent();
     std::string result;
-    HexEncoder enc(new StringSink(result));
+    HexEncoder enc{new StringSink(result)};
     num.DEREncode(enc);
     // key.DEREncode(enc);
 
@@ -84,10 +85,10 @@ std::string serialize_public_key(const DL_PrivateKey_EC<ECP>& privkey)
 {
     DL_PublicKey_EC<ECP> key;
     privkey.MakePublicKey(key);
-    auto pt(key.GetPublicElement());
+    auto pt = key.GetPublicElement();
 
     std::string result;
-    HexEncoder enc(new StringSink(result));
+    HexEncoder enc{new StringSink(result)};
     key.GetGroupParameters().GetCurve().EncodePoint(enc, pt, true);
 
     return result;
@@ -109,6 +110,17 @@ DL_PublicKey_EC<ECP> deserialize_public_key(const std::string& privkey)
 
     return result;
      */
+}
+
+std::string sha256(const std::string& in)
+{
+    std::string result;
+    SHA256 hash;
+
+    StringSource(in, true, new HashFilter(hash, new Base64Encoder(
+                                                    new StringSink(result))));
+
+    return result;
 }
 
 } // namespace crypto

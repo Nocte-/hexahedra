@@ -855,7 +855,10 @@ void lua::on_component_change(int component_id, const object& callback)
 void lua::on_console(const object& callback)
 {
     try {
-        cb_console.push_back(callback);
+        if (callback.is_valid())
+            cb_console.push_back(callback);
+        else
+            std::cerr << "No valid callback for on_console" << std::endl;            
     } catch (luabind::error&) {
         log_msg("Lua error: %1%", lua_tostring(state_, -1));
     } catch (...) {
@@ -961,18 +964,19 @@ void lua::console(es::entity plr, const std::string& text)
     }
 }
 
-void lua::change_block(const world_coordinates& p, uint16_t type)
+void lua::change_block(const world_coordinates& p, uint16_t material)
 {
-    trace("Change block %1% to %2%", p, type);
+    trace("Change block %1% to %2%", p, material);
     auto proxy(gameworld().acquire_write_access(p >> cnkshift));
     trace("(Got write access)");
     auto& cnk(proxy.get_chunk(p >> cnkshift));
-    cnk[p % chunk_size] = type;
+    cnk[p % chunk_size] = material;
 }
 
-void lua::change_block_s(const world_coordinates& p, const std::string& type)
+void lua::change_block_s(const world_coordinates& p,
+                         const std::string& material)
 {
-    change_block(p, find_material(type));
+    change_block(p, find_material(material, type::air));
 }
 
 void lua::place_block(const world_coordinates& p, uint16_t type)
@@ -983,9 +987,10 @@ void lua::place_block(const world_coordinates& p, uint16_t type)
         call_function<void>(cb->second, p, type);
 }
 
-void lua::place_block_s(const world_coordinates& p, const std::string& type)
+void lua::place_block_s(const world_coordinates& p,
+                        const std::string& material)
 {
-    place_block(p, find_material(type));
+    place_block(p, find_material(material, type::air));
 }
 
 uint16_t lua::get_block(const world_coordinates& p)

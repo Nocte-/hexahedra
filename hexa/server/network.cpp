@@ -88,13 +88,11 @@ network::network(uint16_t port, world& w, server_entity_system& entities,
     , lua_(scripting)
     , running_(false)
 {
-    world_.on_update_surface.connect([&](chunk_coordinates pos) {
-        on_update_surface(pos);
-    });
+    world_.on_update_surface.connect(
+        [&](chunk_coordinates pos) { on_update_surface(pos); });
 
-    world_.on_update_coarse_height.connect([&](chunk_coordinates pos) {
-        send_coarse_height(pos);
-    });
+    world_.on_update_coarse_height.connect(
+        [&](chunk_coordinates pos) { send_coarse_height(pos); });
 }
 
 network::~network()
@@ -578,7 +576,7 @@ void network::login(packet_info& info)
             if (ch != undefined_height && ch < chunk_world_limit.z)
                 start_pos.z = ch * chunk_size;
             else
-                start_pos.z = world_center.z + 40;
+                start_pos.z = world_center.z + 4;
         }
 
         trace("Going to spawn player near %1%",
@@ -602,7 +600,7 @@ void network::login(packet_info& info)
             }
         }
 
-        start_pos.z += 16;
+        start_pos.z += 4;
         log_msg("Spawning new player at %1%", start_pos);
         trace("Final position: %1%",
               world_rel_coordinates(start_pos - world_center));

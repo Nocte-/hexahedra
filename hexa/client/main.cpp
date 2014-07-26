@@ -80,8 +80,7 @@ int main(int argc, char* argv[])
     auto& vm(global_settings);
     po::options_description generic("Command line options");
     generic.add_options() //
-        ("version,v", "print version string")
-        ("help", "show help message")
+        ("version,v", "print version string")("help", "show help message")
         //("newsingle",   "Immediately start a new single-player game")
         //("continue",    "Continue the last game")
         //("quickjoin",   "Join your favorite server")

@@ -19,29 +19,30 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "canvas.hpp"
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class text_label : public widget
 {
 public:
-    text_label(context& owner, const std::wstring& text, float font_size) 
-       : widget (owner)
-       , label_ (cnv.create_label(text, font_size))
-    { } 
+    text_label(context& owner, const std::wstring& text, float font_size)
+        : widget(owner)
+        , label_(cnv.create_label(text, font_size))
+    {
+    }
 
-    void draw(canvas& cnv)
-        { cnv.draw(bounding_box.first, label_); }
+    void draw(canvas& cnv) { cnv.draw(bounding_box.first, label_); }
 
 protected:
     std::shared_ptr<label> label_;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

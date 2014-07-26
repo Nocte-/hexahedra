@@ -47,5 +47,7 @@ serialize_public_key(const CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP>& privkey);
 CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>
 deserialize_public_key(const std::string& privkey);
 
+std::string sha256(const std::string& in);
+
 } // namespace crypto
 } // namespace hexa

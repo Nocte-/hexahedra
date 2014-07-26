@@ -19,25 +19,27 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 /**  */
 class theme
 {
 public:
-    theme() { }
-    virtual ~theme() { }
+    theme() {}
+    virtual ~theme() {}
 
-    virtual widget::ptr text_label (const std::string& text) const = 0;
+    virtual widget::ptr text_label(const std::string& text) const = 0;
 
-    virtual widget::ptr button (widget::ptr&& contents,
-                                std::function<void()> on_activate) const = 0;
+    virtual widget::ptr button(widget::ptr&& contents,
+                               std::function<void()> on_activate) const = 0;
 
     virtual float default_spacing() const { return 5.0f; }
 };
-
-}} // namespace hexa::gui
+}
+} // namespace hexa::gui

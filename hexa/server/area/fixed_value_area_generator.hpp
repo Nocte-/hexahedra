@@ -19,25 +19,26 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <boost/range/algorithm.hpp>
 #include "area_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class fixed_value_area_generator : public area_generator_i
 {
 public:
     fixed_value_area_generator(world& w,
                                const boost::property_tree::ptree& conf)
-        : area_generator_i(w, conf)
-        , value_(conf.get<int16_t>("value", std::numeric_limits<int16_t>::lowest()))
+        : area_generator_i{w, conf}
+        , value_{conf.get<int16_t>("value",
+                                   std::numeric_limits<int16_t>::lowest())}
     {
     }
 
-    area_data generate (map_coordinates) override
+    area_data generate(map_coordinates) override
     {
         area_data result;
         boost::range::fill(result, value_);
@@ -49,4 +50,3 @@ private:
 };
 
 } // namespace hexa
-

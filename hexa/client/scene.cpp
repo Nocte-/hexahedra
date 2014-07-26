@@ -87,6 +87,8 @@ void scene::move_camera_to(chunk_coordinates pos)
     if (old_pos == pos)
         return;
 
+    trace("Scene camera to %1%", pos);
+    
     terrain_.center(pos);
 
     // The area around the camera's chunk is always visible.
@@ -153,9 +155,8 @@ void scene::set(chunk_coordinates pos, const surface_data& surface,
     // Pass by reference doesn't work with Visual Studio,
     // so for now we'll have to make a copy of surface and
     // light:
-    pending_.emplace_back(threads_.enqueue([=] {
-        return build_mesh(pos, surface, light);
-    }));
+    pending_.emplace_back(
+        threads_.enqueue([=] { return build_mesh(pos, surface, light); }));
 }
 
 void scene::set_coarse_height(map_coordinates pos, chunk_height h,
@@ -343,7 +344,8 @@ void scene::chunk_became_visible(chunk_coordinates pos)
 
 void scene::make_occlusion_query(chunk_coordinates pos)
 {
-    terrain_.set(pos, {gl::vbo(), gl::vbo(), gl::occlusion_query(true)});
+    if (terrain_.is_inside(pos))    
+        terrain_.set(pos, {gl::vbo(), gl::vbo(), gl::occlusion_query(true)});
 }
 
 } // namespace hexa

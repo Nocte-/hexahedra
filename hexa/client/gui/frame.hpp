@@ -19,13 +19,15 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 class frame : public widget
 {
@@ -33,8 +35,7 @@ public:
     frame();
     virtual ~frame() {}
 
-    virtual void draw (canvas& cnv) = 0;
+    virtual void draw(canvas& cnv) = 0;
 };
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

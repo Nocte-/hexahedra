@@ -84,9 +84,8 @@ public:
         if (stop_)
             throw std::runtime_error("threadpool was stopped");
 
-        auto task =
-            std::make_shared<std::packaged_task<return_type()>>(std::bind(
-                std::forward<Func>(f), std::forward<Args>(args)...));
+        auto task = std::make_shared<std::packaged_task<return_type()>>(
+            std::bind(std::forward<Func>(f), std::forward<Args>(args)...));
 
         std::future<return_type> result{task->get_future()};
         {

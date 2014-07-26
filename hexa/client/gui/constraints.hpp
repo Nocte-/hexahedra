@@ -19,18 +19,20 @@
 //
 // Copyright 2013, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
+
 #pragma once
 
 #include <rhea/constraint.hpp>
 #include "widget.hpp"
 
-namespace hexa {
-namespace gui {
+namespace hexa
+{
+namespace gui
+{
 
 /** Combine a number of constraints lists to one single list. */
 inline rhea::constraint_list
-combine (std::initializer_list<rhea::constraint_list> l)
+combine(std::initializer_list<rhea::constraint_list> l)
 {
     rhea::constraint_list result;
 
@@ -40,110 +42,91 @@ combine (std::initializer_list<rhea::constraint_list> l)
     return result;
 }
 
-inline rhea::constraint_list
-place_left_of (const widget& a, const widget& b, double space = 0.0)
+inline rhea::constraint_list place_left_of(const widget& a, const widget& b,
+                                           double space = 0.0)
 {
-    return { a.right() + space <= b.left() };
+    return {a.right() + space <= b.left()};
 }
 
-inline rhea::constraint_list
-place_right_of (const widget& a, const widget& b, double space = 0.0)
+inline rhea::constraint_list place_right_of(const widget& a, const widget& b,
+                                            double space = 0.0)
 {
-    return { a.left() - space >= b.right() };
+    return {a.left() - space >= b.right()};
 }
 
-inline rhea::constraint_list
-place_above (const widget& a, const widget& b, double space = 0.0)
+inline rhea::constraint_list place_above(const widget& a, const widget& b,
+                                         double space = 0.0)
 {
-    return { a.bottom() + space <= b.top() };
+    return {a.bottom() + space <= b.top()};
 }
 
-inline rhea::constraint_list
-place_below (const widget& a, const widget& b, double space = 0.0)
+inline rhea::constraint_list place_below(const widget& a, const widget& b,
+                                         double space = 0.0)
 {
-    return { a.top() - space >= b.bottom() };
+    return {a.top() - space >= b.bottom()};
 }
 
-
-
-inline rhea::constraint_list
-center_h (const widget& a, const widget& b)
+inline rhea::constraint_list center_h(const widget& a, const widget& b)
 {
-    return { a.center_h() == b.center_h() };
+    return {a.center_h() == b.center_h()};
 }
 
-inline rhea::constraint_list
-center_v (const widget& a, const widget& b)
+inline rhea::constraint_list center_v(const widget& a, const widget& b)
 {
-    return { a.center_v() == b.center_v() };
+    return {a.center_v() == b.center_v()};
 }
 
-inline rhea::constraint_list
-center (const widget& a, const widget& b)
+inline rhea::constraint_list center(const widget& a, const widget& b)
 {
-    return combine({ center_h(a, b), center_v(a, b) });
+    return combine({center_h(a, b), center_v(a, b)});
 }
 
-
-
-inline rhea::constraint_list
-equal_height (const widget& a, const widget& b)
+inline rhea::constraint_list equal_height(const widget& a, const widget& b)
 {
-    return { a.height() == b.height() };
+    return {a.height() == b.height()};
 }
 
-inline rhea::constraint_list
-equal_width (const widget& a, const widget& b)
+inline rhea::constraint_list equal_width(const widget& a, const widget& b)
 {
-    return { a.width() == b.width() };
+    return {a.width() == b.width()};
 }
 
-inline rhea::constraint_list
-equal_size (const widget& a, const widget& b)
+inline rhea::constraint_list equal_size(const widget& a, const widget& b)
 {
     return combine({equal_width(a, b), equal_height(a, b)});
 }
 
-
-
-inline rhea::constraint_list
-align_left (const widget& a, const widget& b)
+inline rhea::constraint_list align_left(const widget& a, const widget& b)
 {
-    return { a.left() == b.left() };
+    return {a.left() == b.left()};
 }
 
-inline rhea::constraint_list
-align_top (const widget& a, const widget& b)
+inline rhea::constraint_list align_top(const widget& a, const widget& b)
 {
-    return { a.top() == b.top() };
+    return {a.top() == b.top()};
 }
 
-inline rhea::constraint_list
-align_right (const widget& a, const widget& b)
+inline rhea::constraint_list align_right(const widget& a, const widget& b)
 {
-    return { a.right() == b.right() };
+    return {a.right() == b.right()};
 }
 
-inline rhea::constraint_list
-align_bottom (const widget& a, const widget& b)
+inline rhea::constraint_list align_bottom(const widget& a, const widget& b)
 {
-    return { a.bottom() == b.bottom() };
+    return {a.bottom() == b.bottom()};
 }
 
-
-
-inline rhea::constraint_list
-keep_inside (const widget& a, const widget& b)
+inline rhea::constraint_list keep_inside(const widget& a, const widget& b)
 {
-    return { a.left() >= b.left(), a.top() >= b.top(), 
-             a.right() <= b.right(), a.bottom() <= b.bottom() };
+    return {a.left() >= b.left(), a.top() >= b.top(), a.right() <= b.right(),
+            a.bottom() <= b.bottom()};
 }
 
-inline rhea::constraint_list
-frame (const widget& a, const widget& b, double h, double v)
+inline rhea::constraint_list frame(const widget& a, const widget& b, double h,
+                                   double v)
 {
-    return { a.left() + h == b.left(), a.top() + v == b.top(), 
-             a.right() - h == b.right(), a.bottom() - v == b.bottom() };
+    return {a.left() + h == b.left(), a.top() + v == b.top(),
+            a.right() - h == b.right(), a.bottom() - v == b.bottom()};
 }
 
 //--------------------------------------------------------------------------
@@ -152,28 +135,26 @@ frame (const widget& a, const widget& b, double h, double v)
  *  For a constraint f and a list of widgets (a, b, c, d, ...), this will
  *  result in a list of constraints (f(a, b), f(b, c), f(c, d), ...)
  *  An empty list or a list with only one widget will give an empty result. */
-inline rhea::constraint_list
-template <typename op>
-chain (std::initializer_list<const widget&> wl, op func)
+inline rhea::constraint_list template <typename op>
+chain(std::initializer_list<const widget&> wl, op func)
 {
     rhea::constraint_list result;
 
     if (wl.size() < 2)
         return result;
 
-    auto i (std::begin(wl));
-    for (auto j (std::next(i)); j != std::end(wl); ++i, ++j)
+    auto i(std::begin(wl));
+    for (auto j(std::next(i)); j != std::end(wl); ++i, ++j)
         result.splice(result.end(), func(*i, *j));
 
     return result;
 }
 
 /** Chain a list of widgets with multiple functions. */
-inline rhea::constraint_list
-template <typename op, typename... op_tail>
-chain (std::initializer_list<const widget&> wl, op func, op_tail... tail)
+inline rhea::constraint_list template <typename op, typename... op_tail>
+chain(std::initializer_list<const widget&> wl, op func, op_tail... tail)
 {
-    auto result (chain(wl, func));
+    auto result(chain(wl, func));
     result.insert(result.end(), chain(wl, tail));
     return result;
 }
@@ -181,39 +162,39 @@ chain (std::initializer_list<const widget&> wl, op func, op_tail... tail)
 //--------------------------------------------------------------------------
 
 /** Pack a list of widgets horizontally. */
-inline rhea::constraint_list
-pack_h (std::initializer_list<const widget&> wl, double spacing = 0.0)
+inline rhea::constraint_list pack_h(std::initializer_list<const widget&> wl,
+                                    double spacing = 0.0)
 {
-    auto partial_app ([=](const widget& a, const widget& b)
-                    { return place_left_of(a, b, spacing); });
+    auto partial_app([=](const widget& a, const widget& b) {
+        return place_left_of(a, b, spacing);
+    });
 
     return chain(wl, partial_app, align_top, equal_height);
 }
 
 /** Pack a list of widgets vertically. */
-inline rhea::constraint_list
-pack_v (std::initializer_list<const widget&> wl, double spacing = 0.0)
+inline rhea::constraint_list pack_v(std::initializer_list<const widget&> wl,
+                                    double spacing = 0.0)
 {
-    auto partial_app ([=](const widget& a, const widget& b)
-                    { return place_below(a, b, spacing); });
+    auto partial_app([=](const widget& a, const widget& b) {
+        return place_below(a, b, spacing);
+    });
 
     return chain(wl, partial_app, align_left, equal_width);
 }
 
-
 /** Pack a list of widgets horizontally, and make them all the same width. */
 inline rhea::constraint_list
-pack_equal_h (std::initializer_list<const widget&> wl, double spacing = 0.0)
+pack_equal_h(std::initializer_list<const widget&> wl, double spacing = 0.0)
 {
-    return combine({ pack_h(wl, spacing), chain(wl, equal_width) });
+    return combine({pack_h(wl, spacing), chain(wl, equal_width)});
 }
 
 /** Pack a list of widgets vertically, and make them all the same height. */
 inline rhea::constraint_list
-pack_equal_v (std::initializer_list<const widget&> wl, double spacing = 0.0)
+pack_equal_v(std::initializer_list<const widget&> wl, double spacing = 0.0)
 {
-    return combine({ pack_v(wl, spacing), chain(wl, equal_height) });
+    return combine({pack_v(wl, spacing), chain(wl, equal_height)});
 }
-
-}} // namespace hexa::gui
-
+}
+} // namespace hexa::gui

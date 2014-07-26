@@ -37,19 +37,20 @@
 using namespace boost;
 using namespace boost::property_tree;
 
-namespace hexa {
+namespace hexa
+{
 
 typedef std::array<unsigned int, 3> triangle;
 
-namespace {
+namespace
+{
 
-
-float opacity (uint16_t t)
+float opacity(uint16_t t)
 {
     return 1.0f - (material_prop[t].transparency / 255.f);
 }
 
-std::vector<vector> golden_spiral (int count)
+std::vector<vector> golden_spiral(int count)
 {
     // Based on an implementation by Patrick Boucher.
     // http://www.softimage.blog/
@@ -57,15 +58,14 @@ std::vector<vector> golden_spiral (int count)
     const float inv_phi = math::constants::pi<float>() * (3.0 - std::sqrt(5));
 
     std::vector<vector> result;
-    float off (2.0f / count);
-    for (int k = 0; k < count; ++k)
-    {
-        float z (k * off - 1.0f + (off / 2.0f));
+    float off(2.0f / count);
+    for (int k = 0; k < count; ++k) {
+        float z(k * off - 1.0f + (off / 2.0f));
 
         if (z <= 0)
             continue;
 
-        float r (std::sqrt(1.0f - z*z));
+        float r(std::sqrt(1.0f - z * z));
         float th = k * inv_phi;
         result.emplace_back(std::cos(th) * r, std::sin(th) * r, z);
     }
@@ -75,13 +75,11 @@ std::vector<vector> golden_spiral (int count)
 
 } // anonymous namespace
 
-
 ////////////////////////////////////////////////////////////////////////////
 
-
-ambient_occlusion_lightmap::ambient_occlusion_lightmap
-            (world& c, const ptree& config)
-    : lightmap_generator_i (c, config)
+ambient_occlusion_lightmap::ambient_occlusion_lightmap(world& c,
+                                                       const ptree& config)
+    : lightmap_generator_i(c, config)
 {
     detail_levels_.emplace_back(precalc(10, 10));
     detail_levels_.emplace_back(precalc(30, 40));
@@ -89,34 +87,32 @@ ambient_occlusion_lightmap::ambient_occlusion_lightmap
 }
 
 ambient_occlusion_lightmap::rays
-ambient_occlusion_lightmap::precalc (float ambient_raylen, unsigned int count) const
+ambient_occlusion_lightmap::precalc(float ambient_raylen,
+                                    unsigned int count) const
 {
     rays result;
-    vector center (0.5f, 0.5f, 0.5f);
+    vector center(0.5f, 0.5f, 0.5f);
 
-    for (auto v : golden_spiral(count))
-    {
-        for (int i (0); i < 5; ++i)
-        {
-            vector normal (dir_vector[i]);
+    for (auto v : golden_spiral(count)) {
+        for (int i(0); i < 5; ++i) {
+            vector normal(dir_vector[i]);
 
             // Weight is calculated according to Lambert's cosine law:
             // intensity = cos theta = a . b (for unit vectors)
-            float weight (dot_prod(v, normal));
+            float weight(dot_prod(v, normal));
             if (weight <= 0)
                 continue;
 
             // The ray's origin is set to somewhat above the center of the
             // surface.  (Not too close: this darkens corners too much.)
-            auto origin (center + normal * 0.8f);
-            auto dir (v * ambient_raylen);
+            auto origin(center + normal * 0.8f);
+            auto dir(v * ambient_raylen);
             result[i].add(voxel_raycast(origin, origin + dir), weight);
         }
     }
 
-    float max (0);
-    for (int i(0); i < 5; ++i)
-    {
+    float max(0);
+    for (int i(0); i < 5; ++i) {
         if (result[i].weight > max)
             max = result[i].weight;
     }
@@ -128,34 +124,31 @@ ambient_occlusion_lightmap::precalc (float ambient_raylen, unsigned int count) c
     return result;
 }
 
-ambient_occlusion_lightmap::~ambient_occlusion_lightmap ()
-{ }
-
-float
-ambient_occlusion_lightmap::recurse (const ray_bundle& r, float ray_power,
-                                     const world_coordinates& blk,
-                                     world_lightmap_access& data,
-                                     bool first) const
+ambient_occlusion_lightmap::~ambient_occlusion_lightmap()
 {
-    float temp (0.0f);
-    bool should_recurse (true);
+}
 
-    for (auto& voxel : r.trunk)
-    {
-        auto type (data[blk + voxel].type);
+float ambient_occlusion_lightmap::recurse(const ray_bundle& r, float ray_power,
+                                          const world_coordinates& blk,
+                                          world_lightmap_access& data,
+                                          bool first) const
+{
+    float temp(0.0f);
+    bool should_recurse(true);
+
+    for (auto& voxel : r.trunk) {
+        auto type(data[blk + voxel].type);
 
         // If the very first block we traverse is a custom block, we
         // skip it.
-        if (first)
-        {
+        if (first) {
             first = false;
             if (material_prop[type].is_custom_block())
                 continue;
         }
 
         temp += opacity(type);
-        if (temp >= 1.0f)
-        {
+        if (temp >= 1.0f) {
             should_recurse = false;
             break;
         }
@@ -166,8 +159,7 @@ ambient_occlusion_lightmap::recurse (const ray_bundle& r, float ray_power,
     if (ray_power <= 0.01)
         return 0.0;
 
-    if (should_recurse)
-    {
+    if (should_recurse) {
         for (auto& s : r.branches)
             ray_power = recurse(s, ray_power, blk, data, first);
     }
@@ -175,27 +167,23 @@ ambient_occlusion_lightmap::recurse (const ray_bundle& r, float ray_power,
     return ray_power;
 }
 
-lightmap&
-ambient_occlusion_lightmap::generate (world_lightmap_access& data,
-                                      const chunk_coordinates& pos,
-                                      const surface& s,
-                                      lightmap& lightchunk,
-                                      unsigned int phase) const
+lightmap& ambient_occlusion_lightmap::generate(world_lightmap_access& data,
+                                               const chunk_coordinates& pos,
+                                               const surface& s,
+                                               lightmap& lightchunk,
+                                               unsigned int phase) const
 {
     assert(phase < detail_levels_.size());
     trace("for %1%", world_vector(pos - world_chunk_center));
 
-    auto lmi (std::begin(lightchunk));
-    for (faces f : s)
-    {
-        world_coordinates blk (pos * chunk_size + f.pos);
+    auto lmi(std::begin(lightchunk));
+    for (faces f : s) {
+        world_coordinates blk(pos * chunk_size + f.pos);
 
-        for (int d (0) ; d < 5; ++d)
-        {
-            if (f[d])
-            {
-                const ray_bundle& r (detail_levels_[phase][d]);
-                float light_level (recurse(r, r.weight, blk, data));
+        for (int d(0); d < 5; ++d) {
+            if (f[d]) {
+                const ray_bundle& r(detail_levels_[phase][d]);
+                float light_level(recurse(r, r.weight, blk, data));
 
                 if (d < 4)
                     light_level += d * 0.05f;
@@ -206,8 +194,7 @@ ambient_occlusion_lightmap::generate (world_lightmap_access& data,
             }
         }
 
-        if (f[5])
-        {
+        if (f[5]) {
             lmi->ambient = 0;
             ++lmi;
         }
@@ -219,4 +206,3 @@ ambient_occlusion_lightmap::generate (world_lightmap_access& data,
 }
 
 } // namespace hexa
-
