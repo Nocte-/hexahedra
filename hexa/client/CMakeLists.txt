@@ -56,6 +56,9 @@ foreach (LIB ${NEED_GLEW} OpenGL CryptoPP ENet ES)
     target_link_libraries(${LIBNAME} ${${ULIB}_LIBRARIES})
 endforeach()
 
+target_link_libraries(${LIBNAME} cppnetlib-client-connections cppnetlib-uri)
+
+
 # OpenGL uses a different convention:
 target_link_libraries(${LIBNAME} ${OPENGL_gl_LIBRARY})
 target_link_libraries(${LIBNAME} ${OPENGL_glu_LIBRARY})
