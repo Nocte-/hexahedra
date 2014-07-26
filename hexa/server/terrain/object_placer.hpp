@@ -19,10 +19,10 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include "terrain_generator_i.hpp"
+#include "../hndl.hpp"
 #include "../voxel_sprite.hpp"
 
 namespace hexa
@@ -41,8 +41,14 @@ public:
                                  chunk_height prev) const override;
 
 private:
-    int density_map_;
+    std::vector<map_world_coordinates> spots(const map_coordinates& pos);
+                                             
+private:
+    std::unique_ptr<noise::generator_i> density_func_;
+    int surface_map_;
+
     std::vector<voxel_sprite> sprites_;
+    std::vector<material> allowed_materials_;
 };
 
 } // namespace hexa
