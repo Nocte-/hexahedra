@@ -24,33 +24,17 @@
 #include <hexanoise/generator_opencl.hpp>
 #include <hexanoise/generator_slowinterpreter.hpp>
 #include <hexa/algorithm.hpp>
-#include "../opencl.hpp"
+#include "../hndl.hpp"
 
-namespace hexa {
-
-area_generator::area_generator (world& w,
-                                const boost::property_tree::ptree& conf,
-                                const noise::generator_context& ctx)
-    : area_generator_i(w, conf)
-    , ctx_(ctx)
-    , script_(ctx_.get_script(conf.get<std::string>("name")))
+namespace hexa
 {
-    if (have_opencl())
-    {
-        try
-        {
-            gen_ = std::make_unique<noise::generator_opencl>(ctx, opencl_context(), opencl_device(), script_);
-        }
-        catch (std::exception& e)
-        {
-            std::cout << "Cannot set up OpenCL : " << e.what() << std::endl;
-        }
-    }
 
-    if (gen_ == nullptr)
-        gen_ = std::make_unique<noise::generator_slowinterpreter>(ctx, script_);
-
-    std::string t (conf.get<std::string>("type", "regular"));
+area_generator::area_generator(world& w,
+                               const boost::property_tree::ptree& conf)
+    : area_generator_i(w, conf)
+    , gen_(compile_hndl(conf.get<std::string>("hndl")))
+{
+    std::string t(conf.get<std::string>("type", "regular"));
 
     if (t == "normalized")
         type_ = type::normalized;
@@ -58,24 +42,25 @@ area_generator::area_generator (world& w,
         type_ = type::regular;
 }
 
-area_data
-area_generator::generate (map_coordinates pos)
+area_data area_generator::generate(map_coordinates pos)
 {
     area_data result;
-    auto tmp (gen_->run(glm::dvec2((int)pos.x - (int)world_chunk_center.x, (int)pos.y - (int)world_chunk_center.y) * (double)chunk_size,
-                        glm::dvec2(1, 1),
-                        glm::ivec2(chunk_size, chunk_size) ));
+    auto tmp(gen_->run(glm::dvec2((int)pos.x - (int)world_chunk_center.x,
+                                  (int)pos.y - (int)world_chunk_center.y)
+                       * (double)chunk_size,
+                       glm::dvec2(1, 1), glm::ivec2(chunk_size, chunk_size)));
 
-    switch (type_)
-    {
+    switch (type_) {
     case type::normalized:
-        std::transform(tmp.begin(), tmp.end(), result.begin(),
-                       [](double i){ return std::lround(clamp(i, -1.0, 0.0) * 32767); });
+        std::transform(tmp.begin(), tmp.end(), result.begin(), [](double i) {
+            return std::lround(clamp(i, -1.0, 0.0) * 32767);
+        });
         break;
 
     case type::regular:
-        std::transform(tmp.begin(), tmp.end(), result.begin(),
-                       [](double i){ return std::lround(clamp(i, -32767.0,  32767.0)); });
+        std::transform(tmp.begin(), tmp.end(), result.begin(), [](double i) {
+            return std::lround(clamp(i, -32767.0, 32767.0));
+        });
         break;
 
     default:
@@ -85,4 +70,3 @@ area_generator::generate (map_coordinates pos)
 }
 
 } // namespace hexa
-

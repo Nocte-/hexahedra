@@ -26,35 +26,25 @@
     }
 ],
 
-"areas": [
+"functions" : [
     {
         "name": "heightmap",
-        "cache": true,
-        "def": "shift(40,5):distance:div(50):sin:mul(30)"
-    },
-    {
-        "name": "waterlevel",
-        "def": "-10"
-    },
-    {
-        "name": "surface",
-        "cache": true
-    },
-    {
-        "name": "biomes",
-        "def":  "scale(20):checkerboard:add(1):div(2)"
+        "hndl": "shift(40,5):distance:div(50):sin:mul(30)"
     }
 ],
- 
+
 "terrain": [
-    { "module" : "heightmap_terrain" },
+    { "module" : "heightmap_terrain", "hndl": "@heightmap" },
     { "module" : "caves" },
-    { "module" : "soil",
-      "material": [
-          [ "grass", "dirt" ],
-          [ "sand" ]
-    ]},
-    { "module" : "heightmap_terrain", "area":"waterlevel", "material":"water" }
+    { "module" : "soil", 
+        "hndl" : "scale(20):checkerboard:add(1):div(2)",
+        "material" : [ [ "grass", "dirt" ],
+                       [ "sand" ]
+                     ]},
+    { "module" : "objects",
+        "hndl" : "0.005:mul(scale(200):simplex:add)",
+        "sprites" : [ "/usr/share/hexahedra/games/defaultgame/mc_tree.hbs.txt" ]
+    }
 ],
 
 "light": [

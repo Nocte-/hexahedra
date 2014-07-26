@@ -26,7 +26,8 @@
 #include <hexa/basic_types.hpp>
 #include <hexa/area_data.hpp>
 
-namespace hexa {
+namespace hexa
+{
 
 class world;
 
@@ -40,25 +41,25 @@ class world;
 class area_generator_i
 {
 public:
-    area_generator_i (world& w, const boost::property_tree::ptree& conf)
-        : w_ (w)
-        , name_ (conf.get<std::string>("name"))
+    area_generator_i(world& w, const boost::property_tree::ptree& conf)
+        : w_(w)
+        , name_(conf.get<std::string>("name"))
         , cache_(conf.get<std::string>("cache", "") == "true")
-    {}
+    {
+    }
 
     std::string name() const { return name_; }
 
     virtual ~area_generator_i() {}
 
-    virtual area_data generate (map_coordinates) = 0;
+    virtual area_data generate(map_coordinates) = 0;
 
     bool should_write_to_file() const { return cache_; }
 
 protected:
-    world&      w_;
+    world& w_;
     std::string name_;
-    bool        cache_;
+    bool cache_;
 };
 
 } // namespace hexa
-

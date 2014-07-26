@@ -691,6 +691,9 @@ game_state::transition main_game::next_state() const
 
 void main_game::player_motion()
 {
+    if (player_entity_ == 0xffffffff)
+        return;
+    
     if (old_chunk_pos_ != player_.chunk_position())
         scene_.move_camera_to(player_.chunk_position());
 
@@ -863,9 +866,14 @@ void main_game::greeting(deserializer<packet>& p)
 
     player_entity_ = mesg.entity_id;
 
-    renderer().offset(mesg.position >> cnkshift);
+    ///\todo Refresh VBOs when shifting render offset.
+    ///      For now, it's kept at the world center.
+    //renderer().offset(mesg.position >> cnkshift);
+    
     entities_.make(player_entity_);
-    player_.move_to(mesg.position, vector3<float>(.5f, .5f, 5.f));
+    wfpos pl_pos{mesg.position, vector3<float>{0.5f, 0.5f, 0.0f}};
+    player_.move_to(pl_pos);
+    entities_.set_position(player_entity_, pl_pos);
 
     log_msg("MOTD: %1%", mesg.motd);
     log_msg("player %1% spawned at %2%", mesg.entity_id, mesg.position);

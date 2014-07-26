@@ -23,6 +23,7 @@
 
 #include <hexa/log.hpp>
 #include <hexa/trace.hpp>
+#include "../hndl.hpp"
 #include "../world.hpp"
 
 using namespace boost::property_tree;
@@ -34,11 +35,9 @@ static area_data zeroes_;
 
 soil_generator::soil_generator(world& w, const ptree& conf)
     : terrain_generator_i(w)
-    , surfacemap_(w.find_area_generator(
-          conf.get<std::string>("surface_map", "surface")))
-    , biome_map_(w.find_area_generator(
-          conf.get<std::string>("distribution_map", "biomes")))
-    , original_(find_material(conf.get<std::string>("replace", "stone"), 1))
+    , surfacemap_{w.find_area_generator("surface")}
+    , biome_func_{compile_hndl(conf.get<std::string>("hndl"))}
+    , original_{find_material(conf.get<std::string>("replace", "stone"), 1)}
 {
     zeroes_.clear(0);
     if (surfacemap_ < 0)
@@ -61,26 +60,25 @@ void soil_generator::generate(world_terraingen_access& data,
                               const chunk_coordinates& pos, chunk& cnk)
 {
     trace("soil generation for %1%", world_vector(pos - world_chunk_center));
-    auto& sm(data.get_area_data(pos, surfacemap_));
-    auto& bm(biome_map_ >= 0 ? data.get_area_data(pos, biome_map_) : zeroes_);
+    auto& sm = data.get_area_data(pos, surfacemap_);
+    auto bm = hndl_area_int16(*biome_func_, pos);
+    int16_t z_offset = convert_height_16bit(pos.z * chunk_size);
 
-    int16_t z_offset(convert_height_16bit(pos.z * chunk_size));
-
-    for (int x(0); x < chunk_size; ++x) {
-        for (int y(0); y < chunk_size; ++y) {
-            auto biome_type(bm(x, y));
+    for (int y = 0; y < chunk_size; ++y) {
+        for (int x = 0; x < chunk_size; ++x) {
+            auto biome_type = bm(x, y);
             if (biome_type < 0 || (uint16_t)biome_type >= replace_.size())
                 continue;
 
-            auto& column(replace_[biome_type]);
-            int16_t lz(sm(x, y));
+            auto& column = replace_[biome_type];
+            int16_t lz = sm(x, y);
 
             if (lz <= z_offset
                 || lz - (int16_t)column.size() > z_offset + chunk_size) {
                 continue;
             }
-            int z((int)lz - z_offset - 1);
-            for (size_t i(0); i < column.size(); ++i)
+            int z = (int)lz - z_offset - 1;
+            for (size_t i = 0; i < column.size(); ++i)
                 replace(x, y, z - i, cnk, original_, column[i]);
         }
     }

@@ -23,11 +23,10 @@
 
 #include <memory>
 #include <hexanoise/generator_i.hpp>
-#include <hexanoise/generator_context.hpp>
-#include <hexanoise/node.hpp>
 #include "area_generator_i.hpp"
 
-namespace hexa {
+namespace hexa
+{
 
 class world;
 
@@ -35,8 +34,7 @@ class world;
 class area_generator : public area_generator_i
 {
 public:
-    enum type
-    {
+    enum type {
         /** Default type; the result of the script is rounded and copied
          ** directly to the area data. */
         regular,
@@ -46,17 +44,13 @@ public:
     };
 
 public:
-    area_generator (world& w, const boost::property_tree::ptree& conf,
-                    const noise::generator_context& ctx);
+    area_generator(world& w, const boost::property_tree::ptree& conf);
 
-    area_data generate (map_coordinates) override;
+    area_data generate(map_coordinates) override;
 
 private:
-    const noise::generator_context&     ctx_;
-    noise::node                         script_;
     std::unique_ptr<noise::generator_i> gen_;
-    type                                type_;
+    type type_;
 };
 
 } // namespace hexa
-

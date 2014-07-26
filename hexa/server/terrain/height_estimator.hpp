@@ -1,7 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   server/init_terrain_generators.hpp
-/// \brief  Chain the terrain generators together as specified in a config
-///         file.
+/// \file   server/terrain/height_estimator.hpp
+/// \brief  Use a function to estimate the terrain height.
 //
 // This file is part of Hexahedra.
 //
@@ -18,20 +17,33 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2012-2014, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 #pragma once
 
-#include <boost/property_tree/ptree.hpp>
+#include <memory>
+#include <hexanoise/generator_i.hpp>
+#include "terrain_generator_i.hpp"
 
 namespace hexa
 {
 
-class world;
+/** Estimate the height of the terrain with an HNDL function. */
+class height_estimator : public terrain_generator_i
+{
+public:
+    height_estimator(world& w, const boost::property_tree::ptree& conf);
 
-/** Terrain generator factory.
- *  This function chains terrain generators together, as specified by the
- *  configuration file. */
-void init_terrain_gen(world& w, const boost::property_tree::ptree& config);
+    void generate(world_terraingen_access& data, const chunk_coordinates& pos,
+                  chunk& cnk) override
+    {
+    }
+
+    chunk_height estimate_height(world_terraingen_access&, map_coordinates pos,
+                                 chunk_height) const override;
+
+private:
+    std::unique_ptr<noise::generator_i> func_;
+};
 
 } // namespace hexa

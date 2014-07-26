@@ -44,11 +44,7 @@ public:
     void look_at(const yaw_pitch& direction);
     yaw_pitch turn_head(const yaw_pitch& amount);
     void move(const vector& delta);
-    void move_to(const wfpos& p)
-    {
-        position_ = p.pos;
-        position_fraction_ = p.frac;
-    }
+    void move_to(const wfpos& p);
 
 public:
     yaw_pitch head_angle() const;

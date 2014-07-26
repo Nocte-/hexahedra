@@ -83,4 +83,11 @@ inline const float prng_next_f(uint32_t& n)
     return static_cast<int32_t>(n << 1) / 2147483647.f;
 }
 
+/** Get a double ranged 0..1 from the PRNG. */
+inline const double prng_next_zto(uint32_t& n)
+{
+    n = prng(n);
+    return n / 2147483647.0;
+}
+
 } // namespace hexa

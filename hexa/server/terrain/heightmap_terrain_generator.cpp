@@ -25,13 +25,12 @@
 #include <mutex>
 #include <unordered_map>
 #include <boost/range/algorithm.hpp>
-#include <noisepp/NoisePerlin.h>
-#include <noisepp/NoisePipeline.h>
 
 #include <hexa/block_types.hpp>
 #include <hexa/lru_cache.hpp>
 #include <hexa/trace.hpp>
 
+#include "../hndl.hpp"
 #include "../world.hpp"
 
 using namespace boost::property_tree;
@@ -42,20 +41,14 @@ namespace hexa
 
 struct heightmap_terrain_generator::impl
 {
-    std::string hm_name_;
-    int height_idx_;
+    std::unique_ptr<noise::generator_i> func_;
     block fill_material_;
 
     impl(world& w, const ptree& conf)
-        : hm_name_(conf.get<std::string>("area", "heightmap"))
-        , height_idx_(w.find_area_generator(hm_name_))
-        , fill_material_(
-              find_material(conf.get<std::string>("material", "stone"), 1))
+        : func_{compile_hndl(conf.get<std::string>("hndl"))}
+        , fill_material_{
+              find_material(conf.get<std::string>("material", "stone"), 1)}
     {
-        if (height_idx_ < 0)
-            throw std::runtime_error(
-                "heightmap_terrain requires area data named '" + hm_name_
-                + "'");
     }
 
     ~impl() {}
@@ -64,19 +57,19 @@ struct heightmap_terrain_generator::impl
                   chunk& cnk)
     {
         trace("heightmap terrain generation for %1%",
-              world_vector(pos - world_chunk_center));
+              world_vector{pos - world_chunk_center});
 
-        auto& hm(data.get_area_data(pos, height_idx_));
-        uint32_t bottom(pos.z * chunk_size);
+        auto hm = hndl_area_int16(*func_, pos);
+        uint32_t bottom = pos.z * chunk_size;
 
-        for (int x(0); x < chunk_size; ++x) {
-            for (int y(0); y < chunk_size; ++y) {
+        for (int y = 0; y < chunk_size; ++y) {
+            for (int x = 0; x < chunk_size; ++x) {
                 // Absolute height
-                uint32_t h(world_center.z + hm(x, y));
+                uint32_t h = world_center.z + hm(x, y);
                 if (h > bottom) {
-                    auto range(std::min<uint16_t>(h - bottom, chunk_size));
-                    for (uint16_t z(0); z < range; ++z) {
-                        auto& blk(cnk(x, y, z));
+                    auto range = std::min<uint16_t>(h - bottom, chunk_size);
+                    for (uint16_t z = 0; z < range; ++z) {
+                        auto& blk = cnk(x, y, z);
                         if (blk == type::air)
                             blk = fill_material_;
                     }
@@ -88,18 +81,18 @@ struct heightmap_terrain_generator::impl
     void generate(world_terraingen_access& data, map_coordinates xy,
                   area_data& sm)
     {
-        auto& hm(data.get_area_data(xy, height_idx_));
-        auto j(hm.begin());
-        for (auto i(sm.begin()); i != sm.end(); ++i, ++j)
+        auto hm = hndl_area_int16(*func_, xy);
+        auto j = hm.begin();
+        for (auto i = sm.begin(); i != sm.end(); ++i, ++j)
             *i = std::max(*i, *j);
     }
 
     chunk_height estimate_height(world_terraingen_access& data,
                                  map_coordinates xy, chunk_height prev) const
     {
-        auto& hm(data.get_area_data(xy, height_idx_));
-        uint32_t highest(world_center.z
-                         + *std::max_element(hm.begin(), hm.end()));
+        auto hm = hndl_area_int16(*func_, xy);
+        uint32_t highest = world_center.z
+                           + *std::max_element(hm.begin(), hm.end());
 
         return (highest >> cnkshift) + 1;
     }
@@ -107,8 +100,8 @@ struct heightmap_terrain_generator::impl
 
 heightmap_terrain_generator::heightmap_terrain_generator(world& w,
                                                          const ptree& conf)
-    : terrain_generator_i(w)
-    , pimpl_(std::make_unique<impl>(w, conf))
+    : terrain_generator_i{w}
+    , pimpl_{std::make_unique<impl>(w, conf)}
 {
 }
 

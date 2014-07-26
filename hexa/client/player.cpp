@@ -26,6 +26,7 @@
 #include <boost/math/constants/constants.hpp>
 
 #include <hexa/block_types.hpp>
+#include <hexa/trace.hpp>
 
 using namespace boost::math::constants;
 
@@ -48,6 +49,14 @@ void player::move_to(const world_coordinates& pos, const vector& fraction)
 {
     position_ = pos;
     position_fraction_ = fraction;
+    trace("Player move to %1%", position_);
+}
+
+void player::move_to(const wfpos& p)
+{
+    position_ = p.pos;
+    position_fraction_ = p.frac;
+    trace("Player move to %1%", position_);
 }
 
 void player::look_at(const yaw_pitch& direction)

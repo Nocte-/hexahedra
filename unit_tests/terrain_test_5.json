@@ -1,14 +1,15 @@
 {
-"areas": [
+"functions": [
     {
         "name": "heightmap",
-        "def": "x:div(2):sub(0.49)"
+        "hndl": "x:div(2):sub(0.49)"
     }
 ],
 
 "terrain": [
     {
-        "module": "heightmap_terrain"
+        "module": "heightmap_terrain",
+        "hndl": "@heightmap"
     }
 ]
 }

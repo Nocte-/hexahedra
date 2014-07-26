@@ -26,6 +26,7 @@
 #include <hexa/algorithm.hpp>
 #include <hexa/trace.hpp>
 
+#include "hndl.hpp"
 #include "world.hpp"
 
 #include "area/area_generator.hpp"
@@ -39,9 +40,12 @@
 #include "lightmap/uniform_lightmap.hpp"
 
 #include "terrain/cave_generator.hpp"
+#include "terrain/height_estimator.hpp"
 #include "terrain/flatworld_generator.hpp"
 #include "terrain/heightmap_terrain_generator.hpp"
+#include "terrain/object_placer.hpp"
 #include "terrain/testpattern_generator.hpp"
+#include "terrain/transmute.hpp"
 #include "terrain/soil_generator.hpp"
 
 /*
@@ -60,27 +64,42 @@ using namespace boost::property_tree;
 namespace hexa
 {
 
-void init_terrain_gen(world& w, const ptree& config,
-                      noise::generator_context& gen_ctx)
+void init_terrain_gen(world& w, const ptree& config)
 {
-    auto area_def(config.get_child_optional("areas"));
-    if (area_def)
-        for (const auto& area : *area_def) {
-            const auto& info(area.second);
-            auto name(info.get<std::string>("name"));
-            auto def(info.get<std::string>("def", ""));
-            auto cache(info.get<std::string>("cache", ""));
+    auto func_def = config.get_child_optional("functions");
+    if (func_def) {
+        for (const auto& func : *func_def) {
+            const auto& info = func.second;
+            auto name = info.get<std::string>("name");
+            auto hndl = info.get<std::string>("hndl");
+            compile_hndl(name, hndl);
+        }
+    }
 
-            trace((format("area name '%1%'") % name).str());
+    boost::property_tree::ptree surface_info;
+    surface_info.put("name", "surface");
+    surface_info.put("cache", "true");
+    w.add_area_generator(
+        std::make_unique<fixed_value_area_generator>(w, surface_info));
+
+    /*
+    auto area_def = config.get_child_optional("areas");
+    if (area_def) {
+        for (const auto& area : *area_def) {
+            const auto& info = area.second;
+            auto name = info.get<std::string>("name");
+            auto def = info.get<std::string>("hndl", "");
+            auto cache = info.get<std::string>("cache", "");
+
+            trace("area name '%1%'", name);
             try {
                 if (def.empty())
                     w.add_area_generator(
                         std::make_unique<fixed_value_area_generator>(w, info));
 
                 else {
-                    gen_ctx.set_script(name, def);
                     w.add_area_generator(
-                        std::make_unique<area_generator>(w, info, gen_ctx));
+                        std::make_unique<area_generator>(w, info));
                 }
             } catch (ptree_bad_path& e) {
                 throw std::runtime_error(
@@ -93,18 +112,24 @@ void init_terrain_gen(world& w, const ptree& config,
                      % name % e.what()).str());
             }
         }
+    }
+    */
 
-    auto terrain_def(config.get_child_optional("terrain"));
-    if (terrain_def)
+    auto terrain_def = config.get_child_optional("terrain");
+    if (terrain_def) {
         for (const auto& def : *terrain_def) {
-            const auto& info(def.second);
-            auto module(info.get<std::string>("module"));
+            const auto& info = def.second;
+            auto module = info.get<std::string>("module");
 
-            trace((format("terrain generator %1%") % module).str());
+            trace("terrain generator %1%", module);
             try {
                 if (module == "caves")
                     w.add_terrain_generator(
                         std::make_unique<cave_generator>(w, info));
+
+                else if (module == "estimate_height")
+                    w.add_terrain_generator(
+                        std::make_unique<height_estimator>(w, info));
 
                 else if (module == "flat")
                     w.add_terrain_generator(
@@ -119,43 +144,18 @@ void init_terrain_gen(world& w, const ptree& config,
                         std::make_unique<heightmap_terrain_generator>(w,
                                                                       info));
 
+                else if (module == "objects")
+                    w.add_terrain_generator(
+                        std::make_unique<object_placer>(w, info));
+
                 else if (module == "testpattern")
                     w.add_terrain_generator(
                         std::make_unique<testpattern_generator>(w, info));
 
-                /*
-                            if (module == "anvil")
-                                w.add_terrain_generator(std::make_unique<anvil_generator>(w,
-                   info));
+                else if (module == "transmute")
+                    w.add_terrain_generator(
+                        std::make_unique<transmute_generator>(w, info));
 
-                            else if (module == "binvox")
-                                w.add_terrain_generator(std::make_unique<binvox_world_generator>(w,
-                   info));
-
-                            else if (module == "flat")
-                                w.add_terrain_generator(std::make_unique<flatworld_generator>(w,
-                   info));
-
-                            else if (module == "grid")
-                                w.add_terrain_generator(std::make_unique<gridworld_generator>(w,
-                   info));
-
-                            else if (module == "robinton")
-                                w.add_terrain_generator(std::make_unique<robinton_generator>(w,
-                   info));
-
-                            else if (module == "ocean")
-                                w.add_terrain_generator(std::make_unique<ocean_generator>(w,
-                   info));
-
-                            else if (module == "topsurface")
-                                w.add_terrain_generator(std::make_unique<topsurface_generator>(w,
-                   info));
-
-                            else if (module == "trees")
-                                w.add_terrain_generator(std::make_unique<tree_generator>(w,
-                   info));
-                */
                 else
                     throw std::runtime_error(
                         (format("unknown terrain module '%1'") % module)
@@ -167,14 +167,15 @@ void init_terrain_gen(world& w, const ptree& config,
                      % e.path<std::string>()).str());
             }
         }
+    }
 
-    auto light_def(config.get_child_optional("light"));
-    if (light_def)
+    auto light_def = config.get_child_optional("light");
+    if (light_def) {
         for (const auto& def : *light_def) {
-            const auto& info(def.second);
-            auto module(info.get<std::string>("module"));
+            const auto& info = def.second;
+            auto module = info.get<std::string>("module");
 
-            trace((format("lightmap %1%") % module).str());
+            trace("lightmap %1%", module);
             try {
                 if (module == "ambient_occlusion")
                     w.add_lightmap_generator(
@@ -210,6 +211,7 @@ void init_terrain_gen(world& w, const ptree& config,
                      % e.path<std::string>()).str());
             }
         }
+    }
 }
 
 } // namespace hexa

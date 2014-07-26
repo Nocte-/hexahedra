@@ -22,15 +22,9 @@
 #include "server_list.hpp"
 
 #include <sstream>
-
-#define BOOST_NETWORK_NO_LIB
-#include <boost/network/protocol/http.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
-
 #include <hexa/config.hpp>
 
-using namespace boost::network;
 using namespace boost::property_tree;
 
 namespace hexa
@@ -60,17 +54,14 @@ bool check_version(const std::string& version)
 std::vector<server_info> get_server_list(const std::string& json_uri)
 {
     std::vector<server_info> result;
-
-#if defined(_MSC_VER) && defined(_DEBUG)
     return result;
-#endif
-
+/*
     http::client::request rq(json_uri);
     rq << header("Connection", "close");
     http::client temp_client;
 
     ptree tree;
-    std::string body(http::body(temp_client.get(rq)));
+    std::string body{http::body(temp_client.get(rq))};
     std::stringstream str(body);
     read_json(str, tree);
     for (auto& n : tree.get_child("servers")) {
@@ -89,6 +80,7 @@ std::vector<server_info> get_server_list(const std::string& json_uri)
     }
 
     return result;
+    */
 }
 
 } // namespace hexa

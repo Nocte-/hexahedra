@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   server/terrain/soil_generator.hpp
-/// \brief  Cover the surface with different materials.
+/// \file   server/terrain/transmute.hpp
+/// \brief  Replace materials according to given rules.
 //
 // This file is part of Hexahedra.
 //
@@ -17,42 +17,39 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013-2014, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 #pragma once
 
 #include <memory>
 #include <vector>
 #include <hexanoise/generator_i.hpp>
+#include <hexanoise/generator_context.hpp>
+#include <hexanoise/node.hpp>
 #include "terrain_generator_i.hpp"
 
 namespace hexa
 {
 
-/** Replace the top number of blocks with a different material.
- *  This generator uses a "biome" map to look up the replacement materials.
- */
-class soil_generator : public terrain_generator_i
+/** Change the material of blocks using a HNDL function and a matching
+ ** pattern. */
+class transmute_generator : public terrain_generator_i
 {
 public:
-    /** The following configuration elements are used:
-     * - 'hndl': The biome classification. 
-     * - 'original_material': The name of the material that will be replaced
-     * (default: 'stone')
-     * - 'replace': An array of an array of material names.  The value
-     *   returned by 'distribution_map' will be used as the index.  The
-     *   indexed array is then used as a column of different materials, the
-     *   one at the first position will be the topmost block. */
-    soil_generator(world& w, const boost::property_tree::ptree& conf);
+    transmute_generator(world& w, const boost::property_tree::ptree& conf);
 
     void generate(world_terraingen_access& data, const chunk_coordinates& pos,
                   chunk& cnk) override;
 
+    chunk_height estimate_height(world_terraingen_access&, map_coordinates,
+                                 chunk_height) const override
+    {
+        return chunk_world_limit.z;
+    }
+
 private:
-    int surfacemap_;
-    std::unique_ptr<noise::generator_i> biome_func_;
-    block original_;
-    std::vector<std::vector<block>> replace_;
+    std::unique_ptr<noise::generator_i> func_;
+    std::vector<uint16_t> lu_table_;
 };
 
 } // namespace hexa

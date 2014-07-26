@@ -1,16 +1,16 @@
 {
-"areas": [
+"functions": [
     {
         "name": "distance_test",
-        "def": "distance"
+        "hndl": "distance"
     },
     {
         "name": "distance_div",
-        "def": "@distance_test:div(10)"
+        "hndl": "@distance_test:div(10)"
     },
     {
         "name": "global_test",
-        "def": "$two"
+        "hndl": "$two"
     }
 ]
 }

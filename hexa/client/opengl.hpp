@@ -133,7 +133,7 @@ public:
     ~guard_matrix() { glPopMatrix(); }
 };
 
-void cube_face(float size, direction_type d, float grow = 0.001f);
+void cube_face(float size, direction_type d, float grow = 0.01f);
 
 void box(const aabb<vector>& box);
 }
