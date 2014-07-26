@@ -55,8 +55,8 @@ public:
 
 public:
     renderer_i(scene& s)
-        : scene_{s}
-        , chunk_offset_{world_chunk_center}
+        : scene_(s)
+        , chunk_offset_(world_chunk_center)
     {
     }
 
