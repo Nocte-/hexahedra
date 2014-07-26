@@ -10,7 +10,7 @@ IF(NOT HEXANOISE_INCLUDE_DIR)
 ENDIF()
 
 IF(NOT HEXANOISE_LIBRARY)
-    find_library(HEXANOISE_LIBRARY hexanoise 
+    find_library(HEXANOISE_LIBRARY hexanoise-s
       "${CMAKE_SOURCE_DIR}/../hexanoise/build/hexanoise"
       "${CMAKE_SOURCE_DIR}/../hexanoise-build/hexanoise"
       hexanoise)

@@ -55,7 +55,7 @@ else(LUAJIT_FOUND)
   endif(LUA51_FOUND)
 endif(LUAJIT_FOUND)
 
-set(LIBS ENet ES HexaNoise ZLIB GLM)
+set(LIBS ENet ES HexaNoise ZLIB GLM PNG)
 foreach (LIB ${LIBS})
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)
