@@ -572,6 +572,7 @@ lua::lua(server_entity_system& entities, world& w)
 lua::~lua()
 {
     cb_on_login.clear();
+    cb_console.clear();
     cb_on_action.clear();
     cb_on_place.clear();
     cb_on_remove.clear();
