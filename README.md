@@ -1,5 +1,6 @@
 Hexahedra
 =========
+[![Build status](https://api.travis-ci.org/Nocte-/hexahedra.svg)](https://travis-ci.org/Nocte-/hexahedra)
 
 Hexahedra is a C++ framework for blocky/voxel games.  The most notable
 features are:
@@ -32,10 +33,6 @@ This library depends on the following projects:
 - The [Play](http://www.google.com/fonts/specimen/Play) font is provided as the default.
 - The GUI uses [Rhea](http://github.com/Nocte-/rhea) as its layout constraint solver.
 - [HexaNoise](http://github.com/Nocte-/hexanoise) (the DSL used for [terrain generation](http://github.com/Nocte-/hexahedra/wiki/HNDL-examples)) is now available as a separate MIT-licensed library.
-
-Build status
-------------
-[![Build status](https://travis-ci.org/Nocte-/hexahedra.png?branch=master)](https://travis-ci.org/Nocte-/hexahedra)
 
 This project uses [Travis CI](http://travis-ci.org/) to build and run the unit
 tests on different compilers automatically.
