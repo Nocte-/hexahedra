@@ -37,6 +37,8 @@ struct server_info
     std::string desc;
     std::string icon;
     std::string screenshot;
+    
+    
 };
 
 std::vector<server_info> get_server_list(const std::string& json_uri);

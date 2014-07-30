@@ -48,16 +48,13 @@ else()
     include_directories(${GLEW_INCLUDE_DIR})
 endif()
 
-foreach (LIB ${NEED_GLEW} OpenGL CryptoPP ENet ES)
+foreach (LIB ${NEED_GLEW} CURL OpenGL CryptoPP ENet ES)
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)
     include_directories(${${ULIB}_INCLUDE_DIR})
     target_link_libraries(${LIBNAME} ${${ULIB}_LIBRARY})
     target_link_libraries(${LIBNAME} ${${ULIB}_LIBRARIES})
 endforeach()
-
-target_link_libraries(${LIBNAME} cppnetlib-client-connections cppnetlib-uri)
-
 
 # OpenGL uses a different convention:
 target_link_libraries(${LIBNAME} ${OPENGL_gl_LIBRARY})
