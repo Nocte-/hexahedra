@@ -111,6 +111,7 @@ int main(int argc, char* argv[])
     try {
         po::store(po::parse_command_line(argc, argv, cmdline), vm);
 
+        fs::create_directory(app_user_dir());
         fs::path inifile(app_user_dir() / "hexahedra.ini");
         if (fs::exists(inifile))
             po::store(
