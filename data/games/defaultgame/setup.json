@@ -42,8 +42,8 @@
                        [ "sand" ]
                      ]},
     { "module" : "objects",
-        "hndl" : "0.005:mul(scale(200):simplex:add)",
-        "sprites" : [ "/usr/share/hexahedra/games/defaultgame/mc_tree.hbs.txt" ]
+        "hndl" : "0.05:mul(scale(200):simplex)",
+        "sprites" : [ "/usr/local/share/hexahedra/games/defaultgame/mc_tree.hbs.txt" ]
     }
 ],
 
