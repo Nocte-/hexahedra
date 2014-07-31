@@ -24,6 +24,8 @@ Build-Depends:
  libglu1-mesa-dev | libglu1-dev, 
  libluajit-5.1-dev [i386 amd64 kfreebsd-i386 armel armhf powerpc powerpcspe mips] | liblua5.1-dev,
  libleveldb-dev, 
+ libpng12-dev,
+ libcurl4-openssl-dev,
  librhea1-dev, 
  libes1-dev, 
  libhexanoise1-dev
