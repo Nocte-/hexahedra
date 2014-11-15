@@ -44,6 +44,7 @@
 #include <hexa/compression.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/config.hpp>
+#include <hexa/crypto.hpp>
 #include <hexa/geometric.hpp>
 #include <hexa/log.hpp>
 #include <hexa/os.hpp>
@@ -710,26 +711,17 @@ void main_game::console_input(const std::u32string& msg)
 void main_game::login()
 {
     clock_ = boost::thread([&] { bg_thread(); });
-
     msg::login m;
 
-    m.protocol_version = 1;
-    std::string method;
     if (singleplayer_)
-        method = "singleplayer";
+        m.mode = 0;
     else
-        method = "ecdh";
+        m.mode = 1;
 
-    auto plr_info(get_player_info());
-    std::stringstream json;
-    pt::ptree info;
-    info.put("name", plr_info.name);
-    info.put("uid", plr_info.uid);
-    info.put("public_key", plr_info.public_key);
-    info.put("method", method);
-    pt::json_parser::write_json(json, info);
-
-    m.credentials = json.str();
+    auto foo = crypto::make_new_key();
+    m.public_key = crypto::to_binary(crypto::get_public_key(foo));
+    m.name = "";
+    m.uid = crypto::make_random(8);
 
     send(serialize_packet(m), m.method());
 }

@@ -22,14 +22,33 @@
 #include "server_list.hpp"
 
 #include <sstream>
-#include <curl/curl.h>
+#include <boost/format.hpp>
 #include <boost/property_tree/ptree.hpp>
-#include <hexa/config.hpp>
 
+#include "../config.hpp"
+#include "../rest.hpp"
+#include "../base58.hpp"
+
+
+using boost::format;
 using namespace boost::property_tree;
 
 namespace hexa
 {
+
+server_info json_to_info(const ptree& json)
+{
+    server_info result;
+
+    result.uid = base58_decode(json.get<std::string>("uid", ""));
+    result.name = json.get<std::string>("name");
+    result.public_key = crypto::from_json(json.get_child("pubkey"));
+    result.desc = json.get<std::string>("description", "");
+    result.host = json.get<std::string>("connection.host");
+    result.port = json.get<uint16_t>("connection.port", 15556);
+
+    return result;
+}
 
 bool check_version(const std::string& version)
 {
@@ -52,11 +71,20 @@ bool check_version(const std::string& version)
                        && PROJECT_VERSION_PATCH >= pat)));
 }
 
-std::vector<server_info> get_server_list(const std::string& json_uri)
+std::vector<server_info> get_server_list(const std::string& hostname)
 {
     std::vector<server_info> result;
    
-    
+    auto res = rest::get((format("https://%1%/api/1/servers") % hostname).str());
+    if (res.status_code == 200) {
+        for (auto& n : res.json.get_child("servers")) {
+            if (check_version(n.second.get<std::string>("reqversion", "0.0.0")))
+                result.emplace_back(json_to_info(n.second));
+        }
+    } else {
+
+    }
+
     return result;
 /*
     http::client::request rq(json_uri);

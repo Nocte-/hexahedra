@@ -20,7 +20,7 @@ add_library(${LIBNAME} STATIC ${SOURCE_FILES} ${HEADER_FILES})
 
 target_link_libraries(${LIBNAME} ${Boost_LIBRARIES})
 
-set(LIBS CryptoPP ES LevelDB)
+set(LIBS CryptoPP ES LevelDB CURL)
 foreach (LIB ${LIBS})
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)

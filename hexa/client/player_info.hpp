@@ -23,24 +23,32 @@
 
 #include <string>
 
+#include <boost/property_tree/ptree.hpp>
+
 namespace hexa
 {
 
-struct player_info
+class player_info
 {
-    std::string name;
+public:
     std::string uid;
     std::string public_key;
     std::string private_key;
     std::string password;
+
+public:
+    player_info();
+
+    player_info (const boost::property_tree::ptree& json);
+
+    boost::property_tree::ptree json() const;
+
+    void generate_new_key();
 };
 
 player_info get_player_info();
 
 void write_player_info(const player_info& info);
 
-void generate_new_key(player_info& info);
-
-void generate_new_uid(player_info& info);
 
 } // namespace hexa

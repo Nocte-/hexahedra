@@ -30,6 +30,7 @@
 #include <es/entity.hpp>
 
 #include <hexa/concurrent_queue.hpp>
+#include <hexa/crypto.hpp>
 #include <hexa/ray.hpp>
 #include <hexa/threadpool.hpp>
 
@@ -116,6 +117,14 @@ private:
     server_entity_system& es_;
     lua& lua_;
     threadpool workers_;
+
+    struct connection_info
+    {
+        uint64_t       clock_offset;
+        uint32_t       entity;
+        binary_data    iv;
+        crypto::aes    encrypt;
+    };
 
     std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
     std::unordered_map<ENetPeer*, uint32_t> entities_;

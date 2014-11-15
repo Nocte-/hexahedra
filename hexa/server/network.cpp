@@ -475,24 +475,24 @@ void network::login(packet_info& info)
     wfpos start_pos_sub;
 
     // Figure out the login info
-    ptree tree;
-    std::stringstream str(msg.credentials);
-    read_json(str, tree);
-    auto login_method(tree.get<std::string>("method", "singleplayer"));
-    auto player_name(tree.get<std::string>(
-        "name",
-        "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000)));
+    auto player_name = msg.name;
+    if (player_name.size() < 2 || player_name.size() > 20)
+        player_name = "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000);
 
     log_msg("player '%1%' tries to login", player_name);
 
-    if (login_method == "singleplayer") {
+    if (msg.mode == 0) {
+        // Localhost singleplayer mode
+
         if (global_settings["mode"].as<std::string>() != "singleplayer") {
             kick_player(info.conn,
                         "Server is not running in singleplayer mode");
             return;
         }
         info.plr = 0;
-    } else if (login_method == "ecdh") {
+    } else if (msg.mode == 1) {
+        // Multiplayer mode
+
         if (global_settings["mode"].as<std::string>() == "singleplayer") {
             kick_player(info.conn,
                         "Server is not running in multiplayer mode");
@@ -500,14 +500,12 @@ void network::login(packet_info& info)
         }
 
         try {
-            auto uid(base58_decode(tree.get<std::string>("uid")));
-            auto key(tree.get<std::string>("public_key"));
-            if (uid.size() != 8)
+            if (msg.uid.size() != 8 || msg.public_key.size() != 33)
                 throw 0;
 
             int found(0);
             es::storage::iterator iter;
-            uint64_t player_uid(*reinterpret_cast<const uint64_t*>(&uid[0]));
+            uint64_t player_uid = *reinterpret_cast<const uint64_t*>(&msg.uid[0]);
 
             es_.for_each<uint64_t>(
                 server_entity_system::c_player_uid,
@@ -521,15 +519,12 @@ void network::login(packet_info& info)
                 });
 
             if (found == 0) {
-                trace("Log in new player with uid %1% (%2%)",
-                      tree.get<std::string>("uid"), player_uid);
+                trace("Log in new player with uid %1%", player_uid);
                 info.plr = es_.new_entity();
                 es_.set(info.plr, server_entity_system::c_player_uid,
                         player_uid);
             } else {
-                trace("Log in existing player with uid %1% (%2%)",
-                      tree.get<std::string>("uid"), player_uid);
-
+                trace("Log in existing player with uid %1%", player_uid);
                 if (found > 1)
                     trace("ERROR: Found more than one, actually");
 

@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   client/server_list.hpp
-/// \brief  Retrieve and parse the list of game servers
+/// \file   hexa/json.hpp
+/// \brief  Some JSON utility functions
 //
 // This file is part of Hexahedra.
 //
@@ -17,34 +17,24 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2014, nocte@hippie.nu
+// Copyright (C) 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
-#include "../basic_types.hpp"
-#include "../crypto.hpp"
+#include <boost/property_tree/ptree.hpp>
+#include <boost/filesystem/path.hpp>
 
 namespace hexa
 {
 
-struct server_info
-{
-    std::string host;
-    uint16_t port;
-    std::string name;
-    binary_data uid;
-    crypto::public_key public_key;
-    std::string desc;
-    binary_data icon;
-    int max_players;
-    std::vector<std::string> tags;
-};
+typedef boost::property_tree::ptree json_data;
 
-std::vector<server_info> get_server_list(const std::string& hostname);
+json_data read_json(const boost::filesystem::path& file);
+
+void write_json(const json_data& json, const boost::filesystem::path& file);
+
+std::string to_string (const json_data& data);
+
+json_data to_json (const std::string& data);
 
 } // namespace hexa

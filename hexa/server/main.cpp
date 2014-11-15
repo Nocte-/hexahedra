@@ -61,6 +61,7 @@
 #include "network.hpp"
 #include "opencl.hpp"
 #include "server_entity_system.hpp"
+#include "server_registration.hpp"
 #include "udp_server.hpp"
 #include "world.hpp"
 
@@ -82,6 +83,7 @@ static std::string default_db_path()
 }
 
 std::atomic<bool> lolquit(false);
+
 void physics(server_entity_system& s, world& w)
 {
     using namespace std::chrono;
@@ -125,6 +127,25 @@ void physics(server_entity_system& s, world& w)
             }
         }
     }
+}
+
+void ping_auth_server (server_registration info)
+{
+    using namespace std::chrono;
+    size_t tick = 87; // Wait a few seconds before announcing we're online
+
+    while (!lolquit.load()) {
+        if (++tick >= 90) {
+            tick = 0;
+            try {
+                ping_server(info);
+            } catch (std::exception& e) {
+                std::cerr << "ping_auth_server: " << e.what() << std::endl;
+            }
+        }
+        std::this_thread::sleep_for(seconds(1));
+    }
+    go_offline(info);
 }
 
 #ifdef _WIN32
@@ -239,6 +260,18 @@ int main(int argc, char* argv[])
             }
         }
         
+        std::thread ping_server_thread;
+        if (vm["mode"].as<std::string>() == "multiplayer") {
+            try {
+                auto info = register_server();
+                std::cout << "Registered server! API key is " << info.api_token << ", uid is " << info.uid << std::endl;
+                std::thread tmp{ping_auth_server, info};
+                ping_server_thread.swap(tmp);
+            } catch (std::runtime_error& e) {
+                std::cerr << "Failed to register server: " << e.what() << std::endl;
+            }
+        }
+
 #ifndef _WIN32
         // Block all signals for background thread.
         sigset_t new_mask;
@@ -333,6 +366,7 @@ int main(int argc, char* argv[])
         lolquit.store(true);
         physics_thread.join();
         gameloop.join();
+        ping_server_thread.join();
 
         log_msg("Saving state...");
         db_per.store(entities);

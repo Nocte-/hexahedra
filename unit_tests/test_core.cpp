@@ -6,6 +6,7 @@
 #include <random>
 #include <set>
 #include <thread>
+#include <boost/algorithm/hex.hpp>
 #include <boost/range/algorithm.hpp>
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/convenience.hpp>
@@ -34,6 +35,7 @@
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
 #include <hexa/wfpos.hpp>
+#include <hexa/rest.hpp>
 
 namespace es {
 
@@ -84,6 +86,15 @@ t serialize_roundtrip(t& in)
 }
 
 BOOST_AUTO_TEST_SUITE(core)
+
+BOOST_AUTO_TEST_CASE (rest_test)
+{
+    rest::get("https://auth.hexahedra.net/api/1/", [](const rest::response& res)
+    {
+        BOOST_CHECK_EQUAL(res.status_code, 200);
+        BOOST_CHECK_EQUAL(res.json.get<std::string>("users", ""), "/api/1/users");
+    });
+}
 
 BOOST_AUTO_TEST_CASE (serialize_test)
 {
@@ -452,20 +463,73 @@ BOOST_AUTO_TEST_CASE (lrucache_test)
     BOOST_CHECK_EQUAL(cache.size(), 4);
 }
 
-
-BOOST_AUTO_TEST_CASE (crypto_test)
+BOOST_AUTO_TEST_CASE (crypto_test_sha)
 {
-    for (int i = 0; i < 100; ++i)
+    std::string test1 ("");
+    BOOST_CHECK_EQUAL(crypto::sha256(test1), "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855");
+    BOOST_CHECK(crypto::sha256(crypto::buffer()) == crypto::unhex(crypto::sha256(test1)));
+
+    crypto::buffer abc { uint8_t('a'), uint8_t('b'), uint8_t('c') };
+    BOOST_CHECK_EQUAL(crypto::sha256("abc"), "BA7816BF8F01CFEA414140DE5DAE2223B00361A396177A9CB410FF61F20015AD");
+    BOOST_CHECK(crypto::sha256(abc) == crypto::unhex(crypto::sha256("abc")));
+}
+
+BOOST_AUTO_TEST_CASE (crypto_test_aes)
+{
+    auto key = crypto::make_aes_key();
+    auto iv = crypto::make_aes_key();
+
+    crypto::aes enc (key);
+    crypto::aes dec (key);
+
+    std::string plain {"The quick brown fox jumps over the lazy dog. 0123456789"};
+    std::string cipher {plain};
+    enc.encrypt(iv, cipher);
+    BOOST_CHECK_NE(plain, cipher);
+    dec.decrypt(iv, cipher);
+    BOOST_CHECK_EQUAL(plain, cipher);
+}
+
+BOOST_AUTO_TEST_CASE (crypto_test_ecc)
+{
+    for (int i = 0; i < 10; ++i)
     {
         auto key   (crypto::make_new_key());
+        auto pub   (crypto::get_public_key(key));
+
+        auto buf1  (crypto::to_binary(pub));
+        BOOST_CHECK_EQUAL(buf1.size(), 33);
+        auto pub2  (crypto::public_key_from_binary(buf1));
+        BOOST_CHECK_EQUAL(pub, pub2);
+
         auto spriv (crypto::serialize_private_key(key));
-        auto spubl (crypto::serialize_public_key(key));
+        auto spubl (crypto::serialize_public_key(crypto::get_public_key(key)));
 
-      //  std::cout << spriv << std::endl;
-        //std::cout << spubl << std::endl;
+        auto des (crypto::deserialize_private_key(spriv));
+        auto spriv2 (crypto::serialize_private_key(des));
 
+        auto des3 (crypto::deserialize_private_key(spriv2));
+        auto spriv3 (crypto::serialize_private_key(des3));
 
+        BOOST_CHECK_EQUAL(spriv, spriv2);
+        BOOST_CHECK_EQUAL(spriv2, spriv3);
+
+        std::string plain ("0123456789ABCDEF");
+        auto encr (crypto::encrypt_ecies(plain, crypto::get_public_key(key)));
+        auto roun (crypto::decrypt_ecies(encr, key));
+        BOOST_CHECK_EQUAL(plain, roun);
     }
+}
+
+BOOST_AUTO_TEST_CASE (crypto_test_ecdh)
+{
+    auto a (crypto::make_new_key());
+    auto b (crypto::make_new_key());
+
+    auto x (crypto::ecdh(crypto::get_public_key(a), b));
+    auto y (crypto::ecdh(crypto::get_public_key(b), a));
+
+    BOOST_CHECK_EQUAL(crypto::hex(x), crypto::hex(y));
 }
 
 BOOST_AUTO_TEST_CASE (compress_test)

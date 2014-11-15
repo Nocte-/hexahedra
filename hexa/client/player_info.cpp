@@ -23,7 +23,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options/variables_map.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
 #include <hexa/base58.hpp>
@@ -47,9 +46,31 @@ fs::path filename_()
     return app_user_dir() / "player_info.json";
 }
 
+void generate_new_key(player_info& info)
+{
+    auto key(crypto::make_new_key());
+
+    info.public_key = crypto::serialize_public_key(crypto::get_public_key(key));
+    info.private_key = crypto::serialize_private_key(key);
+}
+
+void generate_new_uid(player_info& info)
+{
+    info.uid = base58_encode(crypto::make_random(8));
+}
+
 } // anonymous namespace
 
 //---------------------------------------------------------------------------
+
+
+player_info::player_info()
+{
+}
+
+player_info::player_info (const boost::property_tree::ptree& json)
+{
+}
 
 player_info get_player_info()
 {
@@ -64,17 +85,12 @@ player_info get_player_info()
     pt::ptree json;
     pt::json_parser::read_json(filename_().string(), json);
 
-    return {json.get<std::string>("name", ""),
-            json.get<std::string>("uid", ""),
-            json.get<std::string>("public_key", ""),
-            json.get<std::string>("private_key", ""),
-            json.get<std::string>("password", "")};
+    return { json };
 }
 
 void write_player_info(const player_info& info)
 {
     pt::ptree json;
-    json.put("name", info.name);
     json.put("uid", info.uid);
     json.put("public_key", info.public_key);
     json.put("private_key", info.private_key);
@@ -82,19 +98,6 @@ void write_player_info(const player_info& info)
 
     pt::json_parser::write_json(filename_().string(), json);
     fs::permissions(filename_(), fs::perms::owner_read);
-}
-
-void generate_new_key(player_info& info)
-{
-    auto key(crypto::make_new_key());
-
-    info.public_key = crypto::serialize_public_key(key);
-    info.private_key = crypto::serialize_private_key(key);
-}
-
-void generate_new_uid(player_info& info)
-{
-    info.uid = base58_encode(crypto::make_random(8));
 }
 
 } // namespace hexa

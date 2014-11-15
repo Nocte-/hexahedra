@@ -158,6 +158,41 @@ static std::vector<lua_component> registered_components{
     {3, "walk", lua_component::st_vector2},
 };
 
+class lua_entity_vector
+{
+    vector v_;
+    es::storage& es_;
+    es::storage::iterator id_;
+    es::storage::component_id c_;
+
+    void update()
+    {
+        es_.set(id_, c_, v_);
+    }
+
+public:
+    lua_entity_vector(es::storage& s, es::storage::iterator i, es::storage::component_id c)
+        : v_(s.get<vector>(i, c)), es_(s), id_(i), c_(c)
+    { }
+
+    lua_entity_vector(const lua_entity_vector&) = default;
+
+    float get_x() const { return v_.x; }
+    float get_y() const { return v_.y; }
+    float get_z() const { return v_.z; }
+
+    void set_x(float v) { v_.x = v; update(); }
+    void set_y(float v) { v_.y = v; update(); }
+    void set_z(float v) { v_.z = v; update(); }
+
+    lua_entity_vector& operator= (const vector& v)
+    {
+        v_ = v; update(); return *this;
+    }
+
+    operator vector() const { return v_; }
+};
+
 class lua_entity
 {
     es::storage& es_;
@@ -173,6 +208,17 @@ class lua_entity
             trace("get e %1% c %2% failed", id_->first, (int)c);
         }
         return boost::optional<t>();
+    }
+
+    boost::optional<lua_entity_vector> get_ev(es::storage::component_id c) const
+    {
+        trace("get e %1% c %2%", id_->first, (int)c);
+        try {
+            return lua_entity_vector(es_, id_, c);
+        } catch (...) {
+            trace("get e %1% c %2% failed", id_->first, (int)c);
+        }
+        return boost::optional<lua_entity_vector>();
     }
 
     template <typename t>
@@ -202,16 +248,16 @@ public:
 
     void set_position(const wfpos& p) { set(entity_system::c_position, p); }
 
-    boost::optional<vector> get_velocity() const
+    boost::optional<lua_entity_vector> get_velocity() const
     {
-        return get<vector>(entity_system::c_velocity);
+        return get_ev(entity_system::c_velocity);
     }
 
     void set_velocity(const vector& v) { set(entity_system::c_velocity, v); }
 
-    boost::optional<vector> get_force() const
+    boost::optional<lua_entity_vector> get_force() const
     {
-        return get<vector>(entity_system::c_force);
+        return get_ev(entity_system::c_force);
     }
 
     void set_force(const vector& v) { set(entity_system::c_force, v); }
@@ -221,9 +267,9 @@ public:
         return get<yaw_pitch>(entity_system::c_orientation);
     }
 
-    boost::optional<vector> get_impact() const
+    boost::optional<lua_entity_vector> get_impact() const
     {
-        return get<vector>(entity_system::c_impact);
+        return get_ev(entity_system::c_impact);
     }
 
     boost::optional<uint16_t> get_model() const
@@ -554,6 +600,10 @@ lua::lua(server_entity_system& entities, world& w)
                       &lua_entity::resize_hotbar)
             .def("hotbar_get", &lua_entity::hotbar_get)
             .def("hotbar_set", &lua_entity::hotbar_set),
+        class_<lua_entity_vector>("evecf")
+            .property("x", &lua_entity_vector::get_x, &lua_entity_vector::set_x)
+            .property("y", &lua_entity_vector::get_y, &lua_entity_vector::set_y)
+            .property("z", &lua_entity_vector::get_z, &lua_entity_vector::set_z),
         class_<hotbar_slot>("hotbar_slot")
             .def(constructor<int, std::string>())
             .def_readwrite("type", &hotbar_slot::type)

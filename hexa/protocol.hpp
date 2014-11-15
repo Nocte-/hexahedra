@@ -94,16 +94,22 @@ public:
 
     /** The server's name. */
     std::string server_name;
+    /** The server's UID, or an empty buffer if not registered. */
+    binary_data server_uid;
     /** Public key. */
-    std::vector<uint8_t> public_key;
-    /** Allowed login methods */
-    std::vector<std::string> login_methods;
+    binary_data public_key;
+    /** Nonce for deriving a session key */
+    binary_data nonce;
+    /** Minimum client version */
+    uint8_t maj, min, patch;
+    /** More info as JSON. */
+    std::string json;
 
     /** (De)serialize this message. */
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(server_name)(public_key)(login_methods);
+        ar(server_name)(server_uid)(public_key)(nonce)(maj)(min)(patch)(json);
     }
 };
 
@@ -586,15 +592,21 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    /** The client's protocol version. */
-    uint8_t protocol_version;
-    /** The login credentials (JSON) */
-    std::string credentials;
+    /** Mode (0 = singleplayer localhost, 1 = multiplayer) */
+    uint8_t mode;
+    /** Player name. */
+    std::string name;
+    /** Player UID, or empty if not registered. */
+    binary_data uid;
+    /** Public key. */
+    binary_data public_key;
+    /** Extra JSON data. */
+    std::string json;
 
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(protocol_version)(credentials);
+        ar(mode)(name)(uid)(public_key)(json);
     }
 };
 

@@ -1,5 +1,5 @@
-Hexahedra
-=========
+[![Hexahedra](http://hexahedra.net/img/banner1.png)](http://hexahedra.net/)
+
 [![Build status](https://api.travis-ci.org/Nocte-/hexahedra.svg)](https://travis-ci.org/Nocte-/hexahedra)
 
 Hexahedra is a C++ framework for blocky/voxel games.  The most notable
@@ -9,9 +9,9 @@ features are:
 - "Infinite" terrain (4 billion blocks in all directions)
 - Lua scripting on the server
 - Runtime selection of OpenGL 2.1 and 3.3 renderers
-- Very flexible DSL for terrain generation, compiles to OpenCL if available
-- Centralized player authentication, server list
-
+- Very flexible [DSL for terrain generation](http://github.com/Nocte-/hexanoise), compiles to OpenCL if available
+- Centralized player authentication (optional)
+- Server list
 
 Current status
 --------------

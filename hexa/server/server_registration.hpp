@@ -1,6 +1,6 @@
 //---------------------------------------------------------------------------
-/// \file   client/server_list.hpp
-/// \brief  Retrieve and parse the list of game servers
+/// \file   server/server_registration.hpp
+/// \brief  Register the server with the master server list.
 //
 // This file is part of Hexahedra.
 //
@@ -19,32 +19,26 @@
 //
 // Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
-#include <cstdint>
-#include <string>
-#include <vector>
-
-#include "../basic_types.hpp"
-#include "../crypto.hpp"
+#include <boost/property_tree/ptree.hpp>
+#include <hexa/crypto.hpp>
 
 namespace hexa
 {
 
-struct server_info
+struct server_registration
 {
-    std::string host;
-    uint16_t port;
-    std::string name;
-    binary_data uid;
-    crypto::public_key public_key;
-    std::string desc;
-    binary_data icon;
-    int max_players;
-    std::vector<std::string> tags;
+    std::string url;
+    std::string uid;
+    std::string api_token;
 };
 
-std::vector<server_info> get_server_list(const std::string& hostname);
+/** Register this server. */
+server_registration register_server(const std::string& url = "auth.hexahedra.net");
+
+void ping_server(const server_registration& info);
+
+void go_offline(const server_registration& info);
 
 } // namespace hexa
