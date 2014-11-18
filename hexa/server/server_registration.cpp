@@ -231,7 +231,7 @@ server_registration register_server(const std::string& url)
                         base64_encode(file_contents(gamedir / "icon.png")));
         }
         log_msg("POST JSON: %1%", to_string(details));
-        auto res = rest::post(base, details});
+        auto res = rest::post({base, details});
         if (res.status_code != 201) {
             throw std::runtime_error(
                 (format("Cannot register server on %1%: %2%") % url % res.body)
@@ -249,7 +249,7 @@ server_registration register_server(const std::string& url)
         log_msg("Registered new server as ID %1%", id);
     }
 
-    api_token = decrypt_ecies(unhex(encrypted_key), priv_key);
+    api_token = decrypt_ecies(boost::algorithm::unhex(encrypted_key), priv_key);
     log_msg("Got API token: %1%", api_token);
 
     return {url, id, api_token};

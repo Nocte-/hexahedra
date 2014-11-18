@@ -522,7 +522,7 @@ void network::login(packet_info& info)
                                 shared_secret.end());
             cinfo.cipher.set_key(x_or(shared_secret, cinfo.iv));
 
-            if (csha256(concat(shared_secret, cinfo.iv)) != msg.mac) {
+            if (sha256(concat(shared_secret, cinfo.iv)) != msg.mac) {
                 throw "Could not authenticate player";
             } else {
                 log_msg("MAC is OK");
