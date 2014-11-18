@@ -28,12 +28,19 @@
 namespace hexa
 {
 
+struct inactive_player
+{
+    wfpos       saved_pos;
+    uint64_t    logout;
+};
+
 class server_entity_system : public entity_system
 {
 public:
     enum server_components {
-        c_ip_addr = c_last_component, // ip_addr
-        c_player_uid,                 // uint64_t
+        c_ip_addr = c_last_component,   // ip_addr
+        c_player_uid,                   // uint64_t
+        c_inactive_player,              // struct inactive_player
         c_last_server_component
     };
 

@@ -24,7 +24,9 @@
 
 #include <sstream>
 #include <stdexcept>
-#include <iostream>
+
+#include <boost/algorithm/hex.hpp>
+#include <boost/format.hpp>
 
 #include <cryptopp/eccrypto.h>
 #include <cryptopp/asn.h>
@@ -33,11 +35,15 @@
 #include <cryptopp/hex.h>
 #include <cryptopp/oids.h>
 #include <cryptopp/osrng.h>
+#include <cryptopp/files.h>
 
-#include <boost/algorithm/hex.hpp>
+
+#include <iostream>
+#include "json.hpp"
 
 using namespace CryptoPP;
 using namespace boost::algorithm;
+using boost::format;
 
 namespace hexa
 {
@@ -89,12 +95,46 @@ Integer make_random_128()
     return Integer(out, 16);
 }
 
+buffer x_or (const buffer& a, const buffer& b)
+{
+    if (a.size() >= b.size()) {
+        auto result (a);
+        for (size_t i = 0; i < b.size(); ++i)
+            result[i] ^= b[i];
+
+        return result;
+    } else {
+        auto result (b);
+        for (size_t i = 0; i < a.size(); ++i)
+            result[i] ^= a[i];
+
+        return result;
+    }
+}
+
+buffer concat (const buffer& a, const buffer& b)
+{
+    buffer result (a.size() + b.size());
+    std::copy(b.begin(), b.end(), std::copy(a.begin(), a.end(), result.begin()));
+    return result;
+}
+
 
 
 private_key make_new_key()
 {
     ECIES<ECP>::Decryptor decr{rng, ASN1::secp256k1()};
     return decr.GetKey();
+}
+
+bool is_valid(const private_key& priv)
+{
+    return priv.Validate(rng, 3);
+}
+
+bool is_valid(const public_key& pub)
+{
+    return pub.Validate(rng, 3);
 }
 
 public_key get_public_key (const private_key& priv)
@@ -114,7 +154,12 @@ std::string serialize_number(const Integer& num, size_t len = 32)
 
 Integer deserialize_number(const std::string& num)
 {
-    return Integer(num.c_str());
+    HexDecoder dec;
+    dec.Put(reinterpret_cast<const byte*>(num.c_str()), num.size());
+    dec.MessageEnd();
+    Integer result;
+    result.Decode(dec, num.size() / 2);
+    return result;
 }
 
 std::string serialize_private_key(const private_key &key)
@@ -124,14 +169,26 @@ std::string serialize_private_key(const private_key &key)
 
 private_key deserialize_private_key(const std::string& privkey)
 {
-    Integer x;
-    HexDecoder dec;
-    dec.Put(reinterpret_cast<const byte*>(&*privkey.begin()), privkey.size());
-    dec.MessageEnd();
-    x.Decode(dec, 32);
+    if (privkey.size() != 64)
+        throw std::runtime_error("private key must be 32 bytes");
+
     private_key result;
-    result.Initialize(ASN1::secp256k1(), x);
+    result.Initialize(ASN1::secp256k1(), deserialize_number(privkey));
     return result;
+}
+
+void save_pkcs8(const boost::filesystem::path& file, const private_key& key)
+{
+    FileSink fs{file.string().c_str(), true};
+    key.Save(fs);
+}
+
+private_key load_pkcs8(const boost::filesystem::path& file)
+{
+    private_key key;
+    FileSource fs{file.string().c_str(), true};
+    key.Load(fs);
+    return key;
 }
 
 std::string serialize_public_key(const public_key& key, bool compress)
@@ -148,33 +205,57 @@ public_key deserialize_public_key(const std::string& key)
     throw 0;
 }
 
-buffer to_binary(const public_key& key)
+buffer to_binary(const public_key& key, bool compressed)
 {
-    buffer result;
-    result.resize(33);
-    const auto& q = key.GetPublicElement();
-    key.GetGroupParameters().GetCurve().EncodePoint((byte*)&result[0], q, true);
+    auto& curve = key.GetGroupParameters().GetCurve();
+    auto& point = key.GetPublicElement();
+    buffer result(curve.EncodedPointSize(compressed));
+    curve.EncodePoint((byte*)&result[0], point, compressed);
+    return result;
+}
+
+buffer to_binary(const private_key& key)
+{
+    buffer result(32);
+    key.GetPrivateExponent().Encode(&result[0], 32);
     return result;
 }
 
 public_key public_key_from_binary(const buffer& bin)
 {
-    if (bin.size() != 33)
-        throw std::runtime_error("Compressed public key must be 33 bytes long");
+    public_key key;
+    auto& group = key.AccessGroupParameters();
+    group.Initialize(ASN1::secp256k1());
+    auto& curve = group.GetCurve();
 
-    if (bin[0] != 2 && bin[0] != 3)
+    bool compressed;
+    if (bin.size() == curve.EncodedPointSize(true))
+        compressed = true;
+    else if (bin.size() == curve.EncodedPointSize(false))
+        compressed = false;
+    else
+        throw std::runtime_error("Not a recognized public key");
+
+    group.SetPointCompression(compressed);
+    ECP::Point point;
+    if (!curve.DecodePoint(point, (byte*)&bin[0], bin.size()))
         throw std::runtime_error("Not a valid compressed public key");
 
-    public_key key;
-    key.AccessGroupParameters().SetPointCompression(true);
-    key.AccessGroupParameters().Initialize(ASN1::secp256k1());
-    auto& curve = key.GetGroupParameters().GetCurve();
-    ECP::Point p;
-    curve.DecodePoint(p, (byte*)&bin[0], 33);
-    key.SetPublicElement(p);
+    key.SetPublicElement(point);
     return key;
 }
 
+private_key private_key_from_binary(const buffer& bin)
+{
+    if (bin.size() != 32)
+        throw std::runtime_error("Private key must be 32 bytes long");
+
+    Integer x;
+    x.Decode(&bin[0], 32);
+    private_key key;
+    key.Initialize(ASN1::secp256k1(), x);
+    return key;
+}
 
 boost::property_tree::ptree to_json(const public_key& key)
 {
@@ -187,13 +268,13 @@ boost::property_tree::ptree to_json(const public_key& key)
 
 public_key from_json(const boost::property_tree::ptree& json)
 {
-    ECP::Point q;
-    q.x = deserialize_number(json.get<std::string>("x"));
-    q.y = deserialize_number(json.get<std::string>("y"));
+    ECP::Point q { deserialize_number(json.get<std::string>("x")),
+                   deserialize_number(json.get<std::string>("y"))};
 
-    public_key result;
-    result.Initialize(ASN1::secp256k1(), q);
-    return result;
+    public_key key;
+    key.AccessGroupParameters().Initialize(ASN1::secp256k1());
+    key.SetPublicElement(q);
+    return key;
 }
 
 std::string encrypt_ecies(const std::string& plaintext, const public_key& key)
@@ -227,67 +308,54 @@ std::string decrypt_ecies(const std::string& ciphertext, const private_key& key)
     return plaintext;
 }
 
-void der_encode_public_key(SecByteBlock& enc, const public_key& key)
-{
-    ByteQueue bq;
-    key.DEREncodePublicKey(bq);
-    size_t len = bq.MaxRetrievable();
-    enc.New(len);
-    bq.Get(enc,len);
-}
-
-void der_encode_private_key(SecByteBlock& enc, const private_key& key)
-{
-    auto& exp = key.GetPrivateExponent();
-    size_t len = exp.ByteCount();
-    enc.CleanNew(len);
-    exp.Encode(enc, len);
-}
-
 buffer ecdh(const public_key& pubkey, const private_key& privkey)
 {
     ECDH<ECP>::Domain dh{ASN1::secp256k1()};
-    SecByteBlock priv_exp, pub_int;
-    der_encode_public_key(pub_int, pubkey);
-    der_encode_private_key(priv_exp, privkey);
-
+    buffer pub_buf = to_binary(pubkey, false);
+    buffer prv_buf = to_binary(privkey);
     buffer result(dh.AgreedValueLength());
-    if (!dh.Agree(&result[0], priv_exp, pub_int)) {
+    if (!dh.Agree(&result[0], &prv_buf[0], &pub_buf[0])) {
         throw std::runtime_error("ECDH failed");
     }
     return result;
 }
 
-aes::aes(const buffer &key)
+
+
+
+
+
+void aes::set_key(const buffer &key)
 {
     // Even though we don't use the IV right away, the library
     // will complain if we don't set one straight away.
     static const buffer dummy_iv {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     enc_.SetKeyWithIV(&key[0], key.size(), &dummy_iv[0], dummy_iv.size());
+    ready_ = true;
 }
 
-void aes::encrypt(const buffer& iv, buffer& in)
+void aes::encrypt(const buffer& iv, buffer& in) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
     enc_.ProcessString(&in[0], in.size());
 }
 
-void aes::encrypt(const buffer& iv, std::string& in)
+void aes::encrypt(const buffer& iv, const uint8_t *ptr, size_t bytes, uint8_t* dest) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
-    enc_.ProcessString((byte*)&in[0], in.size());
+    enc_.ProcessString(dest, ptr, bytes);
 }
 
-void aes::decrypt(const buffer& iv, buffer& in)
+void aes::decrypt(const buffer& iv, buffer& in) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
     enc_.ProcessString(&in[0], in.size());
 }
 
-void aes::decrypt(const buffer& iv, std::string& in)
+void aes::decrypt(const buffer& iv, const uint8_t *ptr, size_t bytes, uint8_t* dest) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
-    enc_.ProcessString((byte*)&in[0], in.size());
+    enc_.ProcessString(dest, ptr, bytes);
 }
 
 
@@ -309,4 +377,10 @@ buffer sha256(const buffer& in)
 }
 
 } // namespace crypto
+
+bool operator==(const crypto::public_key& lhs, const crypto::public_key& rhs)
+{
+    return lhs.GetPublicElement() == rhs.GetPublicElement();
+}
+
 } // namespace hexa

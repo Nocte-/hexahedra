@@ -148,9 +148,8 @@ int main(int argc, char* argv[])
     }
 
     auto plinf = get_player_info();
-    trace("Player name : %1%", plinf.name);
-    trace("Player uid  : %1%", plinf.uid);
-    trace("Player key  : %1%", plinf.public_key);
+    log_msg("Player uid  : %1%", plinf.uid);
+    log_msg("Player key  : %1%", plinf.public_key);
 
     log_msg("Initializing Enet");
     auto enet_rc = enet_initialize();

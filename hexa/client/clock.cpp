@@ -49,14 +49,15 @@ void init()
     adjustment_ = 0;
 }
 
-void sync(clientclock_t time)
+void sync(gameclock_t time)
 {
     adjustment_ = time - elapsed_();
 }
 
-clientclock_t time()
+gameclock_t time()
 {
     return elapsed_() + adjustment_;
 }
-}
-} // namespace hexa::clock
+
+} // namespace clock
+} // namespace hexa

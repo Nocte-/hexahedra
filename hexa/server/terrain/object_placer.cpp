@@ -95,8 +95,8 @@ object_placer::spots(const map_coordinates& pos)
     uint32_t rng = fnv_hash(pos);
     auto offset = pos * chunk_size;
 
-    for (int y = 0; y < chunk_size; ++y) {
-        for (int x = 0; x < chunk_size; ++x) {
+    for (uint16_t y = 0; y < chunk_size; ++y) {
+        for (uint16_t x = 0; x < chunk_size; ++x) {
             if (prng_next_zto(rng) < distrib(x, y))
                 result.emplace_back(offset.x + x, offset.y + y);
         }

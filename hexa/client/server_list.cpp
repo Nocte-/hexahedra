@@ -26,6 +26,7 @@
 #include <boost/property_tree/ptree.hpp>
 
 #include "../config.hpp"
+#include "../log.hpp"
 #include "../rest.hpp"
 #include "../base58.hpp"
 
@@ -75,14 +76,18 @@ std::vector<server_info> get_server_list(const std::string& hostname)
 {
     std::vector<server_info> result;
    
-    auto res = rest::get((format("https://%1%/api/1/servers") % hostname).str());
-    if (res.status_code == 200) {
-        for (auto& n : res.json.get_child("servers")) {
-            if (check_version(n.second.get<std::string>("reqversion", "0.0.0")))
-                result.emplace_back(json_to_info(n.second));
-        }
-    } else {
+    try {
+        auto res = rest::get((format("https://%1%/api/1/servers") % hostname).str());
+        if (res.status_code == 200) {
+            for (auto& n : res.json.get_child("servers")) {
+                if (check_version(n.second.get<std::string>("reqversion", "0.0.0")))
+                    result.emplace_back(json_to_info(n.second));
+            }
+        } else {
 
+        }
+    } catch (std::runtime_error& e) {
+        log_msg("Could not get server list: %1%", e.what());
     }
 
     return result;

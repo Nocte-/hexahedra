@@ -45,7 +45,7 @@ public:
     void disconnect(ENetPeer* peer);
 
     virtual void on_connect(ENetPeer* peer) = 0;
-    virtual void on_receive(ENetPeer* peer, const packet& pkt) = 0;
+    virtual void on_receive(ENetPeer* peer, packet pkt) = 0;
     virtual void on_disconnect(ENetPeer* peer) = 0;
 
 private:

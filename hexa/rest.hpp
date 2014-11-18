@@ -84,6 +84,8 @@ void post(const request& req,
 
 response post(const request& req);
 
+response del(const request& req);
+
 
 } // namespace rest
 } // namespace hexa

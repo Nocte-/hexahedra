@@ -248,6 +248,43 @@ void put(const request& req,
     callback(put(req));
 }
 
+response del(const request& req)
+{
+    init_curl();
+    auto curl = curl_easy_init();
+
+    if (!curl)
+        throw std::runtime_error("curl_easy_init failed");
+
+    response res;
+
+    if (req.username.empty() && req.password.empty()) {
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTPS);
+    } else {
+        curl_easy_setopt(curl, CURLOPT_USERNAME, req.username.c_str());
+        curl_easy_setopt(curl, CURLOPT_PASSWORD, req.password.c_str());
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS);
+    }
+    curl_easy_setopt(curl, CURLOPT_URL, req.url.c_str());
+    curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+    auto errcode = curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+
+    if (errcode != CURLE_OK)
+        throw std::runtime_error(std::string("curl delete failed: ") + curl_easy_strerror(errcode));
+
+    if (starts_with(res.headers["content-type"], "application/json")) {
+        std::stringstream str {res.body};
+        try {
+            boost::property_tree::json_parser::read_json(str, res.json);
+        } catch(...) {
+        }
+    }
+    return res;
+}
+
+
 
 } // namespace rest
 } // namespace hexa

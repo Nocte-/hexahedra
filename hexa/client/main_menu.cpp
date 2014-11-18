@@ -167,7 +167,7 @@ void cleanup()
 
 main_menu::main_menu(game& the_game)
     : game_state(the_game)
-    , servers_(get_server_list("https://auth.hexahedra.net/"))
+    , servers_(get_server_list("auth.hexahedra.net"))
     , logo_img_(images("menu_logo") ? *images("menu_logo") : sf::Texture())
     , logo_(logo_img_)
     , copyright_("Copyright (C) 2014, Nocte", font_, 14)

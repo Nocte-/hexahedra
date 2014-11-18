@@ -62,8 +62,8 @@ struct heightmap_terrain_generator::impl
         auto hm = hndl_area_int16(*func_, pos);
         uint32_t bottom = pos.z * chunk_size;
 
-        for (int y = 0; y < chunk_size; ++y) {
-            for (int x = 0; x < chunk_size; ++x) {
+        for (uint16_t y = 0; y < chunk_size; ++y) {
+            for (uint16_t x = 0; x < chunk_size; ++x) {
                 // Absolute height
                 uint32_t h = world_center.z + hm(x, y);
                 if (h > bottom) {

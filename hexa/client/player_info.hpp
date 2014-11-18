@@ -24,6 +24,7 @@
 #include <string>
 
 #include <boost/property_tree/ptree.hpp>
+#include "../crypto.hpp"
 
 namespace hexa
 {
@@ -32,9 +33,8 @@ class player_info
 {
 public:
     std::string uid;
-    std::string public_key;
-    std::string private_key;
-    std::string password;
+    crypto::public_key public_key;
+    crypto::private_key private_key;
 
 public:
     player_info();

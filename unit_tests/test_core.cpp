@@ -20,6 +20,7 @@
 #include <hexa/crypto.hpp>
 #include <hexa/geometric.hpp>
 #include <hexa/hotbar_slot.hpp>
+#include <hexa/json.hpp>
 #include <hexa/lru_cache.hpp>
 #include <hexa/persistence_leveldb.hpp>
 #include <hexa/persistence_null.hpp>
@@ -484,9 +485,9 @@ BOOST_AUTO_TEST_CASE (crypto_test_aes)
 
     std::string plain {"The quick brown fox jumps over the lazy dog. 0123456789"};
     std::string cipher {plain};
-    enc.encrypt(iv, cipher);
+    enc.encrypt(iv, (uint8_t*)&cipher[0], cipher.size(), (uint8_t*)&cipher[0]);
     BOOST_CHECK_NE(plain, cipher);
-    dec.decrypt(iv, cipher);
+    enc.encrypt(iv, (uint8_t*)&cipher[0], cipher.size(), (uint8_t*)&cipher[0]);
     BOOST_CHECK_EQUAL(plain, cipher);
 }
 
@@ -521,15 +522,67 @@ BOOST_AUTO_TEST_CASE (crypto_test_ecc)
     }
 }
 
+BOOST_AUTO_TEST_CASE (crypto_test_binary)
+{
+    auto key   (crypto::make_new_key());
+    auto pub   (crypto::get_public_key(key));
+    BOOST_CHECK_EQUAL(pub, crypto::public_key_from_binary(crypto::to_binary(pub)));
+}
+
+BOOST_AUTO_TEST_CASE (crypto_test_json)
+{
+    auto key   (crypto::make_new_key());
+    auto pub   (crypto::get_public_key(key));
+    BOOST_CHECK_EQUAL(pub, crypto::from_json(crypto::to_json(pub)));
+}
+
 BOOST_AUTO_TEST_CASE (crypto_test_ecdh)
+{
+    for (auto i = 0 ; i < 1000; ++i) {
+        auto a (crypto::make_new_key());
+        auto b (crypto::make_new_key());
+
+        auto x (crypto::ecdh(crypto::get_public_key(a), b));
+        auto y (crypto::ecdh(crypto::get_public_key(b), a));
+
+        BOOST_CHECK_EQUAL(crypto::hex(x), crypto::hex(y));
+    }
+}
+
+BOOST_AUTO_TEST_CASE (crypto_test_ecdh2)
 {
     auto a (crypto::make_new_key());
     auto b (crypto::make_new_key());
 
-    auto x (crypto::ecdh(crypto::get_public_key(a), b));
-    auto y (crypto::ecdh(crypto::get_public_key(b), a));
+    crypto::save_pkcs8("tmp_key_a", a);
+    crypto::save_pkcs8("tmp_key_b", b);
 
+    auto a2 = crypto::load_pkcs8("tmp_key_a");
+    auto b2 = crypto::load_pkcs8("tmp_key_b");
+
+    boost::filesystem::remove("tmp_key_a");
+    boost::filesystem::remove("tmp_key_b");
+
+    BOOST_CHECK_EQUAL(crypto::serialize_private_key(a), crypto::serialize_private_key(a2));
+    BOOST_CHECK_EQUAL(crypto::serialize_private_key(b), crypto::serialize_private_key(b2));
+
+    auto pa = crypto::get_public_key(a2);
+    auto pb = crypto::get_public_key(b2);
+
+    {
+    auto x (crypto::ecdh(crypto::from_json(crypto::to_json(pa)), b2));
+    auto y (crypto::ecdh(crypto::from_json(crypto::to_json(pb)), a2));
     BOOST_CHECK_EQUAL(crypto::hex(x), crypto::hex(y));
+    }
+    {
+    std::cout << "------" << std::endl;
+    auto bpa = crypto::to_binary(pa);
+    auto fba = crypto::public_key_from_binary(bpa);
+
+    auto x (crypto::ecdh(fba, b2));
+    auto y (crypto::ecdh(crypto::public_key_from_binary(crypto::to_binary(pb)), a2));
+    BOOST_CHECK_EQUAL(crypto::hex(x), crypto::hex(y));
+    }
 }
 
 BOOST_AUTO_TEST_CASE (compress_test)

@@ -1061,6 +1061,9 @@ luabind::object lua::raycast(const wfpos& origin, const yaw_pitch& dir,
 
 void lua::send_console_message(es::entity plr, const std::string& json)
 {
+    msg::print_msg msg;
+    msg.json = json;
+    net_->send(plr, serialize_packet(msg), msg.method());
 }
 
 void lua::broadcast_console_message(const std::string& json)

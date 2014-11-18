@@ -41,6 +41,7 @@
 #include <hexa/geometric.hpp>
 #include <hexa/log.hpp>
 #include <hexa/protocol.hpp>
+#include <hexa/rest.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/voxel_algorithm.hpp>
 #include <hexa/voxel_range.hpp>
@@ -100,8 +101,13 @@ network::~network()
     // world_.store(es_);
 }
 
-void network::run()
+void network::run(const crypto::private_key& privkey, const crypto::buffer& server_id)
 {
+    my_private_key_ = privkey;
+    my_public_key_ = crypto::to_binary(crypto::get_public_key(privkey));
+    my_id_ = server_id;
+    log_msg("Network running, server ID %1%", base58_encode(my_id_));
+
     running_.store(true);
     int count(0);
     // auto last_tick (steady_clock::now());
@@ -155,7 +161,7 @@ void network::run()
 
             auto n(clock::now());
             for (auto& c : connections_) {
-                msg.timestamp = n - clock_offset_[c.second];
+                msg.timestamp = n - conn_info_[c.second].clock_offset;
                 send(c.second, serialize_packet(msg), msg.method());
             }
         }
@@ -222,47 +228,19 @@ void network::stop()
 
 void network::on_connect(ENetPeer* c)
 {
-    if (entities_.count(c)) {
-        trace("Player already connected wtf lol");
+    if (conn_info_.count(c)) {
+        log_msg("Player already connected");
         return;
     }
     log_msg("New player connected.");
-
-    /*
-    ip_address player_addr (c->address.host);
-    trace("on_connect() %1%", std::to_string(player_addr));
-    {
-    auto write_lock (es_.acquire_write_lock());
-
-    uint32_t player_id (0xffffffff);
-
-    es_.for_each<ip_address>(server_entity_system::c_ip_addr,
-    [&](es::storage::iterator i, const ip_address& ip)
-    {
-       if (ip == player_addr)
-           player_id = i->first;
-
-       return false;
-    });
-
-    if (player_id == 0xffffffff)
-        player_id = es_.new_entity();
-
-    entities_[c] = player_id;
-    connections_[player_id] = c;
-
-    es_.set(player_id, server_entity_system::c_ip_addr, player_addr);
-
-    log_msg("Player #%1% connected.", player_id);
-    }
-*/
 
     // Greet the new player with the server name and our public key.
     msg::handshake m;
 
     m.server_name = "LOL server";
-    m.public_key.resize(33);
-
+    m.server_id = my_id_;
+    m.public_key = my_public_key_;
+    m.nonce = conn_info_[c].iv = crypto::make_random(16);
     send(c, serialize_packet(m), m.method());
 
     // Send resources, material list, etc.
@@ -273,7 +251,6 @@ void network::on_connect(ENetPeer* c)
             msg.textures[rec.second] = rec.first;
 
         msg.models.push_back("mrfixit");
-
         send(c, serialize_packet(msg), msg.method());
     }
 
@@ -289,45 +266,39 @@ void network::on_connect(ENetPeer* c)
         send(c, serialize_packet(msg), msg.method());
     }
 
-    clock_offset_[c] = clock::now();
+    conn_info_[c].clock_offset = clock::now();
 }
 
 void network::on_disconnect(ENetPeer* c)
 {
-    clock_offset_.erase(c);
+    auto& info = conn_info_[c];
+    log_msg("Disconnect player %1%", info.entity);
+    deactivate_player(info.entity);
+    connections_.erase(info.entity);
+    conn_info_.erase(c);
 
-    auto e(entities_.find(c));
-    if (e == entities_.end()) {
-        log_msg("disconnect received from an unknown player");
-        return;
-    }
-    auto entity_id(e->second);
-    log_msg("disconnecting player %1%", entity_id);
-
-    /*
-    {
-    auto write_lock (es_.acquire_write_lock());
-    es_.delete_entity(entity_id);
-    }
-*/
-
-    connections_.erase(entity_id);
-    entities_.erase(e);
-
-    /*
     msg::entity_delete msg;
-    msg.entity_id = entity_id;
+    msg.entity_id = info.entity;
+    auto packet = serialize_packet(msg);
     for (auto& conn : connections_)
-        send(conn.second, serialize_packet(msg), msg.method());
-        */
+        send(conn.second, packet, msg.method());
 }
 
-void network::on_receive(ENetPeer* c, const packet& p)
+void network::on_receive(ENetPeer* c, packet p)
 {
-    es::entity ent(0);
-    auto found(entities_.find(c));
-    if (found != entities_.end())
-        ent = found->second;
+    es::entity ent = 0;
+    auto found = conn_info_.find(c);
+    if (found != conn_info_.end())
+        ent = found->second.entity;
+
+    if (p.is_encrypted()) {
+        if (found == conn_info_.end() || found->second.iv.empty()) {
+            log_msg("Cannot decrypt packet, ignoring");
+            return;
+        }
+        auto& info = found->second;
+        p.decrypt(info.iv, info.cipher);
+    }
 
     try {
         packet_info info{ent, c, p};
@@ -375,13 +346,36 @@ void network::on_receive(ENetPeer* c, const packet& p)
     }
 }
 
+void network::send_encrypted(ENetPeer* dest, const binary_data& msg,
+                             msg::reliability method) const
+{
+    auto found_info = conn_info_.find(dest);
+    if (found_info == conn_info_.end() || !found_info->second.cipher.is_ready()) {
+        // No encryption required, send straight away.
+        send(dest, msg, method);
+    } else {
+        // Encrypt it before sending.
+        auto& info = found_info->second;
+        binary_data encrypt(msg.size() + 5);
+        encrypt[0] = 0xff;
+        uint32_t timer = clock::client_time(info.clock_offset);
+        *(reinterpret_cast<uint32_t*>(&encrypt[1])) = timer;
+
+        crypto::buffer iv = info.iv;
+        *reinterpret_cast<uint32_t*>(&iv[0]) ^= timer;
+
+        info.cipher.encrypt(iv, &msg[0], msg.size(), &encrypt[5]);
+        send(dest, encrypt, method);
+    }
+}
+
 bool network::send(uint32_t entity, const binary_data& msg,
                    msg::reliability method) const
 {
-    auto found(connections_.find(entity));
-    bool have_connection(found != connections_.end());
+    auto found = connections_.find(entity);
+    bool have_connection = (found != connections_.end());
     if (have_connection)
-        send(found->second, msg, method);
+        send_encrypted(found->second, msg, method);
 
     return have_connection;
 }
@@ -389,7 +383,7 @@ bool network::send(uint32_t entity, const binary_data& msg,
 void network::broadcast(const binary_data& msg, msg::reliability method) const
 {
     for (auto& conn : connections_)
-        send(conn.second, msg, method);
+        send_encrypted(conn.second, msg, method);
 }
 
 void network::send_surface(const chunk_coordinates& cpos)
@@ -462,46 +456,94 @@ void network::kick_player(ENetPeer* dest, const std::string& kickmsg)
     log_msg("Kick player: %1%", kickmsg);
     msg::kick reply;
     reply.reason = kickmsg;
-    send(dest, serialize_packet(reply), reply.method());
+    send_encrypted(dest, serialize_packet(reply), reply.method());
     disconnect(dest);
     on_disconnect(dest);
 }
 
 void network::login(packet_info& info)
 {
-    auto msg(make<msg::login>(info.p));
+    auto msg = make<msg::login>(info.p);
 
     world_coordinates start_pos(world_center);
     wfpos start_pos_sub;
-
-    // Figure out the login info
     auto player_name = msg.name;
-    if (player_name.size() < 2 || player_name.size() > 20)
-        player_name = "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000);
+    bool hashed_id = false;
+
+    // If no player ID was given, generate one by hashing the client's
+    // IP address.
+    if (msg.uid.empty()) {
+        auto& addr = info.conn->address.host;
+        auto ptr = reinterpret_cast<uint8_t*>(&addr);
+        crypto::buffer b (ptr, ptr + sizeof(addr));
+        auto hash = crypto::sha256(b);
+        hash.resize(8);
+        std::copy(hash.begin(), hash.end(), std::back_inserter(msg.uid));
+        hashed_id = true;
+    }
+
+    if (msg.uid.size() != 8) {
+        kick_player(info.conn, "No valid player ID was given");
+        return;
+    }
 
     log_msg("player '%1%' tries to login", player_name);
+    auto& cinfo = conn_info_[info.conn];
 
     if (msg.mode == 0) {
         // Localhost singleplayer mode
-
         if (global_settings["mode"].as<std::string>() != "singleplayer") {
             kick_player(info.conn,
                         "Server is not running in singleplayer mode");
             return;
         }
         info.plr = 0;
+
     } else if (msg.mode == 1) {
         // Multiplayer mode
-
-        if (global_settings["mode"].as<std::string>() == "singleplayer") {
-            kick_player(info.conn,
-                        "Server is not running in multiplayer mode");
-            return;
-        }
-
         try {
-            if (msg.uid.size() != 8 || msg.public_key.size() != 33)
-                throw 0;
+
+            if (global_settings["mode"].as<std::string>() == "singleplayer")
+                throw "Server is not running in multiplayer mode";
+
+            if (msg.public_key.size() != 33)
+                throw "No valid UID or public key";
+
+            auto their_pubkey = crypto::public_key_from_binary(msg.public_key);
+            if (!crypto::is_valid(their_pubkey))
+                throw "Public key is not valid";
+
+            auto shared_secret = crypto::ecdh(their_pubkey, my_private_key_);
+            // The shared secret is too wide for our purposes, use only the
+            // lowest 128 bits.
+            shared_secret.erase(shared_secret.begin() + 16, shared_secret.end());
+            cinfo.cipher.set_key(crypto::x_or(shared_secret, cinfo.iv));
+
+            if (crypto::sha256(crypto::concat(shared_secret, cinfo.iv)) != msg.mac) {
+                throw "Could not authenticate player";
+            } else {
+                log_msg("MAC is OK");
+            }
+
+            if (!hashed_id) {
+                // This is a registered user ID, run a few checks first.
+                std::string url{"https://auth.hexahedra.net/api/1/users/"};
+                auto res = rest::get(url + base58_encode(msg.uid));
+                if (res.status_code == 200) {
+                    if (crypto::from_json(res.json.get_child("users.pubkey")) != their_pubkey)
+                        throw "Could not authenticate player";
+
+                    player_name = res.json.get("users.username", player_name);
+                } else if (res.status_code == 404) {
+                    throw "Player ID does not exist";
+                }
+            }
+
+            if (player_name.empty()) {
+                player_name = "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000);
+            } else if (player_name.size() > 24) {
+                throw "Player name is too long";
+            }
 
             int found(0);
             es::storage::iterator iter;
@@ -529,9 +571,13 @@ void network::login(packet_info& info)
                     trace("ERROR: Found more than one, actually");
 
                 info.plr = iter->first;
+                reactivate_player(info.plr);
             }
+        } catch (const char* msg) {
+            kick_player(info.conn, msg);
+            return;
         } catch (...) {
-            kick_player(info.conn, "Missing uid/pubkey");
+            kick_player(info.conn, "Cannot log in player");
             return;
         }
     } else {
@@ -539,12 +585,12 @@ void network::login(packet_info& info)
         return;
     }
 
-    entities_[info.conn] = info.plr;
+    conn_info_[info.conn].entity = info.plr;
     connections_[info.plr] = info.conn;
 
     log_msg("player %1% (%2%) logged in", info.plr, player_name);
 
-    auto pi(es_.make(info.plr));
+    auto pi = es_.make(info.plr);
     es_.set(pi, server_entity_system::c_name, player_name);
 
     if (es_.entity_has_component(pi, entity_system::c_position)) {
@@ -619,9 +665,9 @@ void network::login(packet_info& info)
     msg::greeting reply;
     reply.position = start_pos;
     reply.entity_id = info.plr;
-    reply.client_time = clock::client_time(clock_offset_[info.conn]);
+    reply.client_time = clock::client_time(conn_info_[info.conn].clock_offset);
     reply.motd = "Be excellent to eachother.";
-    send(info.conn, serialize_packet(reply), reply.method());
+    send_encrypted(info.conn, serialize_packet(reply), reply.method());
 
     // Send height maps
     log_msg("send height maps to player %1%", info.plr);
@@ -685,7 +731,7 @@ void network::login(packet_info& info)
             continue;
 
         log_msg("inform player %1% of player %2%", conn.first, info.plr);
-        send(conn.second, serialize_packet(posmsg), msg::reliable);
+        send_encrypted(conn.second, serialize_packet(posmsg), msg::reliable);
     }
 
     {
@@ -712,7 +758,7 @@ void network::login(packet_info& info)
         });
     }
 
-    send(info.conn, serialize_packet(posmsg), msg::reliable);
+    send_encrypted(info.conn, serialize_packet(posmsg), msg::reliable);
 
     try {
         auto lock(es_.acquire_write_lock());
@@ -739,7 +785,7 @@ void network::timesync(const packet_info& info)
 
     msg::time_sync_response answer;
     answer.request = msg.request;
-    answer.response = clock::client_time(clock_offset_[info.conn]);
+    answer.response = clock::client_time(conn_info_[info.conn].clock_offset);
 
     send(info.conn, serialize_packet(answer), answer.method());
 }
@@ -825,7 +871,7 @@ void network::motion(const packet_info& info)
     float angle((float)msg.move_dir / 256.f * two_pi<float>());
     vector2<float> move(from_polar(angle));
 
-    const float walk_force(1.0f);
+    const float walk_force = 1.0f;
     float magnitude(walk_force * (float)msg.move_speed / 255.f);
 
     trace("player %1% moves in direction %2%", info.plr, move);
@@ -833,9 +879,9 @@ void network::motion(const packet_info& info)
     es_.set_walk(info.plr, move * magnitude);
 
     constexpr float lag(0.05f);
-    auto p(es_.get<wfpos>(info.plr, entity_system::c_position));
-    auto v(es_.get<vector>(info.plr, entity_system::c_velocity));
-    auto l(es_.get<yaw_pitch>(info.plr, entity_system::c_lookat));
+    auto p = es_.get<wfpos>(info.plr, entity_system::c_position);
+    auto v = es_.get<vector>(info.plr, entity_system::c_velocity);
+    auto l = es_.get<yaw_pitch>(info.plr, entity_system::c_lookat);
 
     p += vector(rotate(move, -l.x), 0.0f) * 5.0f * lag;
 
@@ -982,6 +1028,40 @@ void network::on_update_surface(const chunk_coordinates& pos)
 {
     for (auto& conn : connections_)
         send_surface_queue(pos, conn.second);
+}
+
+bool network::deactivate_player(uint32_t entity)
+{
+    auto write_lock = es_.acquire_write_lock();
+    auto i = es_.find(entity);
+    if (i == es_.end() || !es_.entity_has_component(i, server_entity_system::c_position))
+        return false;
+
+    inactive_player data;
+    data.saved_pos = es_.get<wfpos>(i, server_entity_system::c_position);
+    data.logout = clock::epoch();
+    es_.remove_component_from_entity(i, server_entity_system::c_position);
+    es_.set(i, server_entity_system::c_inactive_player, data);
+
+    log_msg("Player %1% has been deactivated", entity);
+
+    return true;
+}
+
+bool network::reactivate_player(uint32_t entity)
+{
+    auto write_lock = es_.acquire_write_lock();
+    auto i = es_.find(entity);
+    if (i == es_.end() || !es_.entity_has_component(i, server_entity_system::c_inactive_player))
+        return false;
+
+    auto data = es_.get<inactive_player>(i, server_entity_system::c_inactive_player);
+    es_.remove_component_from_entity(i, server_entity_system::c_inactive_player);
+    es_.set(i, server_entity_system::c_position, data.saved_pos);
+
+    log_msg("Player %1% has been reactivated", entity);
+
+    return true;
 }
 
 } // namespace hexa

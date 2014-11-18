@@ -29,6 +29,7 @@
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 
+#include <hexa/crypto.hpp>
 #include <hexa/entity_system.hpp>
 #include <hexa/persistent_storage_i.hpp>
 #include <hexa/packet.hpp>
@@ -56,7 +57,7 @@ public:
               unsigned int view_dist = 24);
     ~main_game();
 
-    void receive(const packet& p);
+    void receive(packet p) override;
     void login();
     void request_chunk(const chunk_coordinates& pos);
 
@@ -166,6 +167,11 @@ private:
     bool show_ui_;
 
     uint32_t ignore_text_;
+
+    crypto::private_key my_private_key_;
+    crypto::buffer      server_nonce_;
+    crypto::public_key  server_pubkey_;
+    crypto::aes         cipher_;
 };
 
 } // namespace hexa

@@ -25,6 +25,7 @@
 #include <string>
 #include <boost/format.hpp>
 #include <boost/thread/locks.hpp>
+#include <hexa/log.hpp>
 
 using boost::format;
 
@@ -41,6 +42,7 @@ udp_server::udp_server(uint16_t port, uint16_t max_users)
 #endif
     addr_.port = port;
 
+    log_msg("udp_server listen on port %1%", port);
     sv_ = enet_host_create(&addr_, max_users, 3, 0, 0);
     if (!sv_)
         throw std::runtime_error(
@@ -103,12 +105,15 @@ void udp_server::send(ENetPeer* peer, const binary_data& msg,
     auto pkt(enet_packet_create(&msg[0], msg.size(), flags));
     {
         boost::lock_guard<boost::mutex> lock(enet_mutex_);
-        enet_peer_send(peer, 0, pkt);
+        auto res = enet_peer_send(peer, 0, pkt);
+        if (res != 0)
+            log_msg("udp_server send failed with code %1%", -res);
     }
 }
 
 void udp_server::disconnect(ENetPeer* peer)
 {
+    log_msg("udp_server disconnect");
     enet_peer_disconnect_now(peer, 0);
 }
 

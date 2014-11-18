@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 
 #include "clock.hpp"
@@ -37,6 +37,11 @@ steady_clock::time_point start_;
 
 } // anonymous namespace
 
+uint64_t epoch()
+{
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+}
+
 void init()
 {
     start_ = steady_clock::now();
@@ -47,14 +52,14 @@ uint64_t now()
     return duration_cast<milliseconds>(steady_clock::now() - start_).count();
 }
 
-gameclock_t game_time()
+uint64_t game_time()
 {
-    return static_cast<gameclock_t>(now() / 100);
+    return static_cast<uint64_t>(now() / 10);
 }
 
-clientclock_t client_time(uint64_t client_offset)
+gameclock_t client_time(uint64_t client_offset)
 {
-    return static_cast<clientclock_t>(now() - client_offset);
+    return static_cast<gameclock_t>(now() - client_offset);
 }
 
 } // namespace clock

@@ -24,6 +24,7 @@
 #include <boost/format.hpp>
 #include <boost/thread/locks.hpp>
 #include <hexa/config.hpp>
+#include <hexa/log.hpp>
 
 using boost::format;
 
@@ -49,6 +50,7 @@ udp_client::udp_client(std::string host, uint16_t port)
     enet_address_set_host(&address_, host.c_str());
     address_.port = port;
 
+    log_msg("udp_client set up peer to host %1%", host);
     peer_ = enet_host_connect(host_, &address_, UDP_CHANNELS, 0);
     if (peer_ == nullptr)
         throw network_error("could not set up UDP peer");
@@ -63,17 +65,18 @@ udp_client::~udp_client()
 bool udp_client::connect(unsigned int timeout)
 {
     disconnect();
-
     ENetEvent ev;
     {
         boost::lock_guard<boost::mutex> lock(host_mutex_);
         if (enet_host_service(host_, &ev, timeout) > 0
             && ev.type == ENET_EVENT_TYPE_CONNECT) {
+            log_msg("udp_client connected");
             connected_ = true;
             return true;
         }
     }
 
+    log_msg("udp_client connect failed");
     enet_peer_reset(peer_);
     return false;
 }
@@ -92,6 +95,7 @@ bool udp_client::disconnect()
             switch (ev.type) {
             case ENET_EVENT_TYPE_DISCONNECT:
                 connected_ = false;
+                log_msg("udp_client disconnected");
                 return true;
 
             default:
@@ -100,6 +104,7 @@ bool udp_client::disconnect()
         }
     }
 
+    log_msg("udp_client disconnect failed");
     enet_peer_reset(peer_);
     return false;
 }
@@ -119,7 +124,6 @@ void udp_client::poll(unsigned int milliseconds)
 
     switch (ev.type) {
     case ENET_EVENT_TYPE_CONNECT:
-        receive(packet(ev.packet->data, ev.packet->dataLength));
         on_connect();
         break;
 
@@ -171,7 +175,9 @@ void udp_client::send(const binary_data& p, msg::reliability method)
     ENetPacket* packet(enet_packet_create(&p[0], p.size(), flags));
     {
         boost::lock_guard<boost::mutex> lock(host_mutex_);
-        enet_peer_send(peer_, 0, packet);
+        auto res = enet_peer_send(peer_, 0, packet);
+        if (res != 0)
+            log_msg("udp_client send failed with code %1%", -res);
     }
 }
 

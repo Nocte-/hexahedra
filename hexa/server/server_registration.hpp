@@ -34,6 +34,12 @@ struct server_registration
     std::string api_token;
 };
 
+boost::property_tree::ptree server_info();
+
+crypto::private_key get_server_private_key();
+
+void use_private_key_from_password(const std::string& password);
+
 /** Register this server. */
 server_registration register_server(const std::string& url = "auth.hexahedra.net");
 

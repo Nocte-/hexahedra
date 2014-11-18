@@ -153,11 +153,8 @@ const chunk_coordinates world_chunk_center = world_center / chunk_size;
 const map_coordinates map_chunk_center
     = map_coordinates(world_chunk_center.x, world_chunk_center.y);
 
-/** The game uses a global clock in 100ms ticks. */
+/** The game uses a global clock in 10ms ticks. */
 typedef uint32_t gameclock_t;
-
-/** A millisecond resolution clock is used to keep clients synchronized. */
-typedef uint32_t clientclock_t;
 
 /** Container type for raw binary data. */
 typedef std::vector<uint8_t> binary_data;

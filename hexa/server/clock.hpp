@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 #pragma once
 
@@ -28,13 +28,20 @@ namespace hexa
 namespace clock
 {
 
+/** Milliseconds since epoch. */
+uint64_t epoch();
+
+/** Set the current time as the reference time. */
 void init();
 
+/** Milliseconds since clock::init() was called. */
 uint64_t now();
 
-gameclock_t game_time();
+/** Time in game ticks (1/100th of a second). */
+uint64_t game_time();
 
-clientclock_t client_time(uint64_t client_offset);
+/** Reference time for a client. */
+gameclock_t client_time(uint64_t client_offset);
 
 } // namespace clock
 } // namespace hexa

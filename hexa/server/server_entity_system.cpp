@@ -30,6 +30,7 @@ server_entity_system::server_entity_system()
 {
     auto check1(register_component<ip_address>("ipaddr"));
     auto check2(register_component<uint64_t>("player_uid"));
+    auto check3(register_component<uint64_t>("inactive_player"));
 
     if (!es::is_flat<ip_address>::value)
         throw std::runtime_error("ip_address object is not flat");
@@ -39,6 +40,12 @@ server_entity_system::server_entity_system()
 
     if (check2 != c_player_uid)
         throw std::runtime_error("cannot register component player_uid");
+
+    if (check3 != c_inactive_player)
+        throw std::runtime_error("cannot register component inactive_player");
+
+    if (!es::is_flat<inactive_player>::value)
+        throw std::runtime_error("ip_address object is not flat");
 }
 
 network_send_t network_send_behavior(es::storage::component_id component_id)

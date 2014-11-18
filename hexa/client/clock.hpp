@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
-// Copyright 2013, nocte@hippie.nu
+// Copyright 2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
 #pragma once
 
@@ -34,7 +34,7 @@ void init();
 // @param time  Server's estimated time
 void sync(gameclock_t time);
 
-clientclock_t time();
+gameclock_t time();
 
 } // namespace clock
 } // namespace hexa

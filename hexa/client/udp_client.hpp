@@ -57,7 +57,7 @@ public:
 
     virtual void on_connect() {}
     virtual void on_disconnect() {}
-    virtual void receive(const packet& p) = 0;
+    virtual void receive(packet p) = 0;
 
     bool is_connected() const;
 

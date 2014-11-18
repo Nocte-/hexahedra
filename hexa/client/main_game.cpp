@@ -40,12 +40,14 @@
 #include <es/entity.hpp>
 
 #include <hexa/algorithm.hpp>
+#include <hexa/base58.hpp>
 #include <hexa/collision.hpp>
 #include <hexa/compression.hpp>
 #include <hexa/chunk.hpp>
 #include <hexa/config.hpp>
 #include <hexa/crypto.hpp>
 #include <hexa/geometric.hpp>
+#include <hexa/json.hpp>
 #include <hexa/log.hpp>
 #include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
@@ -133,9 +135,11 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
 
         throw std::runtime_error("cannot connect to server");
     }
+
+    //msg::time_sync_request m;
+    //send(serialize_packet(m), m.method());
+    clock_ = boost::thread([&] { bg_thread(); });
     log_msg("Connected!");
-    login();
-    log_msg("Logged in successfully");
 }
 
 main_game::~main_game()
@@ -710,7 +714,6 @@ void main_game::console_input(const std::u32string& msg)
 
 void main_game::login()
 {
-    clock_ = boost::thread([&] { bg_thread(); });
     msg::login m;
 
     if (singleplayer_)
@@ -718,12 +721,26 @@ void main_game::login()
     else
         m.mode = 1;
 
-    auto foo = crypto::make_new_key();
-    m.public_key = crypto::to_binary(crypto::get_public_key(foo));
-    m.name = "";
-    m.uid = crypto::make_random(8);
+    auto pinfo = get_player_info();
 
-    send(serialize_packet(m), m.method());
+    my_private_key_ = pinfo.private_key;
+    m.public_key = crypto::to_binary(crypto::get_public_key(pinfo.private_key));
+    m.name = "Testplayer";
+    m.uid = base58_decode(pinfo.uid);
+
+    try {
+        log_msg("got a server pubkey for ECDH: %1%", to_string(crypto::to_json(server_pubkey_)));
+        log_msg("my own pubkey: %1%", to_string(crypto::to_json(crypto::get_public_key(pinfo.private_key))));
+        auto shared_secret = crypto::ecdh(server_pubkey_, pinfo.private_key);
+        shared_secret.erase(shared_secret.begin() + 16, shared_secret.end());
+        cipher_.set_key(crypto::x_or(shared_secret, server_nonce_));
+        m.mac = crypto::sha256(crypto::concat(shared_secret, server_nonce_));
+        send(serialize_packet(m), m.method());
+    } catch (std::exception& e) {
+        log_msg("Cannot log in : %1%", e.what());
+        waiting_for_data_ = false;
+        disconnect();
+    }
 }
 
 void main_game::request_chunk(const chunk_coordinates& pos)
@@ -779,10 +796,12 @@ void main_game::action_stop(uint8_t code)
     send(serialize_packet(msg), msg.method());
 }
 
-void main_game::receive(const packet& p)
+void main_game::receive(packet p)
 {
-    auto archive(make_deserializer(p));
+    if (p.is_encrypted())
+        p.decrypt(server_nonce_, cipher_);
 
+    auto archive(make_deserializer(p));
     unsigned int mt(p.message_type());
 
     try {
@@ -845,7 +864,17 @@ void main_game::handshake(deserializer<packet>& p)
 {
     msg::handshake mesg;
     mesg.serialize(p);
-    log_msg("Connected to %1%", mesg.server_name);
+    auto server_id = mesg.server_id;
+    log_msg("Connected to %1% (%2%)", mesg.server_name, base58_encode(server_id));
+    server_pubkey_ = crypto::public_key_from_binary(mesg.public_key);
+    if (!crypto::is_valid(server_pubkey_)) {
+        log_msg("Server's public key is not valid");
+        waiting_for_data_ = false;
+        disconnect();
+        return;
+    }
+    server_nonce_ = mesg.nonce;
+    login();
 }
 
 void main_game::greeting(deserializer<packet>& p)

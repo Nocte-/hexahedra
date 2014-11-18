@@ -73,7 +73,7 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    /** Age of the game, measured in tenths of a second. */
+    /** Age of the game, measured in 100ths of a second. */
     gameclock_t ticks;
 
     /** (De)serialize this message. */
@@ -92,16 +92,20 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
+    handshake() : proto_maj{0}, proto_min{0}, client_maj{0}, client_min{0} {}
+
+    /** Protocol version. */
+    uint8_t proto_maj, proto_min;
+    /** Minimum client version */
+    uint8_t client_maj, client_min;
     /** The server's name. */
     std::string server_name;
-    /** The server's UID, or an empty buffer if not registered. */
-    binary_data server_uid;
+    /** The server's ID, or an empty buffer if not registered. */
+    binary_data server_id;
     /** Public key. */
     binary_data public_key;
     /** Nonce for deriving a session key */
     binary_data nonce;
-    /** Minimum client version */
-    uint8_t maj, min, patch;
     /** More info as JSON. */
     std::string json;
 
@@ -109,7 +113,8 @@ public:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(server_name)(server_uid)(public_key)(nonce)(maj)(min)(patch)(json);
+        ar(proto_maj)(proto_min)(client_maj)(client_min)
+          (server_name)(server_id)(public_key)(nonce)(json);
     }
 };
 
@@ -121,13 +126,12 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    /** Let the client start with this clock, will be synchronized to a
-     ** greater precision later on. */
-    clientclock_t client_time;
     /** The player's starting position. */
     world_coordinates position;
     /** The player's entity ID. */
     uint32_t entity_id;
+    /** Game clock. */
+    gameclock_t client_time;
     /** Message of the day. */
     std::string motd;
 
@@ -135,7 +139,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(client_time)(position)(entity_id)(motd);
+        ar(position)(entity_id)(client_time)(motd);
     }
 };
 
@@ -166,8 +170,8 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    clientclock_t request;
-    clientclock_t response;
+    gameclock_t request;
+    gameclock_t response;
 
     /** (De)serialize this message. */
     template <typename Archive>
@@ -357,7 +361,7 @@ public:
         }
     };
 
-    clientclock_t timestamp;
+    gameclock_t timestamp;
     std::vector<value> updates;
 
     /** (De)serialize this message. */
@@ -600,13 +604,15 @@ public:
     binary_data uid;
     /** Public key. */
     binary_data public_key;
+    /** MAC hash (= sha256(s||n)) */
+    binary_data mac;
     /** Extra JSON data. */
     std::string json;
 
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(mode)(name)(uid)(public_key)(json);
+        ar(mode)(name)(uid)(public_key)(mac)(json);
     }
 };
 
@@ -627,7 +633,7 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
-    clientclock_t request;
+    gameclock_t request;
 
     /** (De)serialize this message. */
     template <typename Archive>

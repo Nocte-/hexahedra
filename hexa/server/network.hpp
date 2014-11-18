@@ -69,15 +69,18 @@ public:
 
     ~network();
 
-    void run();
+    void run(const crypto::private_key& privkey, const crypto::buffer& server_id);
     void stop();
 
     void on_connect(ENetPeer* c);
     void on_disconnect(ENetPeer* c);
-    void on_receive(ENetPeer* c, const packet& p);
+    void on_receive(ENetPeer* c, packet p);
 
     bool send(uint32_t entity, const binary_data& msg,
               msg::reliability method) const;
+
+    void send_encrypted(ENetPeer* dest, const binary_data& msg,
+                        msg::reliability method) const;
 
     void broadcast(const binary_data& msg, msg::reliability method) const;
 
@@ -109,6 +112,8 @@ private:
     void send_coarse_height(chunk_coordinates pos);
     void send_height(const map_coordinates& pos, ENetPeer* dest);
     void kick_player(ENetPeer* dest, const std::string& kickmsg);
+    bool deactivate_player(uint32_t entity);
+    bool reactivate_player(uint32_t entity);
 
     void on_update_surface(const chunk_coordinates& pos);
 
@@ -118,16 +123,22 @@ private:
     lua& lua_;
     threadpool workers_;
 
+    crypto::private_key my_private_key_;
+    crypto::buffer my_public_key_;
+    crypto::buffer my_id_;
+
     struct connection_info
     {
         uint64_t       clock_offset;
         uint32_t       entity;
         binary_data    iv;
-        crypto::aes    encrypt;
+        crypto::aes    cipher;
     };
 
-    std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
-    std::unordered_map<ENetPeer*, uint32_t> entities_;
+    std::unordered_map<ENetPeer*, connection_info> conn_info_;
+
+    //std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
+    //std::unordered_map<ENetPeer*, uint32_t> entities_;
     std::unordered_map<uint32_t, ENetPeer*> connections_;
 
     std::atomic<bool> running_;

@@ -64,8 +64,8 @@ void soil_generator::generate(world_terraingen_access& data,
     auto bm = hndl_area_int16(*biome_func_, pos);
     int16_t z_offset = convert_height_16bit(pos.z * chunk_size);
 
-    for (int y = 0; y < chunk_size; ++y) {
-        for (int x = 0; x < chunk_size; ++x) {
+    for (uint16_t y = 0; y < chunk_size; ++y) {
+        for (uint16_t x = 0; x < chunk_size; ++x) {
             auto biome_type = bm(x, y);
             if (biome_type < 0 || (uint16_t)biome_type >= replace_.size())
                 continue;

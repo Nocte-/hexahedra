@@ -32,18 +32,19 @@
 #include <pthread.h>
 #endif
 
+#include <boost/algorithm/string.hpp>
 #include <boost/program_options/option.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <boost/filesystem/operations.hpp>
-#include <boost/property_tree/ptree.hpp>
-#include <boost/property_tree/json_parser.hpp>
 
 #include <hexanoise/generator_context.hpp>
 #include <hexanoise/simple_global_variables.hpp>
 
 #include <hexa/basic_types.hpp>
+#include <hexa/base58.hpp>
 #include <hexa/config.hpp>
+#include <hexa/json.hpp>
 #include <hexa/os.hpp>
 #include <hexa/protocol.hpp>
 #include <hexa/drop_privileges.hpp>
@@ -176,10 +177,13 @@ int main(int argc, char* argv[])
         "server game mode")("max-players",
                             po::value<unsigned int>()->default_value(10),
                             "maximum number of players")(
-        "port", po::value<unsigned int>()->default_value(15556),
-        "default port")("server-name",
+        "port", po::value<unsigned short>()->default_value(15556),
+        "server port number")("server-name",
                         po::value<std::string>()->default_value("Foo"),
                         "server name")(
+        "hostname", po::value<std::string>()->default_value(""), "publish server info with this domain name instead of my IP address")(
+        "register", po::value<std::string>()->implicit_value("auth.hexahedra.net"), "advertise this server on a global list")(
+        "passphrase", "generate the private key from a passphrase")(
         "uid", po::value<std::string>()->default_value("nobody"),
         "drop to this user id after initialising the server")(
         "chroot", po::value<std::string>()->default_value(""),
@@ -218,6 +222,19 @@ int main(int argc, char* argv[])
             std::cerr << "Warning: could not open logfile in "
                       << temp_dir().string() << std::endl;
             set_log_output(std::cout);
+        }
+    }
+
+    if (vm.count("passphrase")) {
+        try {
+            std::cout << "Passphrase:" << std::endl;
+            std::string pphr;
+            std::getline(std::cin, pphr);
+            boost::algorithm::trim(pphr);
+            use_private_key_from_password(pphr);
+        } catch (std::runtime_error& e) {
+            std::cerr << "\nCould not generate private key: " << e.what() << std::endl;
+            return -1;
         }
     }
 
@@ -260,15 +277,27 @@ int main(int argc, char* argv[])
             }
         }
         
+        log_msg("Hello?");
+        crypto::buffer server_id;
         std::thread ping_server_thread;
-        if (vm["mode"].as<std::string>() == "multiplayer") {
+        if (vm["mode"].as<std::string>() == "multiplayer" && vm.count("register")) {
             try {
-                auto info = register_server();
-                std::cout << "Registered server! API key is " << info.api_token << ", uid is " << info.uid << std::endl;
+                auto info = register_server(vm["register"].as<std::string>());
+                server_id = base58_decode(info.uid);
+                log_msg("Registered server. API token is %1%, server ID is %2%", info.api_token, info.uid);
                 std::thread tmp{ping_auth_server, info};
                 ping_server_thread.swap(tmp);
             } catch (std::runtime_error& e) {
-                std::cerr << "Failed to register server: " << e.what() << std::endl;
+                log_msg("Failed to register server: %1%", e.what());
+            }
+        }
+        if (server_id.empty()) {
+            try {
+                server_id = base58_decode(server_info().get<std::string>("server.id"));
+                log_msg("Server ID read from settings: %1%", base58_encode(server_id));
+            } catch (...) {
+                server_id = crypto::make_random(8);
+                log_msg("Generated a totally random server ID: %1%", base58_encode(server_id));
             }
         }
 
@@ -295,7 +324,7 @@ int main(int argc, char* argv[])
         hexa::server_entity_system entities;
         hexa::world world(db_per);
         hexa::lua scripting(entities, world);
-        hexa::network server(vm["port"].as<unsigned int>(), world, entities,
+        hexa::network server(vm["port"].as<unsigned short>(), world, entities,
                              scripting);
         
         scripting.uglyhack(&server);
@@ -315,22 +344,15 @@ int main(int argc, char* argv[])
             }
         }
 
-        boost::property_tree::ptree config;
         fs::path conf_file(gamedir / "setup.json");
-        std::ifstream conf_str(conf_file.string());
-        if (!conf_str)
-            throw std::runtime_error(std::string("cannot open ")
-                                     + conf_file.string());
-
-        log_msg("Parsing %1%", conf_file.string());
-        boost::property_tree::read_json(conf_str, config);
+        auto config = read_json(conf_file);
         log_msg("Set up game world from %1%", conf_file.string());        
         hexa::init_terrain_gen(world, config);
 
         log_msg("Read entity database");
         db_per.retrieve(entities);
 
-        std::thread gameloop([&] { server.run(); });
+        std::thread gameloop([&] { server.run(get_server_private_key(), server_id); });
         std::thread physics_thread([&] { physics(entities, world); });
         log_msg("All systems go");
 
