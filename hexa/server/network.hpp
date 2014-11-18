@@ -69,7 +69,8 @@ public:
 
     ~network();
 
-    void run(const crypto::private_key& privkey, const crypto::buffer& server_id);
+    void run(const crypto::private_key& privkey,
+             const crypto::buffer& server_id);
     void stop();
 
     void on_connect(ENetPeer* c);
@@ -129,16 +130,16 @@ private:
 
     struct connection_info
     {
-        uint64_t       clock_offset;
-        uint32_t       entity;
-        binary_data    iv;
-        crypto::aes    cipher;
+        uint64_t clock_offset;
+        uint32_t entity;
+        binary_data iv;
+        crypto::aes cipher;
     };
 
     std::unordered_map<ENetPeer*, connection_info> conn_info_;
 
-    //std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
-    //std::unordered_map<ENetPeer*, uint32_t> entities_;
+    // std::unordered_map<ENetPeer*, uint64_t> clock_offset_;
+    // std::unordered_map<ENetPeer*, uint32_t> entities_;
     std::unordered_map<uint32_t, ENetPeer*> connections_;
 
     std::atomic<bool> running_;

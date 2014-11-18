@@ -46,7 +46,7 @@ void system_motion(es::storage& s, float timestep);
 
 /// Collision checks against terrain
 typedef std::function<boost::optional<const surface_data&>(chunk_coordinates)>
-get_surf_func;
+    get_surf_func;
 typedef std::function<bool(chunk_coordinates)> is_air_func;
 void system_terrain_collision(es::storage& s, get_surf_func get_surface,
                               is_air_func is_air);

@@ -33,59 +33,63 @@ namespace rest
 
 struct request
 {
-    std::string     url;
-    std::string     username;
-    std::string     password;
-    std::string     etag;
+    std::string url;
+    std::string username;
+    std::string password;
+    std::string etag;
     boost::property_tree::ptree json;
 
+    request(const std::string& url_)
+        : url(url_)
+    {
+    }
 
-    request (const std::string& url_) : url(url_) { }
-
-    request (const std::string& url_,
-             const boost::property_tree::ptree& json_)
+    request(const std::string& url_, const boost::property_tree::ptree& json_)
         : url(url_)
         , json(json_)
-    { }
+    {
+    }
 
-    request (const std::string& url_,
-             boost::property_tree::ptree&& json_)
+    request(const std::string& url_, boost::property_tree::ptree&& json_)
         : url(url_)
         , json(std::move(json_))
-    { }
+    {
+    }
 
-    request (const char* url_) : url(url_) { }
+    request(const char* url_)
+        : url(url_)
+    {
+    }
 };
 
 struct response
 {
-    int                                             status_code;
-    std::unordered_map<std::string, std::string>    headers;
-    std::string                                     body;
-    boost::property_tree::ptree                     json;
+    int status_code;
+    std::unordered_map<std::string, std::string> headers;
+    std::string body;
+    boost::property_tree::ptree json;
 
-    response() : status_code(0) { }
+    response()
+        : status_code(0)
+    {
+    }
 
     bool is_ok() const { return status_code >= 200 && status_code < 300; }
 };
 
-void get(const request& req,
-         std::function<void(const response&)> callback);
+void get(const request& req, std::function<void(const response&)> callback);
 
 response get(const request& req);
 
-void put(const request& req,
-         std::function<void(const response&)> callback);
+void put(const request& req, std::function<void(const response&)> callback);
 
 response put(const request& req);
 
-void post(const request& req,
-          std::function<void(const response&)> callback);
+void post(const request& req, std::function<void(const response&)> callback);
 
 response post(const request& req);
 
 response del(const request& req);
-
 
 } // namespace rest
 } // namespace hexa

@@ -67,7 +67,7 @@ std::unique_ptr<noise::generator_i> compile_hndl(const std::string& name,
     return std::make_unique<noise::generator_slowinterpreter>(*gen_ctx, n);
 }
 
-void set_global_variable (const std::string& name, double val)
+void set_global_variable(const std::string& name, double val)
 {
     glob_vars[name] = val;
 }

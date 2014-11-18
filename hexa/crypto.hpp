@@ -46,42 +46,33 @@ buffer make_aes_key();
 std::string hex(const buffer& in);
 buffer unhex(const std::string& in);
 
-buffer x_or (const buffer& a, const buffer& b);
-buffer concat (const buffer& a, const buffer& b);
+buffer x_or(const buffer& a, const buffer& b);
+buffer concat(const buffer& a, const buffer& b);
 
 //---------------------------------------------------------------------------
 // Asymmetric key
 
 typedef CryptoPP::DL_PrivateKey_EC<CryptoPP::ECP> private_key;
-typedef CryptoPP::DL_PublicKey_EC<CryptoPP::ECP>  public_key;
-
+typedef CryptoPP::DL_PublicKey_EC<CryptoPP::ECP> public_key;
 
 private_key make_new_key();
 
 bool is_valid(const private_key& priv);
 bool is_valid(const public_key& pub);
 
-public_key get_public_key (const private_key& priv);
+public_key get_public_key(const private_key& priv);
 
+std::string serialize_private_key(const private_key& key);
 
-std::string
-serialize_private_key(const private_key& key);
+private_key deserialize_private_key(const std::string& key);
 
-private_key
-deserialize_private_key(const std::string& key);
+void save_pkcs8(const boost::filesystem::path& file, const private_key& key);
 
-void
-save_pkcs8(const boost::filesystem::path& file, const private_key& key);
+private_key load_pkcs8(const boost::filesystem::path& file);
 
-private_key
-load_pkcs8(const boost::filesystem::path& file);
+std::string serialize_public_key(const public_key& key, bool compress = false);
 
-std::string
-serialize_public_key(const public_key& key, bool compress = false);
-
-public_key
-deserialize_public_key(const std::string& key);
-
+public_key deserialize_public_key(const std::string& key);
 
 boost::property_tree::ptree to_json(const public_key& key);
 
@@ -95,14 +86,12 @@ public_key public_key_from_binary(const buffer& bin);
 
 private_key private_key_from_binary(const buffer& bin);
 
-
 std::string encrypt_ecies(const std::string& plaintext, const public_key& key);
 
-std::string decrypt_ecies(const std::string& ciphertext, const private_key& key);
-
+std::string decrypt_ecies(const std::string& ciphertext,
+                          const private_key& key);
 
 buffer ecdh(const public_key& pubkey, const private_key& privkey);
-
 
 //---------------------------------------------------------------------------
 // Symmetric key
@@ -113,21 +102,24 @@ class aes
     mutable CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption enc_;
 
 public:
-    aes() : ready_{false} { }
+    aes()
+        : ready_{false}
+    {
+    }
     aes(const buffer& key) { set_key(key); }
     aes(aes&& move) = default;
 
     bool is_ready() const { return ready_; }
-    void set_key (const buffer& key);
+    void set_key(const buffer& key);
 
-    void encrypt (const buffer& iv, buffer& in) const;
-    void encrypt (const buffer& iv, const uint8_t* ptr, size_t bytes, uint8_t* dest) const;
+    void encrypt(const buffer& iv, buffer& in) const;
+    void encrypt(const buffer& iv, const uint8_t* ptr, size_t bytes,
+                 uint8_t* dest) const;
 
-    void decrypt (const buffer& iv, buffer& in) const;
-    void decrypt (const buffer& iv, const uint8_t* ptr, size_t bytes, uint8_t* dest) const;
-
+    void decrypt(const buffer& iv, buffer& in) const;
+    void decrypt(const buffer& iv, const uint8_t* ptr, size_t bytes,
+                 uint8_t* dest) const;
 };
-
 
 //---------------------------------------------------------------------------
 // Hashing
@@ -140,8 +132,11 @@ buffer sha256(const buffer& in);
 
 bool operator==(const crypto::public_key& lhs, const crypto::public_key& rhs);
 
-inline bool operator!=(const crypto::public_key& lhs, const crypto::public_key& rhs)
-{ return !(lhs == rhs); }
+inline bool operator!=(const crypto::public_key& lhs,
+                       const crypto::public_key& rhs)
+{
+    return !(lhs == rhs);
+}
 
 } // namespace hexa
 

@@ -37,7 +37,6 @@
 #include <cryptopp/osrng.h>
 #include <cryptopp/files.h>
 
-
 #include <iostream>
 #include "json.hpp"
 
@@ -63,7 +62,7 @@ std::string hex(const buffer& in)
     return result;
 }
 
-buffer unhex(const std::string &in)
+buffer unhex(const std::string& in)
 {
     if (in.size() % 2 != 0)
         throw std::runtime_error("unhex: Not a valid hex representation");
@@ -95,16 +94,16 @@ Integer make_random_128()
     return Integer(out, 16);
 }
 
-buffer x_or (const buffer& a, const buffer& b)
+buffer x_or(const buffer& a, const buffer& b)
 {
     if (a.size() >= b.size()) {
-        auto result (a);
+        auto result(a);
         for (size_t i = 0; i < b.size(); ++i)
             result[i] ^= b[i];
 
         return result;
     } else {
-        auto result (b);
+        auto result(b);
         for (size_t i = 0; i < a.size(); ++i)
             result[i] ^= a[i];
 
@@ -112,14 +111,13 @@ buffer x_or (const buffer& a, const buffer& b)
     }
 }
 
-buffer concat (const buffer& a, const buffer& b)
+buffer concat(const buffer& a, const buffer& b)
 {
-    buffer result (a.size() + b.size());
-    std::copy(b.begin(), b.end(), std::copy(a.begin(), a.end(), result.begin()));
+    buffer result(a.size() + b.size());
+    std::copy(b.begin(), b.end(),
+              std::copy(a.begin(), a.end(), result.begin()));
     return result;
 }
-
-
 
 private_key make_new_key()
 {
@@ -137,7 +135,7 @@ bool is_valid(const public_key& pub)
     return pub.Validate(rng, 3);
 }
 
-public_key get_public_key (const private_key& priv)
+public_key get_public_key(const private_key& priv)
 {
     DL_PublicKey_EC<ECP> key;
     priv.MakePublicKey(key);
@@ -162,7 +160,7 @@ Integer deserialize_number(const std::string& num)
     return result;
 }
 
-std::string serialize_private_key(const private_key &key)
+std::string serialize_private_key(const private_key& key)
 {
     return serialize_number(key.GetPrivateExponent());
 }
@@ -268,8 +266,8 @@ boost::property_tree::ptree to_json(const public_key& key)
 
 public_key from_json(const boost::property_tree::ptree& json)
 {
-    ECP::Point q { deserialize_number(json.get<std::string>("x")),
-                   deserialize_number(json.get<std::string>("y"))};
+    ECP::Point q{deserialize_number(json.get<std::string>("x")),
+                 deserialize_number(json.get<std::string>("y"))};
 
     public_key key;
     key.AccessGroupParameters().Initialize(ASN1::secp256k1());
@@ -279,17 +277,19 @@ public_key from_json(const boost::property_tree::ptree& json)
 
 std::string encrypt_ecies(const std::string& plaintext, const public_key& key)
 {
-    ECIES<ECP>::Encryptor encr {key};
+    ECIES<ECP>::Encryptor encr{key};
     std::string cipher;
     try {
-        StringSource(plaintext, true, new PK_EncryptorFilter(rng, encr, new StringSink(cipher)));
+        StringSource(plaintext, true, new PK_EncryptorFilter(
+                                          rng, encr, new StringSink(cipher)));
     } catch (Exception& e) {
         throw std::runtime_error(e.GetWhat());
     }
     return cipher;
 }
 
-std::string decrypt_ecies(const std::string& ciphertext, const private_key& key)
+std::string decrypt_ecies(const std::string& ciphertext,
+                          const private_key& key)
 {
     if (ciphertext.empty())
         return {};
@@ -300,7 +300,9 @@ std::string decrypt_ecies(const std::string& ciphertext, const private_key& key)
 
     std::string plaintext;
     try {
-        StringSource(ciphertext, true, new PK_DecryptorFilter(rng, decr, new StringSink(plaintext)));
+        StringSource(
+            ciphertext, true,
+            new PK_DecryptorFilter(rng, decr, new StringSink(plaintext)));
     } catch (Exception& e) {
         throw std::runtime_error(e.GetWhat());
     }
@@ -320,16 +322,12 @@ buffer ecdh(const public_key& pubkey, const private_key& privkey)
     return result;
 }
 
-
-
-
-
-
-void aes::set_key(const buffer &key)
+void aes::set_key(const buffer& key)
 {
     // Even though we don't use the IV right away, the library
     // will complain if we don't set one straight away.
-    static const buffer dummy_iv {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+    static const buffer dummy_iv{0, 0, 0, 0, 0, 0, 0, 0,
+                                 0, 0, 0, 0, 0, 0, 0, 0};
     enc_.SetKeyWithIV(&key[0], key.size(), &dummy_iv[0], dummy_iv.size());
     ready_ = true;
 }
@@ -340,7 +338,8 @@ void aes::encrypt(const buffer& iv, buffer& in) const
     enc_.ProcessString(&in[0], in.size());
 }
 
-void aes::encrypt(const buffer& iv, const uint8_t *ptr, size_t bytes, uint8_t* dest) const
+void aes::encrypt(const buffer& iv, const uint8_t* ptr, size_t bytes,
+                  uint8_t* dest) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
     enc_.ProcessString(dest, ptr, bytes);
@@ -352,18 +351,19 @@ void aes::decrypt(const buffer& iv, buffer& in) const
     enc_.ProcessString(&in[0], in.size());
 }
 
-void aes::decrypt(const buffer& iv, const uint8_t *ptr, size_t bytes, uint8_t* dest) const
+void aes::decrypt(const buffer& iv, const uint8_t* ptr, size_t bytes,
+                  uint8_t* dest) const
 {
     enc_.Resynchronize(&iv[0], iv.size());
     enc_.ProcessString(dest, ptr, bytes);
 }
 
-
 std::string sha256(const std::string& in)
 {
     std::string result;
     SHA256 hash;
-    StringSource(in, true, new HashFilter(hash, new HexEncoder(new StringSink(result))));
+    StringSource(in, true,
+                 new HashFilter(hash, new HexEncoder(new StringSink(result))));
     return result;
 }
 

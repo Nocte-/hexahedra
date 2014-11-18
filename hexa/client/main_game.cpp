@@ -136,8 +136,8 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
         throw std::runtime_error("cannot connect to server");
     }
 
-    //msg::time_sync_request m;
-    //send(serialize_packet(m), m.method());
+    // msg::time_sync_request m;
+    // send(serialize_packet(m), m.method());
     clock_ = boost::thread([&] { bg_thread(); });
     log_msg("Connected!");
 }
@@ -698,7 +698,7 @@ void main_game::player_motion()
 {
     if (player_entity_ == 0xffffffff)
         return;
-    
+
     if (old_chunk_pos_ != player_.chunk_position())
         scene_.move_camera_to(player_.chunk_position());
 
@@ -724,13 +724,17 @@ void main_game::login()
     auto pinfo = get_player_info();
 
     my_private_key_ = pinfo.private_key;
-    m.public_key = crypto::to_binary(crypto::get_public_key(pinfo.private_key));
+    m.public_key
+        = crypto::to_binary(crypto::get_public_key(pinfo.private_key));
     m.name = "Testplayer";
     m.uid = base58_decode(pinfo.uid);
 
     try {
-        log_msg("got a server pubkey for ECDH: %1%", to_string(crypto::to_json(server_pubkey_)));
-        log_msg("my own pubkey: %1%", to_string(crypto::to_json(crypto::get_public_key(pinfo.private_key))));
+        log_msg("got a server pubkey for ECDH: %1%",
+                to_string(crypto::to_json(server_pubkey_)));
+        log_msg("my own pubkey: %1%",
+                to_string(crypto::to_json(
+                    crypto::get_public_key(pinfo.private_key))));
         auto shared_secret = crypto::ecdh(server_pubkey_, pinfo.private_key);
         shared_secret.erase(shared_secret.begin() + 16, shared_secret.end());
         cipher_.set_key(crypto::x_or(shared_secret, server_nonce_));
@@ -865,7 +869,8 @@ void main_game::handshake(deserializer<packet>& p)
     msg::handshake mesg;
     mesg.serialize(p);
     auto server_id = mesg.server_id;
-    log_msg("Connected to %1% (%2%)", mesg.server_name, base58_encode(server_id));
+    log_msg("Connected to %1% (%2%)", mesg.server_name,
+            base58_encode(server_id));
     server_pubkey_ = crypto::public_key_from_binary(mesg.public_key);
     if (!crypto::is_valid(server_pubkey_)) {
         log_msg("Server's public key is not valid");
@@ -889,8 +894,8 @@ void main_game::greeting(deserializer<packet>& p)
 
     ///\todo Refresh VBOs when shifting render offset.
     ///      For now, it's kept at the world center.
-    //renderer().offset(mesg.position >> cnkshift);
-    
+    // renderer().offset(mesg.position >> cnkshift);
+
     entities_.make(player_entity_);
     wfpos pl_pos{mesg.position, vector3<float>{0.5f, 0.5f, 0.0f}};
     player_.move_to(pl_pos);

@@ -169,9 +169,9 @@ private:
     uint32_t ignore_text_;
 
     crypto::private_key my_private_key_;
-    crypto::buffer      server_nonce_;
-    crypto::public_key  server_pubkey_;
-    crypto::aes         cipher_;
+    crypto::buffer server_nonce_;
+    crypto::public_key server_pubkey_;
+    crypto::aes cipher_;
 };
 
 } // namespace hexa

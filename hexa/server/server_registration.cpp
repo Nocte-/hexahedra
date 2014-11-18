@@ -58,11 +58,12 @@ std::string api_token;
 
 std::string base64_encode(const std::string& s)
 {
-    const std::string base64_padding[] = {"", "==","="};
+    const std::string base64_padding[] = {"", "==", "="};
     namespace bai = boost::archive::iterators;
 
     std::stringstream os;
-    typedef bai::base64_from_binary<bai::transform_width<const char*, 6, 8> > base64_enc;
+    typedef bai::base64_from_binary<bai::transform_width<const char*, 6, 8>>
+        base64_enc;
 
     std::copy(base64_enc(s.c_str()), base64_enc(s.c_str() + s.size()),
               std::ostream_iterator<char>(os));
@@ -86,14 +87,16 @@ fs::path key_file()
 
 } // anonymous namespace
 
-
 void use_private_key_from_password(const std::string& password)
 {
     if (fs::exists(key_file()))
-        throw std::runtime_error((format("A private key already exists in '%1%'.") % key_file().string()).str());
+        throw std::runtime_error(
+            (format("A private key already exists in '%1%'.")
+             % key_file().string()).str());
 
     if (password.size() < 16)
-        throw std::runtime_error("Passphrase has to be at least 16 characters long.");
+        throw std::runtime_error(
+            "Passphrase has to be at least 16 characters long.");
 
     // Keep feeding the passphase through SHA-256 until we get a
     // valid private key.
@@ -114,8 +117,12 @@ void use_private_key_from_password(const std::string& password)
     auto file = info_file();
     if (fs::exists(file)) {
         auto json = read_json(file);
-        if (json.count("pubkey") && crypto::from_json(json.get_child("pubkey")) != crypto::get_public_key(privkey))
-            throw std::runtime_error("Passphrase does not match against the public key in " + file.string());
+        if (json.count("pubkey")
+            && crypto::from_json(json.get_child("pubkey"))
+               != crypto::get_public_key(privkey))
+            throw std::runtime_error(
+                "Passphrase does not match against the public key in "
+                + file.string());
     }
 }
 
@@ -160,29 +167,37 @@ pt::ptree server_info()
 
 server_registration register_server(const std::string& url)
 {
+    using namespace crypto;
+
     auto info = server_info();
     auto priv_key = get_server_private_key();
     std::string encrypted_key;
     std::string id;
-    auto pub_key = crypto::get_public_key(priv_key);
+    auto pub_key = get_public_key(priv_key);
 
     log_msg("Registering server at %1%", url);
+    std::string base = (format("https://%1%/api/1/servers") % url).str();
 
     if (info.count("id")) {
-        // We have an ID, so this server has been registered earlier, and we can
-        // simply fetch the encrypted API token.
+        // We have an ID, so this server has been registered earlier, and we
+        // can simply fetch the encrypted API token.
         id = info.get<std::string>("id");
 
-        log_msg("Previously registered as server id %1%, fetching public key and API token", id);
-        auto srv_info = rest::get((format("https://%1%/api/1/servers/%2%?fields=pubkey") % url % id).str());
-        if (srv_info.status_code != 200)
-            throw std::runtime_error("Cannot download server info from " + url);
+        log_msg("Previously registered as server id %1%, fetching public key "
+                "and API token", id);
+        auto srv_info = rest::get((format("%1%/%2%?fields=pubkey") % base % id).str());
+        if (srv_info.status_code != 200) {
+            throw std::runtime_error("Cannot download server info from "
+                                     + url);
+        }
 
         if (srv_info.json.count("pubkey") > 0
-            && crypto::from_json(srv_info.json.get_child("pubkey")) != pub_key) {
-            throw std::runtime_error("Your public key doesn't match the one from " + url + ". This probably means you've lost your private key.");
+            && from_json(srv_info.json.get_child("pubkey")) != pub_key) {
+            throw std::runtime_error(
+                "Your public key doesn't match the one from " + url
+                + ". This probably means you've lost your private key.");
         }
-        auto res = rest::get((format("https://%1%/api/1/servers/%2%/apikey") % url % id).str());
+        auto res = rest::get((format("%1%/%2%/apikey") % base % id).str());
         if (res.status_code != 200)
             throw std::runtime_error("Cannot obtain an API token from " + url);
 
@@ -192,60 +207,70 @@ server_registration register_server(const std::string& url)
         log_msg("Not yet registered, posting data to %1%", url);
 
         auto info_file = gamedir / "info.json";
-        if (!fs::exists(info_file))
-            throw std::runtime_error("Cannot register server: " + info_file.string() + " not found");
-
+        if (!fs::exists(info_file)) {
+            throw std::runtime_error("Cannot register server: "
+                                     + info_file.string() + " not found");
+        }
         json_data details;
         auto sub = read_json(info_file);
         details.put_child("servers", sub);
-        details.put_child("servers.pubkey", crypto::to_json(pub_key));
-        details.put("servers.players.max", global_settings["max-players"].as<unsigned int>());
+        details.put_child("servers.pubkey", to_json(pub_key));
+        details.put("servers.players.max",
+                    global_settings["max-players"].as<unsigned int>());
 
         std::string hostname{global_settings["hostname"].as<std::string>()};
-        if (!hostname.empty())
+        if (!hostname.empty()) {
             details.put("servers.connection.host", hostname);
-
+        }
         log_msg("Registering as hostname '%1%'", hostname);
-        details.put("servers.connection.port", global_settings["port"].as<unsigned short>());
+        details.put("servers.connection.port",
+                    global_settings["port"].as<unsigned short>());
 
-        if (fs::exists(gamedir / "icon.png"))
-            details.put("servers.icon", base64_encode(file_contents(gamedir / "icon.png")));
-
+        if (fs::exists(gamedir / "icon.png")) {
+            details.put("servers.icon",
+                        base64_encode(file_contents(gamedir / "icon.png")));
+        }
         log_msg("POST JSON: %1%", to_string(details));
-        auto res = rest::post({(format("https://%1%/api/1/servers") % url).str(), details});
-        if (res.status_code != 201)
-            throw std::runtime_error((format("Cannot register server on %1%: %2%") % url % res.body).str());
-
+        auto res = rest::post(base, details});
+        if (res.status_code != 201) {
+            throw std::runtime_error(
+                (format("Cannot register server on %1%: %2%") % url % res.body)
+                    .str());
+        }
         try {
             id = res.json.get<std::string>("servers.id");
             encrypted_key = res.json.get<std::string>("encryptedApiKey");
         } catch (...) {
-            throw std::runtime_error("Server did not return a server ID and api token");
+            throw std::runtime_error(
+                "Server did not return a server ID and api token");
         }
         info.put("id", id);
         write_server_info(info);
         log_msg("Registered new server as ID %1%", id);
     }
 
-    api_token = crypto::decrypt_ecies(unhex(encrypted_key), priv_key);
+    api_token = decrypt_ecies(unhex(encrypted_key), priv_key);
     log_msg("Got API token: %1%", api_token);
 
-    return { url, id, api_token };
+    return {url, id, api_token};
 }
 
 void ping_server(const server_registration& info)
 {
-    rest::request req ((format("https://%1%/api/1/servers/%2%/ping") % info.url % info.uid).str());
+    rest::request req((format("https://%1%/api/1/servers/%2%/ping") % info.url
+                       % info.uid).str());
     req.username = info.uid;
     req.password = info.api_token;
     auto res = rest::put(req);
     if (!res.is_ok())
-        throw std::runtime_error((format("could not ping server: %1%, %2%") % res.status_code % res.body).str());
+        throw std::runtime_error((format("could not ping server: %1%, %2%")
+                                  % res.status_code % res.body).str());
 }
 
 void go_offline(const server_registration& info)
 {
-    rest::request req ((format("https://%1%/api/1/servers/%2%/ping") % info.url % info.uid).str());
+    rest::request req((format("https://%1%/api/1/servers/%2%/ping") % info.url
+                       % info.uid).str());
     req.username = info.uid;
     req.password = info.api_token;
     std::cout << "Go offline: " << rest::del(req).status_code << std::endl;

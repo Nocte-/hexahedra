@@ -67,8 +67,11 @@ public:
     area_data(area_data&&) = default;
     area_data& operator=(area_data&&) = default;
 #endif
-    
-    area_data(std::vector<int16_t>&& m) : buf_(std::move(m)) { }
+
+    area_data(std::vector<int16_t>&& m)
+        : buf_(std::move(m))
+    {
+    }
 
     /** Fill the area with zeroes (or a given value). */
     void clear(value_type v = 0) { std::fill(begin(), end(), v); }
@@ -115,7 +118,7 @@ public:
     size_t size() const { return chunk_area; }
 
     bool empty() const { return false; }
-    
+
 public:
     template <typename Archiver>
     Archiver& serialize(Archiver& ar)

@@ -41,16 +41,14 @@ hndl_area_int16(noise::generator_i& gen, map_coordinates pos)
 {
     map_rel_coordinates p = pos - map_chunk_center;
     return gen.run_int16(glm::dvec2{p.x, p.y} * (double)chunk_size,
-                         glm::dvec2{1, 1}, 
-                         glm::ivec2{chunk_size, chunk_size});
+                         glm::dvec2{1, 1}, glm::ivec2{chunk_size, chunk_size});
 }
 
 inline array_2d<double, chunk_size, chunk_size>
 hndl_area_double(noise::generator_i& gen, map_coordinates pos)
 {
     map_rel_coordinates p = pos - map_chunk_center;
-    return gen.run(glm::dvec2{p.x, p.y} * (double)chunk_size,
-                   glm::dvec2{1, 1}, 
+    return gen.run(glm::dvec2{p.x, p.y} * (double)chunk_size, glm::dvec2{1, 1},
                    glm::ivec2{chunk_size, chunk_size});
 }
 
@@ -63,6 +61,6 @@ hndl_chunk(noise::generator_i& gen, chunk_coordinates pos)
                    glm::ivec3(chunk_size, chunk_size, chunk_size));
 }
 
-void set_global_variable (const std::string& name, double val);
+void set_global_variable(const std::string& name, double val);
 
 } // namespace hexa

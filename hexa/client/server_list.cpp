@@ -30,7 +30,6 @@
 #include "../rest.hpp"
 #include "../base58.hpp"
 
-
 using boost::format;
 using namespace boost::property_tree;
 
@@ -75,48 +74,50 @@ bool check_version(const std::string& version)
 std::vector<server_info> get_server_list(const std::string& hostname)
 {
     std::vector<server_info> result;
-   
+
     try {
-        auto res = rest::get((format("https://%1%/api/1/servers") % hostname).str());
+        auto res = rest::get(
+            (format("https://%1%/api/1/servers") % hostname).str());
         if (res.status_code == 200) {
             for (auto& n : res.json.get_child("servers")) {
-                if (check_version(n.second.get<std::string>("reqversion", "0.0.0")))
+                if (check_version(
+                        n.second.get<std::string>("reqversion", "0.0.0")))
                     result.emplace_back(json_to_info(n.second));
             }
         } else {
-
         }
     } catch (std::runtime_error& e) {
         log_msg("Could not get server list: %1%", e.what());
     }
 
     return result;
-/*
-    http::client::request rq(json_uri);
-    rq << header("Connection", "close");
-    http::client temp_client;
+    /*
+        http::client::request rq(json_uri);
+        rq << header("Connection", "close");
+        http::client temp_client;
 
-    ptree tree;
-    std::string body{http::body(temp_client.get(rq))};
-    std::stringstream str(body);
-    read_json(str, tree);
-    for (auto& n : tree.get_child("servers")) {
-        if (!check_version(n.second.get<std::string>("client_version", "")))
-            continue;
+        ptree tree;
+        std::string body{http::body(temp_client.get(rq))};
+        std::stringstream str(body);
+        read_json(str, tree);
+        for (auto& n : tree.get_child("servers")) {
+            if (!check_version(n.second.get<std::string>("client_version",
+       "")))
+                continue;
 
-        server_info item;
-        item.host = n.second.get<std::string>("host");
-        item.port = n.second.get<uint16_t>("port");
-        item.name = n.second.get<std::string>("name");
-        item.desc = n.second.get<std::string>("description");
-        item.icon = n.second.get<std::string>("icon");
-        item.screenshot = n.second.get<std::string>("screenshot");
+            server_info item;
+            item.host = n.second.get<std::string>("host");
+            item.port = n.second.get<uint16_t>("port");
+            item.name = n.second.get<std::string>("name");
+            item.desc = n.second.get<std::string>("description");
+            item.icon = n.second.get<std::string>("icon");
+            item.screenshot = n.second.get<std::string>("screenshot");
 
-        result.push_back(item);
-    }
+            result.push_back(item);
+        }
 
-    return result;
-    */
+        return result;
+        */
 }
 
 } // namespace hexa

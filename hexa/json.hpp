@@ -33,8 +33,8 @@ json_data read_json(const boost::filesystem::path& file);
 
 void write_json(const json_data& json, const boost::filesystem::path& file);
 
-std::string to_string (const json_data& data);
+std::string to_string(const json_data& data);
 
-json_data to_json (const std::string& data);
+json_data to_json(const std::string& data);
 
 } // namespace hexa

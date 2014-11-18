@@ -39,7 +39,8 @@ steady_clock::time_point start_;
 
 uint64_t epoch()
 {
-    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count();
+    return duration_cast<milliseconds>(steady_clock::now().time_since_epoch())
+        .count();
 }
 
 void init()

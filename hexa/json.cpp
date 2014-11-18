@@ -33,9 +33,10 @@ namespace hexa
 
 json_data read_json(const boost::filesystem::path& file)
 {
-    std::ifstream str (file.string());
+    std::ifstream str(file.string());
     if (!str)
-        throw std::runtime_error(std::string("cannot open '") + file.string() + "' for reading");
+        throw std::runtime_error(std::string("cannot open '") + file.string()
+                                 + "' for reading");
 
     pt::ptree json;
     pt::read_json(str, json);
@@ -44,25 +45,26 @@ json_data read_json(const boost::filesystem::path& file)
 
 void write_json(const json_data& json, const boost::filesystem::path& file)
 {
-    std::ofstream str (file.string());
+    std::ofstream str(file.string());
     if (!str)
-        throw std::runtime_error(std::string("cannot open '") + file.string() + "' for writing");
+        throw std::runtime_error(std::string("cannot open '") + file.string()
+                                 + "' for writing");
 
     pt::write_json(str, json);
 }
 
-std::string to_string (const json_data& data)
+std::string to_string(const json_data& data)
 {
     std::stringstream str;
     pt::write_json(str, data);
-    std::string result {str.str()};
+    std::string result{str.str()};
     erase_all(result, "\r");
     erase_all(result, "\n");
     erase_all(result, "\t");
     return result;
 }
 
-json_data to_json (const std::string& data)
+json_data to_json(const std::string& data)
 {
     json_data result;
     std::istringstream str{data};

@@ -165,15 +165,17 @@ class lua_entity_vector
     es::storage::iterator id_;
     es::storage::component_id c_;
 
-    void update()
-    {
-        es_.set(id_, c_, v_);
-    }
+    void update() { es_.set(id_, c_, v_); }
 
 public:
-    lua_entity_vector(es::storage& s, es::storage::iterator i, es::storage::component_id c)
-        : v_(s.get<vector>(i, c)), es_(s), id_(i), c_(c)
-    { }
+    lua_entity_vector(es::storage& s, es::storage::iterator i,
+                      es::storage::component_id c)
+        : v_(s.get<vector>(i, c))
+        , es_(s)
+        , id_(i)
+        , c_(c)
+    {
+    }
 
     lua_entity_vector(const lua_entity_vector&) = default;
 
@@ -181,13 +183,27 @@ public:
     float get_y() const { return v_.y; }
     float get_z() const { return v_.z; }
 
-    void set_x(float v) { v_.x = v; update(); }
-    void set_y(float v) { v_.y = v; update(); }
-    void set_z(float v) { v_.z = v; update(); }
-
-    lua_entity_vector& operator= (const vector& v)
+    void set_x(float v)
     {
-        v_ = v; update(); return *this;
+        v_.x = v;
+        update();
+    }
+    void set_y(float v)
+    {
+        v_.y = v;
+        update();
+    }
+    void set_z(float v)
+    {
+        v_.z = v;
+        update();
+    }
+
+    lua_entity_vector& operator=(const vector& v)
+    {
+        v_ = v;
+        update();
+        return *this;
     }
 
     operator vector() const { return v_; }
@@ -210,7 +226,8 @@ class lua_entity
         return boost::optional<t>();
     }
 
-    boost::optional<lua_entity_vector> get_ev(es::storage::component_id c) const
+    boost::optional<lua_entity_vector>
+    get_ev(es::storage::component_id c) const
     {
         trace("get e %1% c %2%", id_->first, (int)c);
         try {
@@ -601,9 +618,12 @@ lua::lua(server_entity_system& entities, world& w)
             .def("hotbar_get", &lua_entity::hotbar_get)
             .def("hotbar_set", &lua_entity::hotbar_set),
         class_<lua_entity_vector>("evecf")
-            .property("x", &lua_entity_vector::get_x, &lua_entity_vector::set_x)
-            .property("y", &lua_entity_vector::get_y, &lua_entity_vector::set_y)
-            .property("z", &lua_entity_vector::get_z, &lua_entity_vector::set_z),
+            .property("x", &lua_entity_vector::get_x,
+                      &lua_entity_vector::set_x)
+            .property("y", &lua_entity_vector::get_y,
+                      &lua_entity_vector::set_y)
+            .property("z", &lua_entity_vector::get_z,
+                      &lua_entity_vector::set_z),
         class_<hotbar_slot>("hotbar_slot")
             .def(constructor<int, std::string>())
             .def_readwrite("type", &hotbar_slot::type)
@@ -909,7 +929,7 @@ void lua::on_console(const object& callback)
         if (callback.is_valid())
             cb_console.push_back(callback);
         else
-            std::cerr << "No valid callback for on_console" << std::endl;            
+            std::cerr << "No valid callback for on_console" << std::endl;
     } catch (luabind::error&) {
         log_msg("Lua error: %1%", lua_tostring(state_, -1));
     } catch (...) {

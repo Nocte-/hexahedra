@@ -92,7 +92,13 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    handshake() : proto_maj{0}, proto_min{0}, client_maj{0}, client_min{0} {}
+    handshake()
+        : proto_maj{0}
+        , proto_min{0}
+        , client_maj{0}
+        , client_min{0}
+    {
+    }
 
     /** Protocol version. */
     uint8_t proto_maj, proto_min;
@@ -113,8 +119,8 @@ public:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(proto_maj)(proto_min)(client_maj)(client_min)
-          (server_name)(server_id)(public_key)(nonce)(json);
+        ar(proto_maj)(proto_min)(client_maj)(client_min)(server_name)(
+            server_id)(public_key)(nonce)(json);
     }
 };
 

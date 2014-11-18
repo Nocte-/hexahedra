@@ -102,8 +102,8 @@ public:
     {
         Iter lower; /**< Lower boundary. */
         Iter upper; /**< Upper boundary. */
-        key_type
-        interpolated; /**< Interpolation between the boundaries, range [0,1) */
+        /** Interpolation between the boundaries, range [0,1) */
+        key_type interpolated;
 
         result(Iter l, Iter u, key_type i)
             : lower{l}

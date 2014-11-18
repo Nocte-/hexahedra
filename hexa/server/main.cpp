@@ -130,7 +130,7 @@ void physics(server_entity_system& s, world& w)
     }
 }
 
-void ping_auth_server (server_registration info)
+void ping_auth_server(server_registration info)
 {
     using namespace std::chrono;
     size_t tick = 87; // Wait a few seconds before announcing we're online
@@ -179,10 +179,13 @@ int main(int argc, char* argv[])
                             "maximum number of players")(
         "port", po::value<unsigned short>()->default_value(15556),
         "server port number")("server-name",
-                        po::value<std::string>()->default_value("Foo"),
-                        "server name")(
-        "hostname", po::value<std::string>()->default_value(""), "publish server info with this domain name instead of my IP address")(
-        "register", po::value<std::string>()->implicit_value("auth.hexahedra.net"), "advertise this server on a global list")(
+                              po::value<std::string>()->default_value("Foo"),
+                              "server name")(
+        "hostname", po::value<std::string>()->default_value(""),
+        "publish server info with this domain name instead of my IP address")(
+        "register",
+        po::value<std::string>()->implicit_value("auth.hexahedra.net"),
+        "advertise this server on a global list")(
         "passphrase", "generate the private key from a passphrase")(
         "uid", po::value<std::string>()->default_value("nobody"),
         "drop to this user id after initialising the server")(
@@ -233,7 +236,8 @@ int main(int argc, char* argv[])
             boost::algorithm::trim(pphr);
             use_private_key_from_password(pphr);
         } catch (std::runtime_error& e) {
-            std::cerr << "\nCould not generate private key: " << e.what() << std::endl;
+            std::cerr << "\nCould not generate private key: " << e.what()
+                      << std::endl;
             return -1;
         }
     }
@@ -257,7 +261,7 @@ int main(int argc, char* argv[])
         fs::path datadir(vm["datadir"].as<std::string>());
         fs::path db_root(vm["dbdir"].as<std::string>());
         fs::path dbdir(db_root / game_name);
-        
+
         gamedir = fs::path(datadir / std::string("games") / game_name);
 
         if (!fs::is_directory(datadir)) {
@@ -269,22 +273,25 @@ int main(int argc, char* argv[])
             log_msg("Gamedir '%1%' is not a directory", datadir.string());
             return -1;
         }
-        
+
         if (!fs::is_directory(dbdir)) {
             if (!fs::create_directories(dbdir)) {
                 log_msg("Cannot create dir %1%", dbdir.string());
                 return -2;
             }
         }
-        
+
         log_msg("Hello?");
         crypto::buffer server_id;
         std::thread ping_server_thread;
-        if (vm["mode"].as<std::string>() == "multiplayer" && vm.count("register")) {
+        if (vm["mode"].as<std::string>() == "multiplayer"
+            && vm.count("register")) {
             try {
                 auto info = register_server(vm["register"].as<std::string>());
                 server_id = base58_decode(info.uid);
-                log_msg("Registered server. API token is %1%, server ID is %2%", info.api_token, info.uid);
+                log_msg(
+                    "Registered server. API token is %1%, server ID is %2%",
+                    info.api_token, info.uid);
                 std::thread tmp{ping_auth_server, info};
                 ping_server_thread.swap(tmp);
             } catch (std::runtime_error& e) {
@@ -293,11 +300,14 @@ int main(int argc, char* argv[])
         }
         if (server_id.empty()) {
             try {
-                server_id = base58_decode(server_info().get<std::string>("server.id"));
-                log_msg("Server ID read from settings: %1%", base58_encode(server_id));
+                server_id = base58_decode(
+                    server_info().get<std::string>("server.id"));
+                log_msg("Server ID read from settings: %1%",
+                        base58_encode(server_id));
             } catch (...) {
                 server_id = crypto::make_random(8);
-                log_msg("Generated a totally random server ID: %1%", base58_encode(server_id));
+                log_msg("Generated a totally random server ID: %1%",
+                        base58_encode(server_id));
             }
         }
 
@@ -326,7 +336,7 @@ int main(int argc, char* argv[])
         hexa::lua scripting(entities, world);
         hexa::network server(vm["port"].as<unsigned short>(), world, entities,
                              scripting);
-        
+
         scripting.uglyhack(&server);
 
         // std::cout << "Drop privileges" << std::endl;
@@ -346,13 +356,14 @@ int main(int argc, char* argv[])
 
         fs::path conf_file(gamedir / "setup.json");
         auto config = read_json(conf_file);
-        log_msg("Set up game world from %1%", conf_file.string());        
+        log_msg("Set up game world from %1%", conf_file.string());
         hexa::init_terrain_gen(world, config);
 
         log_msg("Read entity database");
         db_per.retrieve(entities);
 
-        std::thread gameloop([&] { server.run(get_server_private_key(), server_id); });
+        std::thread gameloop(
+            [&] { server.run(get_server_private_key(), server_id); });
         std::thread physics_thread([&] { physics(entities, world); });
         log_msg("All systems go");
 

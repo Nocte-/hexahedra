@@ -72,7 +72,7 @@ size_t header_func(const char* ptr, size_t size, size_t nmemb, void* user)
     } else {
         auto sep = std::find(ptr, end, ':');
         if (sep != end) {
-            std::string value (sep + 1, end);
+            std::string value(sep + 1, end);
             trim(value);
             res.headers[std::string(ptr, sep)] = std::move(value);
         }
@@ -81,7 +81,6 @@ size_t header_func(const char* ptr, size_t size, size_t nmemb, void* user)
 }
 
 } // anonymous namespace
-
 
 response get(const request& req)
 {
@@ -94,7 +93,8 @@ response get(const request& req)
     struct curl_slist* headers = nullptr;
 
     if (req.username.empty() && req.password.empty()) {
-        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS,
+                         CURLPROTO_HTTPS | CURLPROTO_HTTPS);
     } else {
         curl_easy_setopt(curl, CURLOPT_USERNAME, req.username.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, req.password.c_str());
@@ -107,7 +107,7 @@ response get(const request& req)
     curl_easy_setopt(curl, CURLOPT_HEADERDATA, reinterpret_cast<void*>(&res));
 
     if (!req.etag.empty()) {
-        std::string etag_hdr {"Etag :"};
+        std::string etag_hdr{"Etag :"};
         etag_hdr += req.etag;
         headers = curl_slist_append(headers, etag_hdr.c_str());
     }
@@ -120,21 +120,21 @@ response get(const request& req)
     curl_easy_cleanup(curl);
 
     if (errcode != CURLE_OK)
-        throw std::runtime_error(std::string("curl get failed: ") + curl_easy_strerror(errcode));
+        throw std::runtime_error(std::string("curl get failed: ")
+                                 + curl_easy_strerror(errcode));
 
     if (starts_with(res.headers["content-type"], "application/json")) {
-        std::stringstream str {res.body};
+        std::stringstream str{res.body};
         try {
             boost::property_tree::json_parser::read_json(str, res.json);
-        } catch(...) {
+        } catch (...) {
         }
     }
 
     return res;
 }
 
-void get(const request& req,
-         std::function<void(const response&)> callback)
+void get(const request& req, std::function<void(const response&)> callback)
 {
     callback(get(req));
 }
@@ -147,13 +147,13 @@ response post(const request& req)
     if (!curl)
         throw std::runtime_error("curl_easy_init failed");
 
-
     response res;
     struct curl_slist* headers = nullptr;
     std::string json{to_string(req.json)};
 
     if (req.username.empty() && req.password.empty()) {
-        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS,
+                         CURLPROTO_HTTPS | CURLPROTO_HTTPS);
     } else {
         curl_easy_setopt(curl, CURLOPT_USERNAME, req.username.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, req.password.c_str());
@@ -175,21 +175,21 @@ response post(const request& req)
     curl_easy_cleanup(curl);
 
     if (errcode != CURLE_OK)
-        throw std::runtime_error(std::string("curl post failed: ") + curl_easy_strerror(errcode));
+        throw std::runtime_error(std::string("curl post failed: ")
+                                 + curl_easy_strerror(errcode));
 
     if (starts_with(res.headers["content-type"], "application/json")) {
-        std::stringstream str {res.body};
+        std::stringstream str{res.body};
         try {
             boost::property_tree::json_parser::read_json(str, res.json);
-        } catch(...) {
+        } catch (...) {
         }
     }
 
     return res;
 }
 
-void post(const request& req,
-          std::function<void(const response&)> callback)
+void post(const request& req, std::function<void(const response&)> callback)
 {
     callback(post(req));
 }
@@ -207,7 +207,8 @@ response put(const request& req)
     std::string json{to_string(req.json)};
 
     if (req.username.empty() && req.password.empty()) {
-        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS,
+                         CURLPROTO_HTTPS | CURLPROTO_HTTPS);
     } else {
         curl_easy_setopt(curl, CURLOPT_USERNAME, req.username.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, req.password.c_str());
@@ -229,21 +230,21 @@ response put(const request& req)
     curl_easy_cleanup(curl);
 
     if (errcode != CURLE_OK)
-        throw std::runtime_error(std::string("curl post failed: ") + curl_easy_strerror(errcode));
+        throw std::runtime_error(std::string("curl post failed: ")
+                                 + curl_easy_strerror(errcode));
 
     if (starts_with(res.headers["content-type"], "application/json")) {
-        std::stringstream str {res.body};
+        std::stringstream str{res.body};
         try {
             boost::property_tree::json_parser::read_json(str, res.json);
-        } catch(...) {
+        } catch (...) {
         }
     }
 
     return res;
 }
 
-void put(const request& req,
-         std::function<void(const response&)> callback)
+void put(const request& req, std::function<void(const response&)> callback)
 {
     callback(put(req));
 }
@@ -259,7 +260,8 @@ response del(const request& req)
     response res;
 
     if (req.username.empty() && req.password.empty()) {
-        curl_easy_setopt(curl, CURLOPT_PROTOCOLS, CURLPROTO_HTTPS | CURLPROTO_HTTPS);
+        curl_easy_setopt(curl, CURLOPT_PROTOCOLS,
+                         CURLPROTO_HTTPS | CURLPROTO_HTTPS);
     } else {
         curl_easy_setopt(curl, CURLOPT_USERNAME, req.username.c_str());
         curl_easy_setopt(curl, CURLOPT_PASSWORD, req.password.c_str());
@@ -272,19 +274,18 @@ response del(const request& req)
     curl_easy_cleanup(curl);
 
     if (errcode != CURLE_OK)
-        throw std::runtime_error(std::string("curl delete failed: ") + curl_easy_strerror(errcode));
+        throw std::runtime_error(std::string("curl delete failed: ")
+                                 + curl_easy_strerror(errcode));
 
     if (starts_with(res.headers["content-type"], "application/json")) {
-        std::stringstream str {res.body};
+        std::stringstream str{res.body};
         try {
             boost::property_tree::json_parser::read_json(str, res.json);
-        } catch(...) {
+        } catch (...) {
         }
     }
     return res;
 }
-
-
 
 } // namespace rest
 } // namespace hexa

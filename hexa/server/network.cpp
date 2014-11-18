@@ -101,7 +101,8 @@ network::~network()
     // world_.store(es_);
 }
 
-void network::run(const crypto::private_key& privkey, const crypto::buffer& server_id)
+void network::run(const crypto::private_key& privkey,
+                  const crypto::buffer& server_id)
 {
     my_private_key_ = privkey;
     my_public_key_ = crypto::to_binary(crypto::get_public_key(privkey));
@@ -350,7 +351,8 @@ void network::send_encrypted(ENetPeer* dest, const binary_data& msg,
                              msg::reliability method) const
 {
     auto found_info = conn_info_.find(dest);
-    if (found_info == conn_info_.end() || !found_info->second.cipher.is_ready()) {
+    if (found_info == conn_info_.end()
+        || !found_info->second.cipher.is_ready()) {
         // No encryption required, send straight away.
         send(dest, msg, method);
     } else {
@@ -463,6 +465,8 @@ void network::kick_player(ENetPeer* dest, const std::string& kickmsg)
 
 void network::login(packet_info& info)
 {
+    using namespace crypto;
+
     auto msg = make<msg::login>(info.p);
 
     world_coordinates start_pos(world_center);
@@ -475,8 +479,8 @@ void network::login(packet_info& info)
     if (msg.uid.empty()) {
         auto& addr = info.conn->address.host;
         auto ptr = reinterpret_cast<uint8_t*>(&addr);
-        crypto::buffer b (ptr, ptr + sizeof(addr));
-        auto hash = crypto::sha256(b);
+        crypto::buffer b(ptr, ptr + sizeof(addr));
+        auto hash = sha256(b);
         hash.resize(8);
         std::copy(hash.begin(), hash.end(), std::back_inserter(msg.uid));
         hashed_id = true;
@@ -493,8 +497,7 @@ void network::login(packet_info& info)
     if (msg.mode == 0) {
         // Localhost singleplayer mode
         if (global_settings["mode"].as<std::string>() != "singleplayer") {
-            kick_player(info.conn,
-                        "Server is not running in singleplayer mode");
+            kick_player(info.conn, "Server is not in singleplayer mode");
             return;
         }
         info.plr = 0;
@@ -502,24 +505,24 @@ void network::login(packet_info& info)
     } else if (msg.mode == 1) {
         // Multiplayer mode
         try {
-
             if (global_settings["mode"].as<std::string>() == "singleplayer")
                 throw "Server is not running in multiplayer mode";
 
             if (msg.public_key.size() != 33)
                 throw "No valid UID or public key";
 
-            auto their_pubkey = crypto::public_key_from_binary(msg.public_key);
+            auto their_pubkey = public_key_from_binary(msg.public_key);
             if (!crypto::is_valid(their_pubkey))
                 throw "Public key is not valid";
 
             auto shared_secret = crypto::ecdh(their_pubkey, my_private_key_);
             // The shared secret is too wide for our purposes, use only the
             // lowest 128 bits.
-            shared_secret.erase(shared_secret.begin() + 16, shared_secret.end());
-            cinfo.cipher.set_key(crypto::x_or(shared_secret, cinfo.iv));
+            shared_secret.erase(shared_secret.begin() + 16,
+                                shared_secret.end());
+            cinfo.cipher.set_key(x_or(shared_secret, cinfo.iv));
 
-            if (crypto::sha256(crypto::concat(shared_secret, cinfo.iv)) != msg.mac) {
+            if (csha256(concat(shared_secret, cinfo.iv)) != msg.mac) {
                 throw "Could not authenticate player";
             } else {
                 log_msg("MAC is OK");
@@ -530,7 +533,7 @@ void network::login(packet_info& info)
                 std::string url{"https://auth.hexahedra.net/api/1/users/"};
                 auto res = rest::get(url + base58_encode(msg.uid));
                 if (res.status_code == 200) {
-                    if (crypto::from_json(res.json.get_child("users.pubkey")) != their_pubkey)
+                    if (from_json(res.json.get_child("users.pubkey")) != their_pubkey)
                         throw "Could not authenticate player";
 
                     player_name = res.json.get("users.username", player_name);
@@ -540,14 +543,17 @@ void network::login(packet_info& info)
             }
 
             if (player_name.empty()) {
-                player_name = "Guest" + std::to_string(fnv_hash(info.conn->address.host) % 1000);
+                player_name = "Guest"
+                              + std::to_string(
+                                    fnv_hash(info.conn->address.host) % 1000);
             } else if (player_name.size() > 24) {
                 throw "Player name is too long";
             }
 
             int found(0);
             es::storage::iterator iter;
-            uint64_t player_uid = *reinterpret_cast<const uint64_t*>(&msg.uid[0]);
+            uint64_t player_uid
+                = *reinterpret_cast<const uint64_t*>(&msg.uid[0]);
 
             es_.for_each<uint64_t>(
                 server_entity_system::c_player_uid,
@@ -624,7 +630,7 @@ void network::login(packet_info& info)
               world_rel_coordinates(start_pos - world_center));
 
         // Move the spawn point to the surface.
-        if (false) {
+        if (false) { // temp. disabled
             auto proxy(world_.acquire_read_access());
             if (proxy.get_block(start_pos + dir_vector[dir_down])
                 == type::air) {
@@ -648,7 +654,7 @@ void network::login(packet_info& info)
 
         start_pos_sub = wfpos(start_pos, vector(0.5, 0.5, 0.5));
         {
-            auto write_lock(es_.acquire_write_lock());
+            auto write_lock = es_.acquire_write_lock();
 
             es_.set(info.plr, server_entity_system::c_position, start_pos_sub);
             es_.set(info.plr, server_entity_system::c_velocity,
@@ -1034,7 +1040,8 @@ bool network::deactivate_player(uint32_t entity)
 {
     auto write_lock = es_.acquire_write_lock();
     auto i = es_.find(entity);
-    if (i == es_.end() || !es_.entity_has_component(i, server_entity_system::c_position))
+    if (i == es_.end()
+        || !es_.entity_has_component(i, server_entity_system::c_position))
         return false;
 
     inactive_player data;
@@ -1052,11 +1059,15 @@ bool network::reactivate_player(uint32_t entity)
 {
     auto write_lock = es_.acquire_write_lock();
     auto i = es_.find(entity);
-    if (i == es_.end() || !es_.entity_has_component(i, server_entity_system::c_inactive_player))
+    if (i == es_.end()
+        || !es_.entity_has_component(i,
+                                     server_entity_system::c_inactive_player))
         return false;
 
-    auto data = es_.get<inactive_player>(i, server_entity_system::c_inactive_player);
-    es_.remove_component_from_entity(i, server_entity_system::c_inactive_player);
+    auto data
+        = es_.get<inactive_player>(i, server_entity_system::c_inactive_player);
+    es_.remove_component_from_entity(i,
+                                     server_entity_system::c_inactive_player);
     es_.set(i, server_entity_system::c_position, data.saved_pos);
 
     log_msg("Player %1% has been reactivated", entity);

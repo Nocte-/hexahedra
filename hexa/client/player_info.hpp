@@ -39,7 +39,7 @@ public:
 public:
     player_info();
 
-    player_info (const boost::property_tree::ptree& json);
+    player_info(const boost::property_tree::ptree& json);
 
     boost::property_tree::ptree json() const;
 
@@ -49,6 +49,5 @@ public:
 player_info get_player_info();
 
 void write_player_info(const player_info& info);
-
 
 } // namespace hexa

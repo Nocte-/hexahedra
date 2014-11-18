@@ -41,7 +41,8 @@ crypto::private_key get_server_private_key();
 void use_private_key_from_password(const std::string& password);
 
 /** Register this server. */
-server_registration register_server(const std::string& url = "auth.hexahedra.net");
+server_registration register_server(const std::string& url
+                                    = "auth.hexahedra.net");
 
 void ping_server(const server_registration& info);
 

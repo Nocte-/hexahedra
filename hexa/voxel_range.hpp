@@ -308,6 +308,6 @@ static const range<chunk_index> every_block_in_chunk(0, chunk_size);
 
 /** Predefined range for iterating over every block in a \a neighborhood. */
 static const range<chunk_index>
-every_block_in_neighborhood(-block_chunk_size, block_chunk_size * 2);
+    every_block_in_neighborhood(-block_chunk_size, block_chunk_size * 2);
 
 } // namespace hexa

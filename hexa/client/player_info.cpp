@@ -68,15 +68,15 @@ void generate_new_uid(player_info& info)
 
 //---------------------------------------------------------------------------
 
-
 player_info::player_info()
 {
 }
 
-player_info::player_info (const boost::property_tree::ptree& json)
+player_info::player_info(const boost::property_tree::ptree& json)
     : uid(json.get<std::string>("uid"))
     //, public_key{crypto::from_json(json.get_child("pubkey"))}
-    //, private_key{crypto::deserialize_private_key(json.get<std::string>("private_key"))}
+    //,
+    //private_key{crypto::deserialize_private_key(json.get<std::string>("private_key"))}
     , private_key{crypto::load_pkcs8(keyfile())}
 {
     public_key = crypto::get_public_key(private_key);
@@ -94,15 +94,16 @@ player_info get_player_info()
 
     pt::ptree json;
     pt::json_parser::read_json(filename_().string(), json);
-    return { json };
+    return {json};
 }
 
 void write_player_info(const player_info& info)
 {
     pt::ptree json;
     json.put("uid", info.uid);
-    //json.put_child("pubkey", crypto::to_json(info.public_key));
-    //json.put("private_key", crypto::serialize_private_key(info.private_key));
+    // json.put_child("pubkey", crypto::to_json(info.public_key));
+    // json.put("private_key",
+    // crypto::serialize_private_key(info.private_key));
 
     pt::json_parser::write_json(filename_().string(), json);
     fs::permissions(filename_(), fs::perms::owner_read);

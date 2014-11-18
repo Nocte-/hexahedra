@@ -88,7 +88,7 @@ void scene::move_camera_to(chunk_coordinates pos)
         return;
 
     trace("Scene camera to %1%", pos);
-    
+
     terrain_.center(pos);
 
     // The area around the camera's chunk is always visible.
@@ -344,7 +344,7 @@ void scene::chunk_became_visible(chunk_coordinates pos)
 
 void scene::make_occlusion_query(chunk_coordinates pos)
 {
-    if (terrain_.is_inside(pos))    
+    if (terrain_.is_inside(pos))
         terrain_.set(pos, {gl::vbo(), gl::vbo(), gl::occlusion_query(true)});
 }
 

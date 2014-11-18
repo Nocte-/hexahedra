@@ -48,8 +48,7 @@ public:
     {
     }
 
-    //packet(std::vector<char>&& buffer) {}
-
+    // packet(std::vector<char>&& buffer) {}
 
     packet(const packet&) = default;
 

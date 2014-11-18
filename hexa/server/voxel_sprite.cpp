@@ -42,7 +42,7 @@ void paste(world_write& w, const voxel_sprite& sprite, world_coordinates pos)
 
     // The bounding box of the sprite as it will appear in the game world.
     aabb<world_coordinates> sprite_box{corner, corner + size};
-    
+
     for_each(to_chunk_range(sprite_box), [&](chunk_coordinates c) {
         auto& terrain = w.get_chunk(c);
         paste(terrain, c, sprite, pos);
@@ -62,7 +62,7 @@ void paste(chunk& cnk, chunk_coordinates cnk_pos, const voxel_sprite& sprite,
     // The bounding box of the chunk we're drawing the sprite in.
     aabb<world_coordinates> cnk_box{cnk_pos};
     cnk_box *= chunk_size;
-    
+
     // The intersection between both bounding boxes is the
     // range of voxels we need to iterate over.
     auto inter = intersection(sprite_box, cnk_box);
