@@ -45,7 +45,7 @@ server_entity_system::server_entity_system()
         throw std::runtime_error("cannot register component inactive_player");
 
     if (!es::is_flat<inactive_player>::value)
-        throw std::runtime_error("ip_address object is not flat");
+        throw std::runtime_error("inactive_player object is not flat");
 }
 
 network_send_t network_send_behavior(es::storage::component_id component_id)

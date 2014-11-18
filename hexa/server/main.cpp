@@ -281,7 +281,6 @@ int main(int argc, char* argv[])
             }
         }
 
-        log_msg("Hello?");
         crypto::buffer server_id;
         std::thread ping_server_thread;
         if (vm["mode"].as<std::string>() == "multiplayer"

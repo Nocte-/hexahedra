@@ -70,6 +70,12 @@ network_send_t network_send_behavior(es::storage::component_id component);
 namespace es
 {
 
+template<>
+struct is_flat<hexa::inactive_player>
+{
+    static const bool value = true;
+};
+
 template <>
 inline void serialize<std::string>(const std::string& obj,
                                    std::vector<char>& buf)
