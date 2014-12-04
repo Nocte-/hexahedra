@@ -113,7 +113,7 @@ def main():
 
     if not os.path.exists("stage"):
         print("Build Boost...")
-        os.system("b2.exe toolset=msvc variant=release link=static threading=multi runtime-link=static stage --with-thread --with-filesystem --with-date_time --with-system --with-chrono --with-signals2 --with-program_options")
+        os.system("b2.exe toolset=msvc variant=release link=static threading=multi runtime-link=static stage --with-thread --with-filesystem --with-date_time --with-system --with-chrono --with-signals --with-program_options")
         
     os.chdir("..")
     
