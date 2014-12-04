@@ -113,11 +113,11 @@ def main():
 
     if not os.path.exists("stage"):
         print("Build Boost...")
-        os.system("b2.exe toolset=msvc variant=debug,release link=static threading=multi runtime-link=static stage")
+        os.system("b2.exe toolset=msvc variant=release link=static threading=multi runtime-link=static stage --with-thread --with-filesystem --with-date_time --with-system --with-chrono --with-signals2 --with-program_options")
         
     os.chdir("..")
-        
-        
+    
+    
     install("SFML", "SFML-2.1", "http://www.sfml-dev.org/download/sfml/2.1/SFML-2.1-sources.zip")
     def sfml_fix_vs2013():
         for x in ['graphics', 'audio', 'network', 'system', 'window', 'main' ]:
