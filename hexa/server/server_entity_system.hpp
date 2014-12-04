@@ -28,19 +28,35 @@
 namespace hexa
 {
 
-struct inactive_player
+enum class login_type : uint8_t
 {
+    logged_out = 0,
+    anonymous_guest,
+    named_guest,
+    authenticated,
+    custom_password
+};
+
+struct player_data
+{
+    uint64_t id;
     wfpos saved_pos;
     uint64_t logout;
+    login_type logged_in;
+
+    player_data(uint64_t player_id = 0,
+                login_type login = login_type::anonymous_guest)
+        : id(player_id)
+        , logout(0)
+        , logged_in(login)
+    {}
 };
 
 class server_entity_system : public entity_system
 {
 public:
     enum server_components {
-        c_ip_addr = c_last_component, // ip_addr
-        c_player_uid,                 // uint64_t
-        c_inactive_player,            // struct inactive_player
+        c_player_data = c_last_component, // ip_addr
         c_last_server_component
     };
 
@@ -71,7 +87,7 @@ namespace es
 {
 
 template<>
-struct is_flat<hexa::inactive_player>
+struct is_flat<hexa::player_data>
 {
     static const bool value = true;
 };

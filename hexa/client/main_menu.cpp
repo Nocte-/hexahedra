@@ -25,6 +25,7 @@
 #include <cstdlib>
 #include <iostream>
 
+#include <boost/filesystem/path.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/System/Utf.hpp>
@@ -42,6 +43,8 @@
 #include "edge_buffer.hpp"
 #include "event.hpp"
 
+
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 
 namespace hexa
@@ -163,18 +166,48 @@ void cleanup()
 
 } // anonymous namespace
 
+
+sf::Texture sfml_render::texture_resource(const std::string &name)
+{
+    return sf::Texture();
+}
+
+sf::Font sfml_render::font_resource(const std::string& name)
+{
+    return sf::Font();
+}
+
 //---------------------------------------------------------------------------
 
 main_menu::main_menu(game& the_game)
     : game_state(the_game)
-    , servers_(get_server_list("auth.hexahedra.net"))
     , logo_img_(images("menu_logo") ? *images("menu_logo") : sf::Texture())
     , logo_(logo_img_)
     , copyright_("Copyright (C) 2014, Nocte", font_, 14)
     , time_(0)
     , active_menu_(0)
     , exit_(false)
+    //, rnd_(window())
+    //, fnt_(rnd_.make_font("default"))
+    //, label_(rnd_.make_text_label(U"Fur die Lulz", {1,1,1,1}, fnt_))
+    //, toggle_(0, 4)
+    //, layout_({0,0,800,600})
 {
+    fs::path gamesdir{global_settings["datadir"].as<std::string>()};
+    std::cout << "Get game list from " << gamesdir << std::endl;
+    game_list_local list(gamesdir / "games");
+    auto games = list.get_list();
+    for (auto& item : games.get_child("servers")) {
+        auto& i = item.second;
+        std::cout << "Game: " << i.get<std::string>("name") << std::endl;
+        std::cout << "ID  : " << i.get<std::string>("id") << std::endl;
+        std::cout << "Desc: " << i.get<std::string>("description") << std::endl;
+        std::cout << "URL : " << i.get<std::string>("url") << std::endl;
+        for (auto& j : i.get_child("screenshots")) {
+            std::cout << "  screenshot: " << j.second.get_value<std::string>() << std::endl;
+        }
+    }
+
     game_.relative_mouse(false);
 
     copyright_.setFont(*fonts("default"));
@@ -193,13 +226,17 @@ main_menu::main_menu(game& the_game)
         done();
     };
     buttons[1].on_clicked = [&] { switch_menu(1); };
-    buttons[2].on_clicked = [&] { std::cout << "Settings" << std::endl; };
+    buttons[2].on_clicked = [&] {
+        std::cout << "Settings" << std::endl;
+        //toggle_.set(toggle_() + 1);
+    };
     buttons[3].on_clicked = [&] {
         exit_ = true;
         cleanup();
         done();
     };
 
+    /*
     for (auto& s : servers_) {
         std::wstring tmp;
         sf::Utf8::toWide(s.name.begin(), s.name.end(), std::back_inserter(tmp),
@@ -211,10 +248,53 @@ main_menu::main_menu(game& the_game)
             done();
         };
     }
+    */
+
     menus_[1].push_back(button(L"< Back"));
     menus_[1].back().on_clicked = [&] { switch_menu(0); };
 
     setup_dl();
+
+    /*
+    toggle_.on_change.connect([](uint16_t x){std::cout << "Toggle " << x << std::endl;});
+
+    auto& btn_r = queue_.add<gui::render_colored_rect>(gui::rect{0, 0, 200, 40}, gui::color{0.3, 0.4, 0.5, 0.7});
+    auto& tint_rect = queue_.add<gui::render_colored_rect>(gui::rect(0, 0, 340, 600), gui::color(0.04, 0.04, 0.04, 0.31));
+    auto& hexa_logo = queue_.add<gui::render_item>(gui::pos(10, 10), rnd_.load_texture("menu_logo"));
+    auto& copyright = queue_.add<gui::render_item>(gui::pos(10, 700), rnd_.make_text_label(U"Copyright (c) 2014, Nocte", {1,1,1,1}, fnt_, 14));
+
+    auto& sw = queue_.add<gui::render_switch>(toggle_);
+    sw[0].add<gui::render_item>(gui::pos(100, 150),
+                                      rnd_.make_text_label(U"First", {1,0,0,1}, fnt_, 28));
+    sw[1].add<gui::render_item>(gui::pos(100, 150),
+                                      rnd_.make_text_label(U"Second", {0,1,0,1}, fnt_, 28));
+    sw[2].add<gui::render_item>(gui::pos(100, 150),
+                                      rnd_.make_text_label(U"Third", {0,0,1,1}, fnt_, 28));
+    sw[3].add<gui::render_item>(gui::pos(100, 150),
+                                      rnd_.make_text_label(U"Fourth", {1,1,0,1}, fnt_, 28));
+
+    auto& btn_l = layout_.add(btn_r);
+    layout_(btn_l.h_center() == layout_.h_center());
+    layout_(btn_l.v_center() == layout_.v_center() * 0.8);
+    auto& tint_rect_l = layout_.add(tint_rect);
+    layout_(tint_rect_l.width() == 340);
+    layout_(tint_rect_l.bottom() == layout_.bottom());
+    layout_(tint_rect_l.top() == layout_.top());
+    layout_(tint_rect_l.left() == layout_.left());
+    auto& logo_l = layout_.add(hexa_logo);
+    layout_(logo_l.h_center() == tint_rect_l.h_center());
+    auto& copy_l = layout_.add(copyright);
+    layout_(copy_l.top() == layout_.bottom() - 25);
+
+    auto& mev = mouse_events_.add<gui::mouse_region>(sw.area());
+    mev.on_button_down.connect([](gui::pos p, int b){ std::cout << "Button down " << b << std::endl; });
+    mev.on_button_up.connect([](gui::pos p, int b){ std::cout << "Button up " << b << std::endl; });
+    mev.on_drag.connect([](gui::pos p){ std::cout << "Drag to " << p.x << " " << p.y << std::endl; });
+    mev.on_enter.connect([]{ std::cout << "Enter" << std::endl;});
+    mev.on_leave.connect([]{ std::cout << "Leave" << std::endl;});
+    mev.on_move.connect([](gui::pos p){ std::cout << "Move to " << p.x << " " << p.y << std::endl;});
+    mev.on_wheel.connect([](gui::pos p, int z){std::cout << "Wheel "<< z << std::endl;});
+*/
 }
 
 void main_menu::resize(unsigned int x, unsigned int y)
@@ -232,11 +312,14 @@ void main_menu::resize(unsigned int x, unsigned int y)
     for (auto& menu : menus_) {
         int py((y - menu.size() * spacing) * 0.5);
         for (auto& btn : menu) {
-            // btn.set_position(x * 0.5, py);
+            //btn.set_position(x * 0.5, py);
             btn.set_position(170, py);
             py += spacing;
         }
     }
+
+    //layout_.set_area({0, 0, width_, height_});
+    //layout_.update();
 }
 
 void main_menu::update(double time_delta)
@@ -260,6 +343,22 @@ bool main_menu::process_event(const event& ev)
     case event::window_close:
         exit_ = true;
         done();
+        break;
+
+    case event::mouse_button_up:
+        //mouse_events_.button_up(ev.code);
+        break;
+
+    case event::mouse_button_down:
+        //mouse_events_.button_down(ev.code);
+        break;
+
+    case event::mouse_move_abs:
+        //mouse_events_.move_to({ev.xy.x, ev.xy.y});
+        break;
+
+    case event::mouse_wheel:
+        //mouse_events_.wheel(ev.delta);
         break;
 
     default:
@@ -347,6 +446,10 @@ void main_menu::render()
 
     for (auto& btn : menus_[active_menu_])
         btn.draw(win);
+
+    //rnd_.begin_paint();
+    //queue_.draw(rnd_);
+    //rnd_.end_paint();
 }
 
 void main_menu::expose()

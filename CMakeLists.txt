@@ -10,8 +10,8 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CPACK_PACKAGE_NAME "Hexahedra")
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "2")
-set(CPACK_PACKAGE_VERSION_PATCH "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+set(CPACK_PACKAGE_VERSION_PATCH "3")
 
 set(COPYRIGHT "Copyright (c) 2014, Nocte <nocte@hippie.nu>")
 
@@ -33,13 +33,14 @@ if (CMAKE_GITVERSION STREQUAL "")
 endif()
 
 set(WEBPAGE "http://hexahedra.net/")
+set(DEFAULT_AUTH_URL "auth.hexahedra.net")
 
 set(REQUIRED_BOOST_VERSION "1.54")
 
 # What to build?
 #
 set(BUILD_SERVER 1 CACHE BOOL "Build the server")
-set(BUILD_CLIENT 1 CACHE BOOL "Build the demo client")
+set(BUILD_CLIENT 1 CACHE BOOL "Build the client")
 set(BUILD_UNITTESTS 0 CACHE BOOL "Build the unit tests")
 set(BUILD_DOCUMENTATION 0 CACHE BOOL "Generate Doxygen documentation")
 set(USE_VALGRIND 0 CACHE BOOL "Use workarounds for Valgrind")

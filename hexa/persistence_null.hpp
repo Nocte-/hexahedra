@@ -32,6 +32,16 @@ class persistence_null : public persistent_storage_i
 public:
     persistence_null() {}
 
+    void store_meta(uint32_t, const std::string&) override
+    {
+    }
+
+    std::string retrieve_meta(uint32_t) override
+    {
+        return {};
+    }
+
+
     void store(data_type type, chunk_coordinates xyz,
                const compressed_data& data) override
     {

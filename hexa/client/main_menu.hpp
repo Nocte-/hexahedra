@@ -26,13 +26,35 @@
 #include <string>
 #include <utility>
 
-#include <SFML/Graphics.hpp>
-#include "game_state.hpp"
 #include "button.hpp"
+
+#include <SFML/Graphics.hpp>
+#include <SFGUI/SFGUI.hpp>
+
+#include "game_state.hpp"
 #include "server_list.hpp"
+
+#include "gui/sfml2.hpp"
+#include "gui/variable.hpp"
+#include "gui/render_queue.hpp"
+#include "gui/mouse_event_handler.hpp"
+#include "gui/layout.hpp"
+
+#include <tb/tb_core.h>
 
 namespace hexa
 {
+
+class sfml_render : public gui::sfml2_renderer
+{
+public:
+    sfml_render(sf::RenderTarget& target)
+        : gui::sfml2_renderer{target}
+    { }
+
+    virtual sf::Texture texture_resource(const std::string& name) override;
+    virtual sf::Font font_resource(const std::string& name) override;
+};
 
 /** Game state for the main menu. */
 class main_menu : public game_state
@@ -53,7 +75,6 @@ public:
     void switch_menu(int i);
 
 private:
-    std::vector<server_info> servers_;
     sf::Texture logo_img_;
     sf::Sprite logo_;
     sf::Font font_;
@@ -63,12 +84,25 @@ private:
     std::vector<std::vector<button>> menus_;
     int active_menu_;
 
+    std::string selected_singleplayer_game_;
     std::string host_;
     uint16_t port_;
 
     int width_;
     int height_;
     bool exit_;
+
+    /*
+    sfml_render rnd_;
+    gui::renderer_i::font fnt_;
+    gui::renderer_i::texture label_;
+
+    gui::enumeration toggle_;
+    gui::render_group queue_;
+    gui::mouse_region_group mouse_events_;
+
+    gui::layout_rhea layout_;
+*/
 };
 
 } // namespace hexa

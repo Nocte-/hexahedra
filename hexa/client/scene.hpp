@@ -38,7 +38,6 @@ namespace hexa
 
 class main_game;
 class surface_data;
-class light_data;
 
 class scene
 {

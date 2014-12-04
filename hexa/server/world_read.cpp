@@ -57,6 +57,11 @@ const surface_data& world_read::get_surface(chunk_coordinates pos)
     return w_.get_surface(pos);
 }
 
+light_data world_read::get_lightmap(chunk_coordinates pos)
+{
+    return w_.get_client_lightmap(pos);
+}
+
 compressed_data world_read::get_compressed_surface(chunk_coordinates pos)
 {
     return w_.get_compressed_surface(pos);

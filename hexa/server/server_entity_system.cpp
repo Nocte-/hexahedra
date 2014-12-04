@@ -28,24 +28,13 @@ namespace hexa
 
 server_entity_system::server_entity_system()
 {
-    auto check1(register_component<ip_address>("ipaddr"));
-    auto check2(register_component<uint64_t>("player_uid"));
-    auto check3(register_component<uint64_t>("inactive_player"));
+    auto check1(register_component<player_data>("player_data"));
 
-    if (!es::is_flat<ip_address>::value)
-        throw std::runtime_error("ip_address object is not flat");
+    if (!es::is_flat<player_data>::value)
+        throw std::runtime_error("player_data object is not flat");
 
-    if (check1 != c_ip_addr)
-        throw std::runtime_error("cannot register component ipaddr");
-
-    if (check2 != c_player_uid)
-        throw std::runtime_error("cannot register component player_uid");
-
-    if (check3 != c_inactive_player)
-        throw std::runtime_error("cannot register component inactive_player");
-
-    if (!es::is_flat<inactive_player>::value)
-        throw std::runtime_error("inactive_player object is not flat");
+    if (check1 != c_player_data)
+        throw std::runtime_error("cannot register component player_data");
 }
 
 network_send_t network_send_behavior(es::storage::component_id component_id)

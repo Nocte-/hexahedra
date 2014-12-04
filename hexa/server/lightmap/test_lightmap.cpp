@@ -40,23 +40,21 @@ test_lightmap::~test_lightmap()
 {
 }
 
-lightmap& test_lightmap::generate(world_lightmap_access&,
+void test_lightmap::generate(world_lightmap_access&,
                                   const chunk_coordinates&, const surface& s,
-                                  lightmap& lc, unsigned int) const
+                                  lightmap_hr& lc, unsigned int) const
 {
-    auto lmi(std::begin(lc));
+    auto lmi = std::begin(lc);
 
     for (auto& face : s) {
         for (int d = 0; d < 6; ++d) {
             if (face[d]) {
-                lmi->sunlight = face.pos.x;
-                lmi->ambient = face.pos.y;
+                lmi->sunlight = face.pos.x / 15.0f * 255.0f + 0.49f;
+                lmi->ambient = face.pos.y / 15.0f * 255.0f + 0.49f;
                 ++lmi;
             }
         }
     }
-
-    return lc;
 }
 
 } // namespace hexa

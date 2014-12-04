@@ -73,6 +73,31 @@ void persistence_leveldb::close()
     options_.filter_policy = nullptr;
 }
 
+void persistence_leveldb::store_meta(uint32_t index, const std::string& blob)
+{
+    uint32_t key[2];
+    key[0] = data_type::meta;
+    key[1] = index;
+
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+    leveldb::Slice db_value{
+        reinterpret_cast<const char*>(&*blob.begin()), blob.size()};
+
+    check(db_->Put(leveldb::WriteOptions(), db_key, blob));
+}
+
+std::string persistence_leveldb::retrieve_meta(uint32_t index)
+{
+    uint32_t key[2];
+    key[0] = data_type::meta;
+    key[1] = index;
+
+    leveldb::Slice db_key{reinterpret_cast<const char*>(key), sizeof(key)};
+    std::string result;
+    check(db_->Get(leveldb::ReadOptions(), db_key, &result));
+    return result;
+}
+
 void persistence_leveldb::store(data_type type, chunk_coordinates xyz,
                                 const compressed_data& data)
 {

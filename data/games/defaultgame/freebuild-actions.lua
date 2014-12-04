@@ -9,7 +9,7 @@ function place_block (plr, inv, look_at, pos)
       "glass.white",
       "bookshelf",
       "chest (n)",
-      "bricks"
+      "glowstone"
     }
 
     if (blk[1] ~= blk[2]) then 

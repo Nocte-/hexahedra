@@ -84,7 +84,15 @@ public:
     }
 };
 
-/** Greet a client that has just connected. */
+enum class login_method : uint8_t
+{
+    guest = 1 << 0,
+    password_immediate_signup = 1 << 1,
+    auth_url = 1 << 2,
+    password_custom = 1 << 3
+};
+
+/** Greet a client that has just sent msg::knock. */
 class handshake : public msg_i
 {
 public:
@@ -92,25 +100,19 @@ public:
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
-    handshake()
-        : proto_maj{0}
-        , proto_min{0}
-        , client_maj{0}
-        , client_min{0}
-    {
-    }
-
-    /** Protocol version. */
-    uint8_t proto_maj, proto_min;
-    /** Minimum client version */
-    uint8_t client_maj, client_min;
+    /** Chosen protocol version, based on client's capabilities. */
+    uint8_t protocol_version;
+    /** Allowed login methods. */
+    uint8_t login_methods;
     /** The server's name. */
     std::string server_name;
+    /** Authentication URL. */
+    std::string auth_url;
     /** The server's ID, or an empty buffer if not registered. */
     binary_data server_id;
     /** Public key. */
     binary_data public_key;
-    /** Nonce for deriving a session key */
+    /** Nonce for deriving a session key. */
     binary_data nonce;
     /** More info as JSON. */
     std::string json;
@@ -119,13 +121,13 @@ public:
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(proto_maj)(proto_min)(client_maj)(client_min)(server_name)(
-            server_id)(public_key)(nonce)(json);
+        ar(protocol_version)(login_methods)(server_name)(
+            auth_url)(server_id)(public_key)(nonce)(json);
     }
 };
 
-/** Greet the client after it has identified itself. */
-class greeting : public msg_i
+/** Setup the client after it has identified itself. */
+class setup : public msg_i
 {
 public:
     enum { msg_id = 2 };
@@ -138,14 +140,12 @@ public:
     uint32_t entity_id;
     /** Game clock. */
     gameclock_t client_time;
-    /** Message of the day. */
-    std::string motd;
 
     /** (De)serialize this message. */
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(position)(entity_id)(client_time)(motd);
+        ar(position)(entity_id)(client_time);
     }
 };
 
@@ -594,11 +594,30 @@ public:
  * The messages that are sent from the client to the server. */
 /**@{*/
 
+/** First message in the connect sequence. */
+class knock : public msg_i
+{
+public:
+    enum { msg_id = 128 };
+    uint8_t type() const { return msg_id; }
+    reliability method() const { return reliable; }
+
+    uint32_t protocol_id; /* Always 0x41584548 ('HEXA') */
+    uint8_t minimum_version; /* Oldest protocol version still supported. */
+    uint8_t maximum_version; /* Current protocol version. */
+
+    template <typename Archive>
+    void serialize(Archive& ar)
+    {
+        ar(protocol_id)(minimum_version)(maximum_version);
+    }
+};
+
 /** Login. */
 class login : public msg_i
 {
 public:
-    enum { msg_id = 128 };
+    enum { msg_id = 129 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
@@ -606,19 +625,23 @@ public:
     uint8_t mode;
     /** Player name. */
     std::string name;
+    /** Authentication URL. */
+    std::string auth_url;
     /** Player UID, or empty if not registered. */
     binary_data uid;
     /** Public key. */
     binary_data public_key;
     /** MAC hash (= sha256(s||n)) */
     binary_data mac;
+    /** Password (custom login only, AES encrypted. */
+    binary_data custom_password;
     /** Extra JSON data. */
     std::string json;
 
     template <typename Archive>
     void serialize(Archive& ar)
     {
-        ar(mode)(name)(uid)(public_key)(mac)(json);
+        ar(mode)(name)(auth_url)(uid)(public_key)(mac)(custom_password)(json);
     }
 };
 
@@ -626,7 +649,7 @@ public:
 class logout : public msg_i
 {
 public:
-    enum { msg_id = 129 };
+    enum { msg_id = 130 };
     uint8_t type() const { return msg_id; }
 };
 
@@ -635,7 +658,7 @@ public:
 class time_sync_request : public msg_i
 {
 public:
-    enum { msg_id = 130 };
+    enum { msg_id = 131 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return unreliable; }
 
@@ -653,7 +676,7 @@ public:
 class console : public msg_i
 {
 public:
-    enum { msg_id = 131 };
+    enum { msg_id = 132 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return sequenced; }
 
@@ -670,7 +693,7 @@ public:
 class request_surfaces : public msg_i
 {
 public:
-    enum { msg_id = 139 };
+    enum { msg_id = 144 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 
@@ -707,7 +730,7 @@ public:
 class request_heights : public msg_i
 {
 public:
-    enum { msg_id = 140 };
+    enum { msg_id = 145 };
     uint8_t type() const { return msg_id; }
     reliability method() const { return reliable; }
 

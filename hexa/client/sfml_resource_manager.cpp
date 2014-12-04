@@ -23,6 +23,7 @@
 
 #include <boost/program_options/variables_map.hpp>
 #include <hexa/algorithm.hpp>
+#include "../log.hpp"
 #include "iqm_loader.hpp"
 
 namespace hexa
@@ -90,9 +91,10 @@ sprite_manager::resource sprite_manager::load(const std::string& location)
 font_manager::resource font_manager::load(const std::string& location)
 {
     auto result(std::make_shared<sf::Font>());
-    if (!result->loadFromFile(resource_file(res_font, location).string()))
+    if (!result->loadFromFile(resource_file(res_font, location).string())) {
+        log_msg("Error: font %1% not found", location);
         return nullptr;
-
+    }
     return result;
 }
 

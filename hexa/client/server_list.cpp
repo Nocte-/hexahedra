@@ -23,101 +23,124 @@
 
 #include <sstream>
 #include <boost/format.hpp>
-#include <boost/property_tree/ptree.hpp>
+#include <boost/filesystem/operations.hpp>
 
+#include "../base58.hpp"
 #include "../config.hpp"
+#include "../json.hpp"
 #include "../log.hpp"
 #include "../rest.hpp"
-#include "../base58.hpp"
 
 using boost::format;
 using namespace boost::property_tree;
+namespace fs = boost::filesystem;
 
 namespace hexa
 {
 
-server_info json_to_info(const ptree& json)
+server_list_online::server_list_online(const std::string& url)
+    : root_{"https://" + url + "/api/1"}
 {
-    server_info result;
+}
 
-    result.uid = base58_decode(json.get<std::string>("uid", ""));
-    result.name = json.get<std::string>("name");
-    result.public_key = crypto::from_json(json.get_child("pubkey"));
-    result.desc = json.get<std::string>("description", "");
-    result.host = json.get<std::string>("connection.host");
-    result.port = json.get<uint16_t>("connection.port", 15556);
+ptree server_list_online::get_list(int start, int count)
+{
+    ptree result;
+    std::string qry;
+    if (start >= 0 && count > 0)
+        qry = (format("?start=%1%&count=%2%") % start % count).str();
+
+    auto res = rest::get(root_ + "/servers" + qry);
+    if (res.status_code == 200)
+        return std::move(res.json);
 
     return result;
 }
 
-bool check_version(const std::string& version)
+std::string get_url_or_empty(const std::string& url)
 {
-    if (version.empty())
-        return true;
+    auto res = rest::get(url);
+    if (res.status_code == 200)
+        return std::move(res.body);
 
-    uint32_t maj(0), min(0), pat(0);
-
-    if (sscanf(version.c_str(), "%u.%u.%u", &maj, &min, &pat) != 3) {
-        if (sscanf(version.c_str(), "%u.%u", &maj, &min) != 2)
-            return false;
-
-        pat = 0;
-    }
-
-    return PROJECT_VERSION_MAJOR > maj
-           || (PROJECT_VERSION_MAJOR == maj
-               && (PROJECT_VERSION_MINOR > min
-                   || (PROJECT_VERSION_MINOR == min
-                       && PROJECT_VERSION_PATCH >= pat)));
+    return {};
 }
 
-std::vector<server_info> get_server_list(const std::string& hostname)
+std::string server_list_online::get_icon(const std::string& server_id)
 {
-    std::vector<server_info> result;
+    return get_url_or_empty(root_ + "/servers/" + server_id + "/icon");
+}
 
+std::string server_list_online::get_screenshot(const std::string& screenshot_id)
+{
+    return get_url_or_empty(root_ + "/screenshots/" + screenshot_id);
+}
+
+
+
+game_list_local::game_list_local(const fs::path& rootdir)
+    : root_{rootdir}
+{
+    if (!fs::is_directory(root_))
+        throw std::runtime_error(rootdir.string() + " is not a directory");
+}
+
+ptree screenshot_list(const fs::path& dir)
+{
+    ptree list;
+    for (int j = 1; j < 6; ++j) {
+        std::string img{"screenshot" + std::to_string(j) + ".jpeg"};
+        fs::path scr_file{dir / img};
+        if (fs::is_regular_file(scr_file)) {
+            ptree item;
+            item.put("", dir.filename().string() + "/" + img);
+            list.push_back(std::make_pair("", item));
+        }
+    }
+    return list;
+}
+
+ptree game_list_local::get_list(int start, int count)
+{
+    ptree list;
+    typedef fs::directory_iterator diriter;
+    for (auto i = diriter(root_); i != diriter(); ++i) {
+        fs::path info_file{*i / "info.json"};
+        if (!fs::is_regular_file(info_file))
+            continue;
+
+        try {
+            ptree game = read_json(info_file);
+            game.put("id", i->path().filename().string());
+            game.put_child("screenshots", screenshot_list(*i));
+            list.push_back(std::make_pair("", game));
+        } catch (std::exception& e) {
+            log_msg("Failed to parse '%1%': %2%", info_file.string(), e.what());
+        }
+    }
+
+    ptree result;
+    result.add_child("servers", std::move(list));
+    return result;
+}
+
+std::string game_list_local::get_icon(const std::string& server_id)
+{
     try {
-        auto res = rest::get(
-            (format("https://%1%/api/1/servers") % hostname).str());
-        if (res.status_code == 200) {
-            for (auto& n : res.json.get_child("servers")) {
-                if (check_version(
-                        n.second.get<std::string>("reqversion", "0.0.0")))
-                    result.emplace_back(json_to_info(n.second));
-            }
-        } else {
-        }
-    } catch (std::runtime_error& e) {
-        log_msg("Could not get server list: %1%", e.what());
+        return file_contents(root_ / server_id /  "icon.png");
+    } catch(...) {
     }
-
-    return result;
-    /*
-        http::client::request rq(json_uri);
-        rq << header("Connection", "close");
-        http::client temp_client;
-
-        ptree tree;
-        std::string body{http::body(temp_client.get(rq))};
-        std::stringstream str(body);
-        read_json(str, tree);
-        for (auto& n : tree.get_child("servers")) {
-            if (!check_version(n.second.get<std::string>("client_version",
-       "")))
-                continue;
-
-            server_info item;
-            item.host = n.second.get<std::string>("host");
-            item.port = n.second.get<uint16_t>("port");
-            item.name = n.second.get<std::string>("name");
-            item.desc = n.second.get<std::string>("description");
-            item.icon = n.second.get<std::string>("icon");
-            item.screenshot = n.second.get<std::string>("screenshot");
-
-            result.push_back(item);
-        }
-
-        return result;
-        */
+    return {};
 }
+
+std::string game_list_local::get_screenshot(const std::string& screenshot_id)
+{
+    try {
+        return file_contents(root_ / screenshot_id);
+    } catch(...) {
+    }
+    return {};
+}
+
 
 } // namespace hexa

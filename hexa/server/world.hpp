@@ -134,7 +134,9 @@ protected: // Only available through world_read and world_write
 
     const surface_data& get_surface(chunk_coordinates pos);
 
-    const light_data& get_lightmap(chunk_coordinates pos);
+    light_data get_client_lightmap(chunk_coordinates pos);
+
+    const light_data_hr& get_server_lightmap(chunk_coordinates pos);
 
     chunk_height get_coarse_height(map_coordinates pos);
 
@@ -166,7 +168,7 @@ private:
     chunk generate_chunk(chunk_coordinates pos);
 
     /** Generate the lightmap of a given chunk. */
-    light_data generate_lightmap(chunk_coordinates pos, int level = 0);
+    light_data_hr generate_lightmap(chunk_coordinates pos, int level = 2);
 
     chunk_height generate_coarse_height(map_coordinates pos);
 
@@ -190,7 +192,7 @@ private:
     cache_map<area_data> area_data_;
     cache_map<chunk> chunks_;
     cache_map<surface_data> surfaces_;
-    cache_map<light_data> lightmaps_;
+    cache_map<light_data_hr> lightmaps_;
 
     lru_cache<map_coordinates, chunk_height> coarse_heights_;
 
@@ -213,7 +215,7 @@ inline chunk_height coarse_height(world& w, map_coordinates pos)
 
 inline void prepare_for_player(world& w, chunk_coordinates pos)
 {
-    auto proxy(w.acquire_read_access());
+    auto proxy = w.acquire_read_access();
     proxy.get_compressed_surface(pos);
     proxy.get_compressed_lightmap(pos);
 }

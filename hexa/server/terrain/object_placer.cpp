@@ -24,6 +24,7 @@
 #include <boost/filesystem.hpp>
 
 #include <hexa/algorithm.hpp>
+#include "../globals.hpp"
 #include "../hndl.hpp"
 #include "../random.hpp"
 #include "../voxel_sprite.hpp"
@@ -46,7 +47,7 @@ object_placer::object_placer(world& w, const ptree& conf)
 
     auto& list = conf.get_child("sprites", ptree{});
     for (auto& elem : list) {
-        fs::path filename{elem.second.data()};
+        fs::path filename{gamedir() / elem.second.data()};
         std::string content{file_contents(filename)};
 
         if (filename.extension() == ".txt")

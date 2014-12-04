@@ -24,7 +24,8 @@
 #include <mutex>
 #include <boost/optional.hpp>
 
-#include <hexa/basic_types.hpp>
+#include "../basic_types.hpp"
+#include "../lightmap.hpp"
 #include <hexa/surface.hpp>
 #include <hexa/read_write_lockable.hpp>
 
@@ -34,7 +35,6 @@ namespace hexa
 class area_data;
 class chunk;
 class compressed_data;
-class lightmap;
 class world;
 
 /** This object grants read access to the game world. */
@@ -64,6 +64,8 @@ public:
     const chunk& get_chunk(chunk_coordinates pos);
 
     const surface_data& get_surface(chunk_coordinates pos);
+
+    light_data get_lightmap(chunk_coordinates pos);
 
     chunk_height get_coarse_height(map_coordinates pos);
 

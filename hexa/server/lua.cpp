@@ -425,8 +425,6 @@ public:
 
     wfpos get_position() const { return {p_.position, p_.position_fraction}; }
 
-    // world_coordinates get_position() const { return p_.position; }
-
     void set_position(const world_coordinates& p) { p_.position = p; }
 
     vector3<float> get_fposition() const { return p_.position_fraction; }

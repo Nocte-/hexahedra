@@ -99,7 +99,7 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
     , player_entity_(0xffffffff)
     , waiting_for_data_(true)
     , loading_screen_(false)
-    , singleplayer_(host.empty())
+    , singleplayer_(host.empty() || host[0] == ':')
     , show_ui_(true)
     , ignore_text_(0)
 {
@@ -108,8 +108,11 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
             log_msg("Launching server...");
             fs::path dir(executable_path().parent_path());
             log_msg("Path is %1%", dir);
-            server_process_ = start_process(dir / "hexahedra-server",
-                                            {"--mode=singleplayer"});
+            std::vector<std::string> params {"--mode=singleplayer"};
+            if (!host.empty()) {
+                params.emplace_back("--game=" + host.substr(1));
+            }
+            server_process_ = start_process(dir / "hexahedra-server", params);
             log_msg("Done.");
             boost::this_thread::sleep_for(boost::chrono::milliseconds(300));
         } catch (std::runtime_error& e) {
@@ -121,7 +124,7 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
         }
     }
 
-    std::string host_ext(singleplayer_ ? "local" : host);
+    std::string host_ext(singleplayer_ ? "localhost" : host);
 
     game_.relative_mouse(true);
     setup_renderer();
@@ -133,13 +136,17 @@ main_game::main_game(game& the_game, const std::string& host, uint16_t port,
         if (singleplayer_)
             terminate_process(server_process_);
 
-        throw std::runtime_error("cannot connect to server");
+        throw std::runtime_error("cannot connect to server " + host_ext);
     }
 
-    // msg::time_sync_request m;
-    // send(serialize_packet(m), m.method());
     clock_ = boost::thread([&] { bg_thread(); });
     log_msg("Connected!");
+
+    msg::knock msg;
+    msg.protocol_id = 0x41584548;
+    msg.maximum_version = 1;
+    msg.minimum_version = 1;
+    send(serialize_packet(msg), msg.method());
 }
 
 main_game::~main_game()
@@ -152,12 +159,11 @@ main_game::~main_game()
 
 void main_game::setup_world(const std::string& host, uint16_t port)
 {
-    fs::path user_dir(global_settings["userdir"].as<std::string>());
-    fs::path data_dir(global_settings["datadir"].as<std::string>());
-
-    fs::path gameroot(user_dir / "games");
-    std::string host_id((format("%1%.%2%") % host % port).str());
-    fs::path gamepath(gameroot / host_id);
+    fs::path user_dir{global_settings["userdir"].as<std::string>()};
+    fs::path data_dir{global_settings["datadir"].as<std::string>()};
+    fs::path gameroot{user_dir / "games"};
+    std::string host_id{(format("%1%.%2%") % host % port).str()};
+    fs::path gamepath{gameroot / host_id};
 
     if (!fs::exists(gamepath) && !fs::create_directories(gamepath)) {
         throw std::runtime_error(
@@ -165,8 +171,8 @@ void main_game::setup_world(const std::string& host, uint16_t port)
              % gamepath.string()).str());
     }
 
-    storage_
-        = std::make_unique<persistence_leveldb>(gamepath / "world.leveldb");
+    auto map = gamepath / "world.leveldb";
+    storage_ = std::make_unique<persistence_leveldb>(map);
     map_ = std::make_unique<chunk_cache>(*storage_);
 }
 
@@ -176,9 +182,12 @@ void main_game::setup_renderer()
 
     extern po::variables_map global_settings;
 
-    std::string ogl_version((const char*)glGetString(GL_VERSION));
+    std::string ogl_version{(const char*)glGetString(GL_VERSION)};
     log_msg("OpenGL version: %1%", ogl_version);
-    int ogl_major(ogl_version[0] - '0'), ogl_minor(ogl_version[2] - '0');
+
+    int ogl_major = ogl_version[0] - '0';
+    int ogl_minor = ogl_version[2] - '0';
+
     if (ogl_major == 1 && ogl_minor < 5) {
         throw std::runtime_error("Sorry, you need at least OpenGL 1.5");
     }
@@ -813,8 +822,8 @@ void main_game::receive(packet p)
         case msg::handshake::msg_id:
             handshake(archive);
             break;
-        case msg::greeting::msg_id:
-            greeting(archive);
+        case msg::setup::msg_id:
+            setup(archive);
             break;
         case msg::kick::msg_id:
             kick(archive);
@@ -882,9 +891,9 @@ void main_game::handshake(deserializer<packet>& p)
     login();
 }
 
-void main_game::greeting(deserializer<packet>& p)
+void main_game::setup(deserializer<packet>& p)
 {
-    msg::greeting mesg;
+    msg::setup mesg;
     mesg.serialize(p);
 
     clock::sync(mesg.client_time);
@@ -901,7 +910,6 @@ void main_game::greeting(deserializer<packet>& p)
     player_.move_to(pl_pos);
     entities_.set_position(player_entity_, pl_pos);
 
-    log_msg("MOTD: %1%", mesg.motd);
     log_msg("player %1% spawned at %2%", mesg.entity_id, mesg.position);
 
     msg::time_sync_request sync;

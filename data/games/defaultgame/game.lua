@@ -6,7 +6,7 @@ function set_hotbar(plr)
     plr:hotbar_set(2, hotbar_slot(1, "glass.white"))
     plr:hotbar_set(3, hotbar_slot(1, "bookshelf"))
     plr:hotbar_set(4, hotbar_slot(1, "chest (n)"))
-    plr:hotbar_set(5, hotbar_slot(1, "bricks"))
+    plr:hotbar_set(5, hotbar_slot(1, "glowstone"))
 end
 
 on_login(set_hotbar)

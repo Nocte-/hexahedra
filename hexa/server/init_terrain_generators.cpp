@@ -24,7 +24,7 @@
 #include <string>
 #include <boost/format.hpp>
 #include <hexa/algorithm.hpp>
-#include <hexa/trace.hpp>
+#include <hexa/log.hpp>
 
 #include "hndl.hpp"
 #include "world.hpp"
@@ -82,46 +82,13 @@ void init_terrain_gen(world& w, const ptree& config)
     w.add_area_generator(
         std::make_unique<fixed_value_area_generator>(w, surface_info));
 
-    /*
-    auto area_def = config.get_child_optional("areas");
-    if (area_def) {
-        for (const auto& area : *area_def) {
-            const auto& info = area.second;
-            auto name = info.get<std::string>("name");
-            auto def = info.get<std::string>("hndl", "");
-            auto cache = info.get<std::string>("cache", "");
-
-            trace("area name '%1%'", name);
-            try {
-                if (def.empty())
-                    w.add_area_generator(
-                        std::make_unique<fixed_value_area_generator>(w, info));
-
-                else {
-                    w.add_area_generator(
-                        std::make_unique<area_generator>(w, info));
-                }
-            } catch (ptree_bad_path& e) {
-                throw std::runtime_error(
-                    (format("cannot initialize area generator '%1%': required "
-                            "property '%2%' missing") % name
-                     % e.path<std::string>()).str());
-            } catch (std::exception& e) {
-                throw std::runtime_error(
-                    (format("cannot initialize area generator '%1%': %2%")
-                     % name % e.what()).str());
-            }
-        }
-    }
-    */
-
     auto terrain_def = config.get_child_optional("terrain");
     if (terrain_def) {
         for (const auto& def : *terrain_def) {
             const auto& info = def.second;
             auto module = info.get<std::string>("module");
 
-            trace("terrain generator %1%", module);
+            log_msg("terrain generator %1%", module);
             try {
                 if (module == "caves")
                     w.add_terrain_generator(
@@ -175,7 +142,7 @@ void init_terrain_gen(world& w, const ptree& config)
             const auto& info = def.second;
             auto module = info.get<std::string>("module");
 
-            trace("lightmap %1%", module);
+            log_msg("lightmap %1%", module);
             try {
                 if (module == "ambient_occlusion")
                     w.add_lightmap_generator(

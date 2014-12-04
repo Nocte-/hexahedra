@@ -72,16 +72,16 @@ public:
     template <typename I>
     const value_type operator()(I x, I y) const
     {
-        assert(x >= 0 && x < DimX);
-        assert(y >= 0 && y < DimY);
+        assert(x >= 0 && x < (I)DimX);
+        assert(y >= 0 && y < (I)DimY);
         return operator[](x + DimX * y);
     }
 
     template <typename I>
     value_type& operator()(I x, I y)
     {
-        assert(x >= 0 && x < DimX);
-        assert(y >= 0 && y < DimY);
+        assert(x >= 0 && x < (I)DimX);
+        assert(y >= 0 && y < (I)DimY);
         return operator[](x + DimX * y);
     }
 

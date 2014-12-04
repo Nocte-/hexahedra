@@ -51,6 +51,12 @@
 namespace hexa
 {
 
+class serialize_error : public std::runtime_error
+{
+public:
+    serialize_error(const std::string& what) : std::runtime_error(what) { }
+};
+
 /// Convert a 64-bit integer from network to host order.
 inline uint64_t ntohll(uint64_t x)
 {
@@ -474,7 +480,7 @@ public:
             return *this;
 
         if (bytes_left() < len)
-            throw std::runtime_error("end of array reached");
+            throw serialize_error("end of array reached");
 
         val.resize(len);
         std::copy(cursor_, cursor_ + len, &*val.begin());
@@ -555,7 +561,7 @@ public:
 
         size_t bytes(elements * sizeof(typename t::value_type));
         if (bytes_left() < bytes)
-            throw std::runtime_error("end of array reached");
+            throw serialize_error("end of array reached");
 
         val.resize(elements);
         char* ptr(reinterpret_cast<char*>(&*val.begin()));

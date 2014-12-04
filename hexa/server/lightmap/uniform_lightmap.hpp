@@ -36,14 +36,16 @@ public:
 
     virtual ~uniform_lightmap();
 
-    virtual lightmap& generate(world_lightmap_access& data,
+    virtual void generate(world_lightmap_access& data,
                                const chunk_coordinates& pos, const surface& s,
-                               lightmap& chunk, unsigned int phase = 0) const;
+                               lightmap_hr &chunk,
+                               unsigned int phase = 0) const override;
 
 private:
     uint8_t sun_;
     uint8_t amb_;
     uint8_t art_;
+    uint8_t sec_;
 };
 
 } // namespace hexa

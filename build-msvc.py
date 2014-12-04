@@ -6,8 +6,8 @@ import tarfile
 
 deps = "hexahedra-deps"
 zlib  = "zlib-1.2.8"
-boost = "boost_1_55_0"
-enet  = "enet-1.3.11"
+boost = "boost_1_57_0"
+enet  = "enet-1.3.12"
 glew  = "glew-1.10.0"
 leveldb = "leveldb-1.16.0"
 
@@ -105,7 +105,7 @@ def main():
     install("zlib", zlib, "http://zlib.net/zlib128.zip")
     do_cmake(zlib)
 
-    install("Boost", boost, "http://sourceforge.net/projects/boost/files/boost/1.55.0/"+boost+".tar.gz/download", boost+".tar.gz")       
+    install("Boost", boost, "http://sourceforge.net/projects/boost/files/boost/1.57.0/"+boost+".tar.gz/download", boost+".tar.gz")       
     os.chdir(boost)
     if not os.path.exists("b2.exe"):
         print("Build Bjam...")
@@ -126,7 +126,7 @@ def main():
     do_cmake("sfml-2.1", "-DSFML_USE_STATIC_STD_LIBS=true -DBUILD_SHARED_LIBS=false", sfml_fix_vs2013)
     
     
-    install("ENet", enet, "http://enet.bespin.org/download/enet-1.3.11.tar.gz")
+    install("ENet", enet, "http://enet.bespin.org/download/"+enet+".tar.gz")
     os.chdir(enet)
     if not os.path.exists("enet.vcxproj"):
         print("Configuring ENet...")
@@ -194,7 +194,7 @@ def main():
         for filename in [ "tokens.cpp", "tokens.hpp", "parser.cpp", "parser.hpp" ]:
             shutil.copy("../hexanoise-master/win32/" + filename, "hexanoise")
         
-        os.system('cmake ../hexanoise-master -DBOOST_INCLUDEDIR="' + os.path.join(root, "boost_1_55_0") +'" -DGLM_INCLUDE_DIR="'
+        os.system('cmake ../hexanoise-master -DBOOST_INCLUDEDIR="' + os.path.join(root, "boost_"+boost) +'" -DGLM_INCLUDE_DIR="'
                    + os.path.join(root, "glm") + '"')            
         os.system("MSBuild.exe hexanoise/hexanoise-s.vcxproj /p:Configuration=Debug") 
         os.system("MSBuild.exe hexanoise/hexanoise-s.vcxproj /p:Configuration=Release") 
@@ -243,7 +243,7 @@ def main():
     -DSFML_GRAPHICS_LIBRARY={root}/{sfml}-build/lib/Release/sfml-graphics-s.lib
     -DSFML_SYSTEM_LIBRARY={root}/{sfml}-build/lib/Release/sfml-system-s.lib
     -DSFML_WINDOW_LIBRARY={root}/{sfml}-build/lib/Release/sfml-window-s.lib
-    """.format(root=root, zlib=zlib, boost=boost, sfml="sfml-2.1", glew=glew, cryptopp="cryptopp", enet="enet-1.3.11", luajit="LuaJit-2.0.3").replace("\n","")
+    """.format(root=root, zlib=zlib, boost=boost, sfml="sfml-2.1", glew=glew, cryptopp="cryptopp", enet=enet, luajit="LuaJit-2.0.3").replace("\n","")
                
     os.system("cmake ../hexahedra " + build_opts)
     

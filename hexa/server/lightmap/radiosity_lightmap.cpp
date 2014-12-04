@@ -70,24 +70,21 @@ struct radiosity
     float str;
 };
 
-lightmap& radiosity_lightmap::generate(world_lightmap_access& data,
+void radiosity_lightmap::generate(world_lightmap_access& data,
                                        const chunk_coordinates& pos,
-                                       const surface& s, lightmap& lightchunk,
+                                       const surface& s, lightmap_hr &lightchunk,
                                        unsigned int phase) const
 {
-    /*
-    neighborhood<chunk_ptr> nbh (cache_, pos);
-
     std::array<float, 6> irr_sun, irr_ambient, irr_artificial;
-    vector half (0.5f, 0.5f, 0.5f);
-    auto lmi (std::begin(lightchunk));
+    vector half {0.5f, 0.5f, 0.5f};
+    auto lmi = std::begin(lightchunk);
     for (const faces& f : s)
     {
         fill(irr_sun, 0.f);
         fill(irr_ambient, 0.f);
         fill(irr_artificial, 0.f);
 
-        auto surr (surroundings(f.pos, 2));
+        auto surr (surroundings(f.pos, phase + 1));
         for (auto sp : surr)
         {
             if (sp == f.pos)
@@ -98,41 +95,32 @@ lightmap& radiosity_lightmap::generate(world_lightmap_access& data,
                 continue;
 
             auto& other (*found);
-            for (int i (0); i < 6; ++i)
+            for (int i = 0; i < 6; ++i)
             {
                 if (!f[i])
                     continue;
 
-                vector this_face (half + f.pos + vector(dir_vector[i]) *
-    0.52f);
-                for (int j (0); j < 6; ++j)
+                vector this_face (half + f.pos + vector(dir_vector[i]) * 0.52f);
+                for (int j = 0; j < 6; ++j)
                 {
                     if (i == j || !other[j])
                         continue;
 
-                    vector that_face (half + other.pos + vector(dir_vector[j])
-    * 0.52f);
+                    vector that_face (half + other.pos + vector(dir_vector[j])* 0.52f);
                     vector conn (that_face - this_face);
                     vector norm_conn (normalize(conn));
                     float dp1 (dot_prod<vector>(dir_vector[j], -norm_conn));
                     if (dp1 <= 0)
                         continue;
 
-                    float dp2 (dot_prod<vector>(dir_vector[i], norm_conn));
+                    float dp2 = dot_prod<vector>(dir_vector[i], norm_conn);
                     if (dp2 <= 0)
                         continue;
 
-                    //std::cout << this_face << " --> " << that_face <<
-    std::endl;
-                    //std::cout << f.pos << "," << i << " --> " << other.pos <<
-    "," << j << std::endl;
-                    //std::cout << conn << "   " << dp1 << " " << dp2 <<
-    std::endl;
-                    float intensity (dp1 * dp2 / squared_length(conn));
-                    //std::cout << intensity << std::endl;
+                    float intensity = dp1 * dp2 / squared_length(conn);
 
-                    auto dist (std::distance(std::begin(s), found));
-                    auto& olm (lightchunk.data[dist]);
+                    auto dist = std::distance(std::begin(s), found);
+                    auto& olm = lightchunk.data[dist];
 
                     irr_sun[i] += olm.sunlight * intensity;
                     irr_ambient[i] += olm.ambient * intensity;
@@ -146,21 +134,13 @@ lightmap& radiosity_lightmap::generate(world_lightmap_access& data,
             if (!f[i])
                 continue;
 
-            if (irr_sun[i] > 1)
-            {
-                //std::cout << "sun " << irr_sun[i] << std::endl;
-                lmi->sunlight = std::max(1, std::min<int>(15, lmi->sunlight +
-    irr_sun[i] / 10.f));
-            }
-            if (irr_ambient[i] > 1)
-                lmi->ambient = std::max(1, std::min<int>(15, lmi->ambient +
-    irr_ambient[i] / 10.f));
+            lmi->r_sunlight = irr_sun[i] * 255.f + 0.49f;
+            lmi->r_ambient = irr_ambient[i] * 255.f + 0.49f;
+            lmi->r_artificial = irr_artificial[i] * 255.f + 0.49f;
 
             ++lmi;
         }
     }
-*/
-    return lightchunk;
 }
 
 } // namespace hexa

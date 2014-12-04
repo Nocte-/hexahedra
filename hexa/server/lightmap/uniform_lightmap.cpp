@@ -30,9 +30,10 @@ namespace hexa
 
 uniform_lightmap::uniform_lightmap(world& c, const ptree& conf)
     : lightmap_generator_i(c, conf)
-    , sun_(conf.get<int>("sun", 15))
-    , amb_(conf.get<int>("skydome", 15))
-    , art_(conf.get<int>("artificial", 15))
+    , sun_(conf.get<int>("sun", 255))
+    , amb_(conf.get<int>("skydome", 255))
+    , art_(conf.get<int>("artificial", 255))
+    , sec_(conf.get<int>("secondary", 255))
 {
 }
 
@@ -40,9 +41,9 @@ uniform_lightmap::~uniform_lightmap()
 {
 }
 
-lightmap& uniform_lightmap::generate(world_lightmap_access&,
+void uniform_lightmap::generate(world_lightmap_access&,
                                      const chunk_coordinates&,
-                                     const surface& s, lightmap& lc,
+                                     const surface& s, lightmap_hr& lc,
                                      unsigned int) const
 {
     chunk_index c1(0, 0, 0), c2(block_chunk_size);
@@ -55,12 +56,11 @@ lightmap& uniform_lightmap::generate(world_lightmap_access&,
                 lmi->sunlight = sun_;
                 lmi->ambient = amb_;
                 lmi->artificial = art_;
+                lmi->secondary = sec_;
                 ++lmi;
             }
         }
     }
-
-    return lc;
 }
 
 } // namespace hexa

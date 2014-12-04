@@ -159,26 +159,26 @@ float sun_lightmap::recurse(const ray_bundle& r, float ray_power,
     return ray_power;
 }
 
-lightmap& sun_lightmap::generate(world_lightmap_access& data,
+void sun_lightmap::generate(world_lightmap_access& data,
                                  const chunk_coordinates& pos,
-                                 const surface& s, lightmap& lightchunk,
+                                 const surface& s, lightmap_hr &lightchunk,
                                  unsigned int phase) const
 {
     trace((boost::format("for %1%") % world_vector(pos - world_chunk_center))
               .str());
 
-    auto lmi(std::begin(lightchunk));
+    auto lmi = std::begin(lightchunk);
 
     for (faces f : s) {
-        world_coordinates blk(pos * chunk_size + f.pos);
+        world_coordinates blk = pos * chunk_size + f.pos;
 
         for (int d(0); d < 6; ++d) {
             if (!f[d])
                 continue;
 
-            const ray_bundle& r(detail_levels_[phase][d]);
-            float light_level(recurse(r, r.weight, blk, data));
-            lmi->sunlight = clamp(light_level, 0.0f, 1.0f) * 15.4f;
+            const ray_bundle& r = detail_levels_[phase][d];
+            float light_level = recurse(r, r.weight, blk, data);
+            lmi->sunlight = clamp(light_level, 0.0f, 1.0f) * 255.0f + 0.49f;
             ++lmi;
         }
     }
@@ -186,7 +186,6 @@ lightmap& sun_lightmap::generate(world_lightmap_access& data,
     trace((boost::format("done with %1%")
            % world_vector(pos - world_chunk_center)).str());
 
-    return lightchunk;
 }
 
 } // namespace hexa

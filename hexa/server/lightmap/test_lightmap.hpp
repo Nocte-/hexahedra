@@ -39,9 +39,9 @@ public:
 
     virtual ~test_lightmap();
 
-    virtual lightmap& generate(world_lightmap_access& data,
-                               const chunk_coordinates& pos, const surface& s,
-                               lightmap& chunk, unsigned int phase = 0) const;
+    virtual void generate(world_lightmap_access& data,
+                          const chunk_coordinates& pos, const surface& s,
+                               lightmap_hr& chunk, unsigned int phase = 0) const override;
 };
 
 } // namespace hexa

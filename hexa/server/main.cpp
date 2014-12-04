@@ -57,8 +57,10 @@
 
 #include "clock.hpp"
 #include "extract_surface.hpp"
+#include "globals.hpp"
 #include "init_terrain_generators.hpp"
 #include "lua.hpp"
+#include "linenoise.h"
 #include "network.hpp"
 #include "opencl.hpp"
 #include "server_entity_system.hpp"
@@ -75,7 +77,6 @@ using namespace hexa;
 namespace hexa
 {
 po::variables_map global_settings;
-fs::path gamedir;
 }
 
 static std::string default_db_path()
@@ -184,8 +185,8 @@ int main(int argc, char* argv[])
         "hostname", po::value<std::string>()->default_value(""),
         "publish server info with this domain name instead of my IP address")(
         "register",
-        po::value<std::string>()->implicit_value("auth.hexahedra.net"),
-        "advertise this server on a global list")(
+        po::value<std::string>()->implicit_value(DEFAULT_AUTH_URL),
+        "register on a master server")(
         "passphrase", "generate the private key from a passphrase")(
         "uid", po::value<std::string>()->default_value("nobody"),
         "drop to this user id after initialising the server")(
@@ -197,7 +198,7 @@ int main(int argc, char* argv[])
         "the server database directory")(
         "game", po::value<std::string>()->default_value("defaultgame"),
         "which game to start")("log", po::value<bool>()->default_value(true),
-                               "log debug info to file");
+                               "log debug info to file")("console", "Start a command-line administration console");
 
     po::options_description cmdline;
     cmdline.add(generic).add(config);
@@ -211,7 +212,7 @@ int main(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
     if (vm.count("version")) {
-        std::cout << "hexahedra " << GIT_VERSION << std::endl;
+        std::cout << PROJECT_NAME << " " << GIT_VERSION << std::endl;
         return EXIT_SUCCESS;
     }
 
@@ -262,15 +263,15 @@ int main(int argc, char* argv[])
         fs::path db_root(vm["dbdir"].as<std::string>());
         fs::path dbdir(db_root / game_name);
 
-        gamedir = fs::path(datadir / std::string("games") / game_name);
+        set_gamedir(datadir / "games" / game_name);
 
         if (!fs::is_directory(datadir)) {
             log_msg("Datadir '%1%' is not a directory", datadir.string());
             return -1;
         }
 
-        if (!fs::is_directory(gamedir)) {
-            log_msg("Gamedir '%1%' is not a directory", datadir.string());
+        if (!fs::is_directory(gamedir())) {
+            log_msg("Gamedir '%1%' is not a directory", gamedir().string());
             return -1;
         }
 
@@ -324,7 +325,7 @@ int main(int argc, char* argv[])
 
         // Set up the game world
         // hexa::network::connections_t players;
-        fs::path db_file(dbdir / "world.leveldb");
+        fs::path db_file{dbdir / "world.leveldb"};
 
         trace("Game DB %1%", db_file.string());
         log_msg("Server game DB: %1%", db_file.string());
@@ -344,7 +345,7 @@ int main(int argc, char* argv[])
         // drop_privileges(vm["uid"].as<std::string>(),
         //                vm["chroot"].as<std::string>());
 
-        for (fs::recursive_directory_iterator i(gamedir);
+        for (fs::recursive_directory_iterator i{gamedir()};
              i != fs::recursive_directory_iterator(); ++i) {
             if (fs::is_regular_file(*i) && i->path().extension() == ".lua") {
                 log_msg("Read Lua script %1%", i->path().string());
@@ -353,7 +354,7 @@ int main(int argc, char* argv[])
             }
         }
 
-        fs::path conf_file(gamedir / "setup.json");
+        fs::path conf_file{gamedir() / "setup.json"};
         auto config = read_json(conf_file);
         log_msg("Set up game world from %1%", conf_file.string());
         hexa::init_terrain_gen(world, config);
@@ -366,27 +367,43 @@ int main(int argc, char* argv[])
         std::thread physics_thread([&] { physics(entities, world); });
         log_msg("All systems go");
 
-#ifndef _WIN32
-        // Restore previous signals.
-        pthread_sigmask(SIG_SETMASK, &old_mask, 0);
+        if (vm.count("console")) {
+            char* line;
+            while((line = linenoise("> ")) != nullptr) {
+                if (line[0] == '\0')
+                    continue;
 
-        // Wait for signal indicating time to shut down.
-        sigset_t wait_mask;
-        sigemptyset(&wait_mask);
-        sigaddset(&wait_mask, SIGHUP);
-        sigaddset(&wait_mask, SIGINT);
-        sigaddset(&wait_mask, SIGQUIT);
-        sigaddset(&wait_mask, SIGTERM);
-        pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
-        int sig(0);
-        sigwait(&wait_mask, &sig);
+                linenoiseHistoryAdd(line);
+                try {
+                    std::cout << server.exec(line) << std::endl;
+                } catch (std::exception& e) {
+                    std::cout << "Exception caught: " << e.what() << std::endl;
+                }
+                free(line);
+            }
+        } else {
+#ifndef _WIN32
+            // Restore previous signals.
+            pthread_sigmask(SIG_SETMASK, &old_mask, 0);
+
+            // Wait for signal indicating time to shut down.
+            sigset_t wait_mask;
+            sigemptyset(&wait_mask);
+            sigaddset(&wait_mask, SIGHUP);
+            sigaddset(&wait_mask, SIGINT);
+            sigaddset(&wait_mask, SIGQUIT);
+            sigaddset(&wait_mask, SIGTERM);
+            pthread_sigmask(SIG_BLOCK, &wait_mask, 0);
+            int sig(0);
+            sigwait(&wait_mask, &sig);
 #else
-        std::cout << "Running..." << std::endl;
-        stopEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
-        ::SetConsoleCtrlHandler(win32_signal_handler, TRUE);
-        ::WaitForSingleObject(stopEvent, INFINITE);
-        ::CloseHandle(stopEvent);
+            std::cout << "Running..." << std::endl;
+            stopEvent = ::CreateEvent(NULL, TRUE, FALSE, NULL);
+            ::SetConsoleCtrlHandler(win32_signal_handler, TRUE);
+            ::WaitForSingleObject(stopEvent, INFINITE);
+            ::CloseHandle(stopEvent);
 #endif
+        }
 
         log_msg("Stopping network...");
         server.stop();

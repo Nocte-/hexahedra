@@ -41,6 +41,9 @@ public:
 
     ~persistence_leveldb();
 
+    void store_meta(uint32_t index, const std::string &blob) override;
+    std::string retrieve_meta(uint32_t index) override;
+
     void store(data_type type, chunk_coordinates xyz,
                const compressed_data& data) override;
     void store(map_coordinates xy, chunk_height data) override;
@@ -56,6 +59,9 @@ public:
     void retrieve(es::storage& es) override;
     void retrieve(es::storage& es, es::entity entity_id) override;
     bool is_available(es::entity entity_id) override;
+
+    //void remove(map_coordinates xy) override;
+    //void remove(chunk_coordinates xyz) override;
 
     void close();
 

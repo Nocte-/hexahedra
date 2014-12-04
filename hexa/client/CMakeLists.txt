@@ -2,14 +2,19 @@ cmake_minimum_required (VERSION 2.8.3)
 set(EXE hexahedra)
 set(LIBNAME hexaclient)
 
-file(GLOB SOURCE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp")
+file(GLOB SOURCE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp" "gui/*.cpp")
 list(REMOVE_ITEM SOURCE_FILES main.cpp)
-file(GLOB HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.hpp")
+file(GLOB HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.hpp" "gui/*.hpp")
 
 source_group(include FILES ${HEADER_FILES})
 source_group(source  FILES ${SOURCE_FILES})
 
-add_library(${LIBNAME} ${SOURCE_FILES} ${HEADER_FILES})
+find_package(Freetype REQUIRED)
+include_directories(${FREETYPE_INCLUDE_DIR})
+include_directories("/usr/include/freetype2/")
+file(GLOB TB_FILES "../../libs/tb/*.cpp" "../../libs/tb/*/*.cpp")
+
+add_library(${LIBNAME} ${SOURCE_FILES} ${TB_FILES} ${HEADER_FILES})
 
 include_directories(../.. ../../libs)
 link_directories(..)
@@ -48,7 +53,7 @@ else()
     include_directories(${GLEW_INCLUDE_DIR})
 endif()
 
-foreach (LIB ${NEED_GLEW} CURL OpenGL CryptoPP ENet ES)
+foreach (LIB ${NEED_GLEW} CURL OpenGL CryptoPP ENet ES Rhea)
     find_package(${LIB} REQUIRED)
     string(TOUPPER ${LIB} ULIB)
     include_directories(${${ULIB}_INCLUDE_DIR})

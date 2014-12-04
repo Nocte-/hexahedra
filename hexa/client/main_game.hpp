@@ -106,7 +106,7 @@ private:
     void console_input(const std::u32string& msg);
 
     void handshake(deserializer<packet>& p);
-    void greeting(deserializer<packet>& p);
+    void setup(deserializer<packet>& p);
     void kick(deserializer<packet>& p);
     void time_sync_response(deserializer<packet>& p);
     void define_resources(deserializer<packet>& p);

@@ -71,7 +71,7 @@ void button::set_position(int x, int y)
 {
     x_ = x;
     y_ = y;
-    label_.setPosition(x, y - 2);
+    label_.setPosition(x, y - 5);
     normal_.setPosition(x, y);
     highlight_.setPosition(x, y);
 }

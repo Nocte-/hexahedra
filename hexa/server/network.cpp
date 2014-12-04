@@ -49,7 +49,6 @@
 #include "clock.hpp"
 #include "lua.hpp"
 #include "player.hpp"
-#include "server_entity_system.hpp"
 #include "world.hpp"
 
 using boost::format;
@@ -107,7 +106,16 @@ void network::run(const crypto::private_key& privkey,
     my_private_key_ = privkey;
     my_public_key_ = crypto::to_binary(crypto::get_public_key(privkey));
     my_id_ = server_id;
-    log_msg("Network running, server ID %1%", base58_encode(my_id_));
+    if (global_settings.count("registration"))
+        auth_url_ = global_settings["mode"].as<std::string>();
+
+    if (auth_url_.empty())
+        auth_url_ = "auth.hexahedra.net";
+
+    if (auth_url_.back() == '/')
+        auth_url_.pop_back();
+
+    log_msg("Network running, server ID %1% on %2%", base58_encode(my_id_), auth_url_);
 
     running_.store(true);
     int count(0);
@@ -233,40 +241,7 @@ void network::on_connect(ENetPeer* c)
         log_msg("Player already connected");
         return;
     }
-    log_msg("New player connected.");
-
-    // Greet the new player with the server name and our public key.
-    msg::handshake m;
-
-    m.server_name = "LOL server";
-    m.server_id = my_id_;
-    m.public_key = my_public_key_;
-    m.nonce = conn_info_[c].iv = crypto::make_random(16);
-    send(c, serialize_packet(m), m.method());
-
-    // Send resources, material list, etc.
-    {
-        msg::define_resources msg;
-        msg.textures.resize(texture_names.size());
-        for (auto& rec : texture_names)
-            msg.textures[rec.second] = rec.first;
-
-        msg.models.push_back("mrfixit");
-        send(c, serialize_packet(msg), msg.method());
-    }
-
-    {
-        msg::define_materials msg;
-        uint16_t index(0);
-        for (const material& m : material_prop) {
-            if (index != type::air && !m.name.empty())
-                msg.materials.emplace_back(index, m);
-
-            ++index;
-        }
-        send(c, serialize_packet(msg), msg.method());
-    }
-
+    log_msg("New connection.");
     conn_info_[c].clock_offset = clock::now();
 }
 
@@ -305,6 +280,9 @@ void network::on_receive(ENetPeer* c, packet p)
         packet_info info{ent, c, p};
 
         switch (p.message_type()) {
+        case msg::knock::msg_id:
+            knock(info);
+            break;
         case msg::login::msg_id:
             login(info);
             break;
@@ -388,19 +366,28 @@ void network::broadcast(const binary_data& msg, msg::reliability method) const
         send_encrypted(conn.second, msg, method);
 }
 
+template <typename type>
+type unpack_as(const compressed_data& data)
+{
+    auto tmp = decompress(data);
+    return deserialize_as<type>(tmp);
+}
+
 void network::send_surface(const chunk_coordinates& cpos)
 {
     trace("broadcast surface %1%", world_vector(cpos - world_chunk_center));
-    auto proxy(world_.acquire_read_access());
+    auto proxy = world_.acquire_read_access();
 
     msg::surface_update reply;
     reply.position = cpos;
     reply.terrain = proxy.get_compressed_surface(cpos);
     reply.light = proxy.get_compressed_lightmap(cpos);
+    assert(count_faces(unpack_as<surface_data>(proxy.get_compressed_surface(cpos)).opaque) == unpack_as<light_data>(proxy.get_compressed_lightmap(cpos)).opaque.size());
+    assert(count_faces(unpack_as<surface_data>(proxy.get_compressed_surface(cpos)).transparent) == unpack_as<light_data>(proxy.get_compressed_lightmap(cpos)).transparent.size());
 
     for (auto& conn : connections_) {
-        auto plr_pos(es_.get<wfpos>(conn.first, entity_system::c_position));
-        auto dist(manhattan_distance(cpos, plr_pos.pos / chunk_size));
+        auto plr_pos = es_.get<wfpos>(conn.first, entity_system::c_position);
+        auto dist = manhattan_distance(cpos, plr_pos.pos / chunk_size);
         if (dist < 64)
             send(conn.second, serialize_packet(reply), reply.method());
     }
@@ -415,12 +402,14 @@ void network::send_surface_queue(const chunk_coordinates& cpos, ENetPeer* dest)
 void network::send_surface(const chunk_coordinates& cpos, ENetPeer* dest)
 {
     trace("send surface %1%", world_vector(cpos - world_chunk_center));
-    auto proxy(world_.acquire_read_access());
+    auto proxy = world_.acquire_read_access();
 
     msg::surface_update reply;
     reply.position = cpos;
     reply.terrain = proxy.get_compressed_surface(cpos);
     reply.light = proxy.get_compressed_lightmap(cpos);
+    assert(count_faces(proxy.get_surface(cpos).opaque) == proxy.get_lightmap(cpos).opaque.size());
+    assert(count_faces(proxy.get_surface(cpos).transparent) == proxy.get_lightmap(cpos).transparent.size());
 
     send(dest, serialize_packet(reply), reply.method());
     trace("send surface %1% done", world_vector(cpos - world_chunk_center));
@@ -461,6 +450,57 @@ void network::kick_player(ENetPeer* dest, const std::string& kickmsg)
     send_encrypted(dest, serialize_packet(reply), reply.method());
     disconnect(dest);
     on_disconnect(dest);
+}
+
+void network::knock(packet_info& info)
+{
+    auto msg = make<msg::knock>(info.p);
+    if (msg.protocol_id != 0x41584548) {
+        log_msg("Wrong protocol");
+        conn_info_.erase(info.conn);
+        disconnect(info.conn);
+        return;
+    }
+
+    if (msg.minimum_version > 1) {
+        kick_player(info.conn, "Server only supports protocol version 1");
+        conn_info_.erase(info.conn);
+        disconnect(info.conn);
+        return;
+    }
+
+    // Greet the new player with the server name and our public key.
+    msg::handshake m;
+    m.protocol_version = 1;
+    m.server_name = "LOL server";
+    m.server_id = my_id_;
+    m.auth_url = auth_url_;
+    m.public_key = my_public_key_;
+    m.nonce = conn_info_[info.conn].iv = crypto::make_random(16);
+    send(info.conn, serialize_packet(m), m.method());
+
+    // Send resources, material list, etc.
+    {
+        msg::define_resources msg;
+        msg.textures.resize(texture_names.size());
+        for (auto& rec : texture_names)
+            msg.textures[rec.second] = rec.first;
+
+        msg.models.push_back("mrfixit");
+        send(info.conn, serialize_packet(msg), msg.method());
+    }
+
+    {
+        msg::define_materials msg;
+        uint16_t index(0);
+        for (const material& m : material_prop) {
+            if (index != type::air && !m.name.empty())
+                msg.materials.emplace_back(index, m);
+
+            ++index;
+        }
+        send(info.conn, serialize_packet(msg), msg.method());
+    }
 }
 
 void network::login(packet_info& info)
@@ -528,26 +568,30 @@ void network::login(packet_info& info)
                 log_msg("MAC is OK");
             }
 
+            login_type login_method = login_type::anonymous_guest;
             if (!hashed_id) {
                 // This is a registered user ID, run a few checks first.
-                std::string url{"https://auth.hexahedra.net/api/1/users/"};
+                std::string url{"https://" + auth_url_ + "/api/1/users/"};
                 auto res = rest::get(url + base58_encode(msg.uid));
                 if (res.status_code == 200) {
                     if (from_json(res.json.get_child("users.pubkey")) != their_pubkey)
                         throw "Could not authenticate player";
 
                     player_name = res.json.get("users.username", player_name);
+                    login_method = login_type::authenticated;
                 } else if (res.status_code == 404) {
                     throw "Player ID does not exist";
                 }
             }
 
             if (player_name.empty()) {
-                player_name = "Guest"
-                              + std::to_string(
-                                    fnv_hash(info.conn->address.host) % 1000);
+                auto nr = fnv_hash(info.conn->address.host) % 1000;
+                player_name = "Guest" + std::to_string(nr);
+                login_method = login_type::anonymous_guest;
             } else if (player_name.size() > 24) {
                 throw "Player name is too long";
+            } else {
+                login_method = login_type::named_guest;
             }
 
             int found(0);
@@ -555,11 +599,11 @@ void network::login(packet_info& info)
             uint64_t player_uid
                 = *reinterpret_cast<const uint64_t*>(&msg.uid[0]);
 
-            es_.for_each<uint64_t>(
-                server_entity_system::c_player_uid,
-                [&](es::storage::iterator i, uint64_t& eid) {
-                    trace("Check against %1%...", eid);
-                    if (eid == player_uid) {
+            es_.for_each<player_data>(
+                server_entity_system::c_player_data,
+                [&](es::storage::iterator i, player_data& pd) {
+                    trace("Check against %1%...", pd.id);
+                    if (pd.id == player_uid) {
                         ++found;
                         iter = i;
                     }
@@ -569,15 +613,15 @@ void network::login(packet_info& info)
             if (found == 0) {
                 trace("Log in new player with uid %1%", player_uid);
                 info.plr = es_.new_entity();
-                es_.set(info.plr, server_entity_system::c_player_uid,
-                        player_uid);
+                es_.set(info.plr, server_entity_system::c_player_data,
+                        player_data{player_uid, login_method});
             } else {
                 trace("Log in existing player with uid %1%", player_uid);
                 if (found > 1)
                     trace("ERROR: Found more than one, actually");
 
                 info.plr = iter->first;
-                reactivate_player(info.plr);
+                reactivate_player(info.plr, login_method);
             }
         } catch (const char* msg) {
             kick_player(info.conn, msg);
@@ -668,11 +712,10 @@ void network::login(packet_info& info)
     // Log in
     log_msg("send greeting to player %1%", info.plr);
 
-    msg::greeting reply;
+    msg::setup reply;
     reply.position = start_pos;
     reply.entity_id = info.plr;
     reply.client_time = clock::client_time(conn_info_[info.conn].clock_offset);
-    reply.motd = "Be excellent to eachother.";
     send_encrypted(info.conn, serialize_packet(reply), reply.method());
 
     // Send height maps
@@ -1038,41 +1081,49 @@ void network::on_update_surface(const chunk_coordinates& pos)
 
 bool network::deactivate_player(uint32_t entity)
 {
+    auto component = server_entity_system::c_player_data;
     auto write_lock = es_.acquire_write_lock();
     auto i = es_.find(entity);
     if (i == es_.end()
-        || !es_.entity_has_component(i, server_entity_system::c_position))
+        || !es_.entity_has_component(i, component))
         return false;
 
-    inactive_player data;
+    auto data = es_.get<player_data>(i, component);
     data.saved_pos = es_.get<wfpos>(i, server_entity_system::c_position);
     data.logout = clock::epoch();
+    data.logged_in = login_type::logged_out;
     es_.remove_component_from_entity(i, server_entity_system::c_position);
-    es_.set(i, server_entity_system::c_inactive_player, data);
+    es_.set(i, component, data);
 
     log_msg("Player %1% has been deactivated", entity);
 
     return true;
 }
 
-bool network::reactivate_player(uint32_t entity)
+bool network::reactivate_player(uint32_t entity, login_type logged)
 {
+    auto component = server_entity_system::c_player_data;
     auto write_lock = es_.acquire_write_lock();
     auto i = es_.find(entity);
-    if (i == es_.end()
-        || !es_.entity_has_component(i,
-                                     server_entity_system::c_inactive_player))
+    if (i == es_.end() || !es_.entity_has_component(i, component))
         return false;
 
-    auto data
-        = es_.get<inactive_player>(i, server_entity_system::c_inactive_player);
-    es_.remove_component_from_entity(i,
-                                     server_entity_system::c_inactive_player);
+    auto data = es_.get<player_data>(i, component);
+    data.logged_in = logged;
     es_.set(i, server_entity_system::c_position, data.saved_pos);
+    es_.set(i, component, data);
 
     log_msg("Player %1% has been reactivated", entity);
 
     return true;
+}
+
+std::string network::exec(const std::string& cmd)
+{
+    if (cmd == "help")
+        return "You're on your own, buddy.";
+
+    return "Syntax error.";
 }
 
 } // namespace hexa

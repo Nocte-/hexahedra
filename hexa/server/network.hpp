@@ -26,6 +26,7 @@
 #include <unordered_map>
 
 #include <boost/thread.hpp>
+#include <boost/signals2.hpp>
 
 #include <es/entity.hpp>
 
@@ -34,14 +35,14 @@
 #include <hexa/ray.hpp>
 #include <hexa/threadpool.hpp>
 
-#include "udp_server.hpp"
 #include "player.hpp"
+#include "server_entity_system.hpp"
+#include "udp_server.hpp"
 
 namespace hexa
 {
 
 class packet;
-class server_entity_system;
 class lua;
 class world;
 
@@ -85,6 +86,9 @@ public:
 
     void broadcast(const binary_data& msg, msg::reliability method) const;
 
+public:
+    std::string exec(const std::string& cmd);
+
 private:
     struct packet_info
     {
@@ -93,6 +97,7 @@ private:
         const packet& p;
     };
 
+    void knock(packet_info& p);
     void login(packet_info& p);
     void logout(const packet_info& p);
     void timesync(const packet_info& p);
@@ -114,7 +119,7 @@ private:
     void send_height(const map_coordinates& pos, ENetPeer* dest);
     void kick_player(ENetPeer* dest, const std::string& kickmsg);
     bool deactivate_player(uint32_t entity);
-    bool reactivate_player(uint32_t entity);
+    bool reactivate_player(uint32_t entity, login_type logged);
 
     void on_update_surface(const chunk_coordinates& pos);
 
@@ -127,6 +132,7 @@ private:
     crypto::private_key my_private_key_;
     crypto::buffer my_public_key_;
     crypto::buffer my_id_;
+    std::string auth_url_;
 
     struct connection_info
     {

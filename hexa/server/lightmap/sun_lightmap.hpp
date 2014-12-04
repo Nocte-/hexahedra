@@ -46,11 +46,11 @@ public:
 
     virtual ~sun_lightmap();
 
-    virtual lightmap& generate(world_lightmap_access& data,
+    virtual void generate(world_lightmap_access& data,
                                const chunk_coordinates& pos, const surface& s,
-                               lightmap& chunk, unsigned int phase = 0) const;
+                               lightmap_hr& chunk, unsigned int phase = 0) const override;
 
-    unsigned int phases() const { return 3; }
+    unsigned int phases() const override { return 3; }
 
 private:
     void add(rays& r, float length, yaw_pitch dir) const;

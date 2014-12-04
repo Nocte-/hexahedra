@@ -31,6 +31,7 @@
 #include <boost/program_options/variables_map.hpp>
 #include <boost/property_tree/json_parser.hpp>
 
+#include "globals.hpp"
 #include "../algorithm.hpp"
 #include "../json.hpp"
 #include "../log.hpp"
@@ -47,7 +48,6 @@ namespace hexa
 {
 
 extern po::variables_map global_settings;
-extern fs::path gamedir;
 
 namespace
 {
@@ -89,23 +89,25 @@ fs::path key_file()
 
 void use_private_key_from_password(const std::string& password)
 {
-    if (fs::exists(key_file()))
+    using namespace crypto;
+
+    if (fs::exists(key_file())) {
         throw std::runtime_error(
             (format("A private key already exists in '%1%'.")
              % key_file().string()).str());
-
-    if (password.size() < 16)
+    }
+    if (password.size() < 16) {
         throw std::runtime_error(
             "Passphrase has to be at least 16 characters long.");
-
+    }
     // Keep feeding the passphase through SHA-256 until we get a
     // valid private key.
-    crypto::buffer round;
+    buffer round;
     std::copy(password.begin(), password.end(), std::back_inserter(round));
     for (;;) {
-        round = crypto::sha256(round);
-        auto key = crypto::private_key_from_binary(round);
-        if (crypto::is_valid(key)) {
+        round = sha256(round);
+        auto key = private_key_from_binary(round);
+        if (is_valid(key)) {
             have_privkey = true;
             privkey = key;
             break;
@@ -115,12 +117,13 @@ void use_private_key_from_password(const std::string& password)
     // If we already have a public key stored, check it against
     // the key we just made.
     auto file = info_file();
-    if (fs::exists(file)) {
-        auto json = read_json(file);
-        if (json.count("pubkey")
-            && crypto::from_json(json.get_child("pubkey"))
-               != crypto::get_public_key(privkey))
-            throw std::runtime_error(
+    if (!fs::exists(file))
+        return;
+
+    auto json = read_json(file);
+    if (json.count("pubkey")
+        && from_json(json.get_child("pubkey")) != get_public_key(privkey)) {
+        throw std::runtime_error(
                 "Passphrase does not match against the public key in "
                 + file.string());
     }
@@ -206,14 +209,14 @@ server_registration register_server(const std::string& url)
         // We don't have a UID yet, so let's register our server.
         log_msg("Not yet registered, posting data to %1%", url);
 
-        auto info_file = gamedir / "info.json";
+        auto info_file = gamedir() / "setup.json";
         if (!fs::exists(info_file)) {
             throw std::runtime_error("Cannot register server: "
                                      + info_file.string() + " not found");
         }
         json_data details;
         auto sub = read_json(info_file);
-        details.put_child("servers", sub);
+        details.put_child("servers", sub.get_child("server"));
         details.put_child("servers.pubkey", to_json(pub_key));
         details.put("servers.players.max",
                     global_settings["max-players"].as<unsigned int>());
@@ -226,9 +229,9 @@ server_registration register_server(const std::string& url)
         details.put("servers.connection.port",
                     global_settings["port"].as<unsigned short>());
 
-        if (fs::exists(gamedir / "icon.png")) {
+        if (fs::exists(gamedir() / "icon.png")) {
             details.put("servers.icon",
-                        base64_encode(file_contents(gamedir / "icon.png")));
+                        base64_encode(file_contents(gamedir() / "icon.png")));
         }
         log_msg("POST JSON: %1%", to_string(details));
         auto res = rest::post({base, details});

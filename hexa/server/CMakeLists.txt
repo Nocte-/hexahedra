@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.8.3)
 set(EXE hexahedra-server)
 set(LIBNAME hexaserver)
 
-file(GLOB SOURCE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp" "*/*.cpp" "../../libs/luabind/*.cpp" "../../libs/clew/clew.c")
+file(GLOB SOURCE_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.cpp" "*/*.cpp" "../../libs/luabind/*.cpp" "../../libs/clew/clew.c" "linenoise.c")
 list(REMOVE_ITEM SOURCE_FILES main.cpp)
 file(GLOB HEADER_FILES RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "*.hpp" "*/*.hpp")
 

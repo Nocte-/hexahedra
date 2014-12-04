@@ -19,17 +19,16 @@
 //
 // Copyright 2012-2014, nocte@hippie.nu
 //---------------------------------------------------------------------------
-
 #pragma once
 
 #include <boost/property_tree/ptree.hpp>
 #include <hexa/basic_types.hpp>
+#include <hexa/lightmap.hpp>
 #include <hexa/surface.hpp>
 
 namespace hexa
 {
 
-class lightmap;
 class world;
 class world_lightmap_access;
 
@@ -51,10 +50,10 @@ public:
      * @param srf   The exposed faces in this chunk
      * @param map   The results will be placed in this chunk
      * @param phase Level of detail \sa phases
-     * @return Reference to \a map */
-    virtual lightmap& generate(world_lightmap_access& data,
+     * */
+    virtual void generate(world_lightmap_access& data,
                                const chunk_coordinates& pos,
-                               const surface& srf, lightmap& map,
+                               const surface& srf, lightmap_hr& map,
                                unsigned int phase = 0) const = 0;
 
     /** The number of phases this generator needs.

@@ -77,18 +77,18 @@ struct lamp
     float str;
 };
 
-lightmap& lamp_lightmap::generate(world_lightmap_access& data,
+void lamp_lightmap::generate(world_lightmap_access& data,
                                   const chunk_coordinates& pos,
-                                  const surface& s, lightmap& lightchunk,
+                                  const surface& s, lightmap_hr& lightchunk,
                                   unsigned int phase) const
 {
-    static const float boost(6.0f);
+    static const float boost = 6.0f;
 
     if (s.empty())
-        return lightchunk;
+        return;
 
-    const vector half(0.5f, 0.5f, 0.5f);
-    block_vector no(chunk_size * 2, chunk_size * 2, chunk_size * 2);
+    const vector half{0.5f, 0.5f, 0.5f};
+    block_vector no{chunk_size * 2, chunk_size * 2, chunk_size * 2};
 
     // Go through all the surfaces in the chunks surrounding the current
     // chunk we're making a lightmap for (a 5x5x5 Moore neighborhood).
@@ -121,30 +121,30 @@ lightmap& lamp_lightmap::generate(world_lightmap_access& data,
     }
 
     if (lamps.empty())
-        return lightchunk;
+        return;
 
     auto lmi(std::begin(lightchunk));
     for (const faces& f : s) {
-        for (int d(0); d < 6; ++d) {
+        for (int d = 0; d < 6; ++d) {
             if (!f[d])
                 continue;
 
-            vector normal(dir_vector[d]);
-            vector o(vector(f.pos) + half + (normal * 0.51f));
+            vector normal = dir_vector[d];
+            vector o = vector{f.pos} + half + (normal * 0.51f);
 
-            float light_level(0.0f);
+            float light_level = 0.0f;
 
             for (auto& lamp : lamps) {
-                const vector& lp(lamp.pos);
-                auto ilp(floor(lp));
+                const vector& lp = lamp.pos;
+                auto ilp = floor(lp);
 
                 if (ilp == f.pos) {
                     light_level = 1;
                     break;
                 }
 
-                float weight(lamp.str * dot_prod(normalize(lp - o), normal)
-                             / squared_distance(lp, o));
+                float weight = lamp.str * dot_prod(normalize(lp - o), normal)
+                              / squared_distance(lp, o);
                 if (weight <= 0)
                     continue;
 
@@ -165,13 +165,11 @@ lightmap& lamp_lightmap::generate(world_lightmap_access& data,
             }
 
             light_level = clamp(light_level, 0.0f, 1.0f);
-            lmi->artificial = light_level * 15.4f;
+            lmi->artificial = light_level * 255.0f + 0.49f;
             ++lmi;
         }
     }
     assert(lmi == std::end(lightchunk));
-
-    return lightchunk;
 }
 
 } // namespace hexa

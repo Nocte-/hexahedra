@@ -1,8 +1,11 @@
 {
     "name": "Hexahedra default game",
     "description": "The default sandbox game, with infinite terrain, building, and crafting.",
-    "url": "http://hexahedra.blogspot.com/",
-    "color": "#601010",
-    "mode": "singleplayer"
+    "url": "http://hexahedra.net/",
+    "color": "606080",
+    "mode": "singleplayer",
+    "tags": ["sandbox", "freebuild"],
+    "ageRating": 1,
+    "contentWarning": ["chat", "usergen"]
 }
 

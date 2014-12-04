@@ -1,9 +1,16 @@
 {
-"name": [{"en": "Hexahedra default game"}],
-"description": [{"en": "The default sandbox game, with infinite terrain, building, and crafting." }],
-"url": "http://hexahedra.net/",
-"color": "#601010",
-"mode": "singleplayer",
+"server" :
+{
+    "name": "Hexahedra default game",
+    "description": "The default sandbox game, with infinite terrain, building, and crafting.",
+    "url": "http://hexahedra.net/",
+    "color": "606080",
+    "mode": "singleplayer",
+    "tags": ["sandbox", "freebuild"],
+    "ageRating": 1,
+    "contentWarning": ["chat", "usergen"]
+},
+
 
 "settings" : [
     {
@@ -43,13 +50,15 @@
                      ]},
     { "module" : "objects",
         "hndl" : "0.05:mul(scale(200):simplex)",
-        "sprites" : [ "/usr/local/share/hexahedra/games/defaultgame/mc_tree.hbs.txt" ]
+        "sprites" : [ "mc_tree.hbs.txt" ]
     }
 ],
 
 "light": [
     { "module": "ambient_occlusion" },
-    { "module": "sun" }
+    { "module": "sun" }, 
+    { "module": "lamp" },
+    { "module": "radiosity" }
 ]
 
 }

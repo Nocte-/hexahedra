@@ -44,7 +44,9 @@ public:
 class persistent_storage_i
 {
 public:
-    typedef enum { area = 0, chunk, surface, light, cnk_height } data_type;
+    typedef enum {
+        meta = 0, area, chunk, surface, light, cnk_height, light_hr
+    } data_type;
 
     class raii_transaction
     {
@@ -60,6 +62,17 @@ public:
 
 public:
     virtual ~persistent_storage_i() {}
+
+    /**
+     * @param index
+     *  0 : uint16_t database format version number
+     *  1 : uint64_t age of the world
+     *  2 : Component layout of the entity system
+     *  3 : A copy of "setup.json"
+     */
+    virtual void store_meta(uint32_t index, const std::string& blob) = 0;
+
+    virtual std::string retrieve_meta(uint32_t index) = 0;
 
     virtual void store(data_type type, chunk_coordinates xyz,
                        const compressed_data& data) = 0;
@@ -84,6 +97,10 @@ public:
     virtual void retrieve(es::storage& es, es::entity entity_id) = 0;
 
     virtual bool is_available(es::entity entity_id) = 0;
+
+    virtual void remove(map_coordinates xy) { }
+
+    virtual void remove(chunk_coordinates xyz) { }
 
     raii_transaction transaction() { return raii_transaction(*this); }
 

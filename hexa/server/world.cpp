@@ -24,9 +24,11 @@
 #include <boost/range/adaptor/reversed.hpp>
 
 #include <hexa/geometric.hpp>
+#include <hexa/log.hpp>
 #include <hexa/ray.hpp>
 #include <hexa/trace.hpp>
 #include <hexa/voxel_algorithm.hpp>
+#include <hexa/voxel_range.hpp>
 
 #include "extract_surface.hpp"
 #include "world_subsection.hpp"
@@ -56,8 +58,39 @@ compressed_data pack(const type& data)
 template <typename type>
 type unpack_as(const compressed_data& data)
 {
-    auto tmp(decompress(data));
-    return deserialize_as<type>(tmp);
+    return deserialize_as<type>(decompress(data));
+}
+
+uint8_t value_convert(uint8_t base, uint8_t radiosity)
+{
+    int val = base;
+    val += radiosity;
+    return clamp(val + 8, 0, 255) / 16;
+}
+
+light convert(const light_hr& element)
+{
+    light result;
+    result.sunlight = value_convert(element.sunlight, element.r_sunlight);
+    result.ambient = value_convert(element.ambient, element.r_ambient);
+    result.artificial = value_convert(element.artificial, element.r_artificial);
+    result.secondary = value_convert(element.secondary, element.r_secondary);
+    return result;
+}
+
+lightmap convert(const lightmap_hr& lm)
+{
+    lightmap nlm;
+    for (auto& elem : lm)
+        nlm.emplace_back(convert(elem));
+
+    assert(nlm.size() == lm.size());
+    return nlm;
+}
+
+light_data convert_to_client_lightmap(const light_data_hr& l)
+{
+    return light_data(convert(l.opaque), convert(l.transparent));
 }
 
 } // anonymous namespace
@@ -124,9 +157,19 @@ chunk& world::get_chunk_writable(chunk_coordinates pos)
         return *found;
 
     auto& result = chunks_[pos];
-    if (storage_.is_available(store_chunk, pos)) {
-        result = unpack_as<chunk>(storage_.retrieve(store_chunk, pos));
-    } else if (!is_air_chunk(pos, get_coarse_height(pos))) {
+
+    try {
+        if (storage_.is_available(store_chunk, pos)) {
+            result = unpack_as<chunk>(storage_.retrieve(store_chunk, pos));
+            return result;
+        }
+    } catch (serialize_error&) {
+        log_msg("Found a corrupt chunk at %1%, regenerating it.", pos);
+        // Fall through to the next section, so we can
+        // regenerate this chunk.
+    }
+
+    if (!is_air_chunk(pos, get_coarse_height(pos))) {
         result = generate_chunk(pos);
         storage_.store(store_chunk, pos, pack(result));
     } else {
@@ -203,26 +246,26 @@ const surface_data& world::get_surface(chunk_coordinates pos)
     return srf;
 }
 
-const light_data& world::get_lightmap(chunk_coordinates pos)
+light_data world::get_client_lightmap(chunk_coordinates pos)
 {
     assert(pos.x < chunk_world_limit.x);
     assert(pos.y < chunk_world_limit.y);
     assert(pos.z < chunk_world_limit.z);
 
-    constexpr auto store_light = persistent_storage_i::light;
+    constexpr auto store_light = persistent_storage_i::light_hr;
 
     auto i = lightmaps_.try_get(pos);
     if (i)
-        return *i;
+        return convert_to_client_lightmap(*i);
 
     auto& lm = lightmaps_[pos];
     if (storage_.is_available(store_light, pos)) {
-        lm = unpack_as<light_data>(storage_.retrieve(store_light, pos));
+        lm = unpack_as<light_data_hr>(storage_.retrieve(store_light, pos));
     } else {
         lm = generate_lightmap(pos);
         storage_.store(store_light, pos, pack(lm));
     }
-    return lm;
+    return convert_to_client_lightmap(lm);
 }
 
 chunk_height world::get_coarse_height(map_coordinates pos)
@@ -253,13 +296,16 @@ compressed_data world::get_compressed_surface(chunk_coordinates pos)
 
 compressed_data world::get_compressed_lightmap(chunk_coordinates pos)
 {
+    return pack(get_client_lightmap(pos));
+    /*
     if (storage_.is_available(persistent_storage_i::light, pos))
         return storage_.retrieve(persistent_storage_i::light, pos);
 
-    compressed_data result{pack(get_lightmap(pos))};
+    compressed_data result{pack(get_client_lightmap(pos))};
     storage_.store(persistent_storage_i::light, pos, result);
 
     return result;
+    */
 }
 
 //---------------------------------------------------------------------------
@@ -280,11 +326,16 @@ void world::commit_write(chunk_coordinates pos)
 
             storage_.store(persistent_storage_i::surface, p, pack(srf));
             surfaces_[p] = std::move(srf);
+        }
+    }
 
+    // Update the surrounding light maps
+    for (auto rel : cube_range<vector>(2)) {
+        auto p = pos + rel;
+        if (!is_air_chunk(p, get_coarse_height(p))) {
             auto& lm = lightmaps_[p];
             lm = generate_lightmap(p);
-            storage_.store(persistent_storage_i::light, p, pack(lm));
-
+            storage_.store(persistent_storage_i::light_hr, p, pack(lm));
             on_update_surface(p);
         }
     }
@@ -326,7 +377,7 @@ bool world::is_surface_available(chunk_coordinates pos) const
 bool world::is_lightmap_available(chunk_coordinates pos) const
 {
     return lightmaps_.count(pos) != 0
-           || storage_.is_available(persistent_storage_i::light, pos);
+           || storage_.is_available(persistent_storage_i::light_hr, pos);
 }
 
 chunk world::generate_chunk(chunk_coordinates pos)
@@ -340,10 +391,10 @@ chunk world::generate_chunk(chunk_coordinates pos)
     return cnk;
 }
 
-light_data world::generate_lightmap(chunk_coordinates pos, int level)
+light_data_hr world::generate_lightmap(chunk_coordinates pos, int level)
 {
     world_lightmap_access proxy{*this};
-    light_data result;
+    light_data_hr result;
     auto& surf = get_surface(pos);
 
     result.opaque.resize(count_faces(surf.opaque));
